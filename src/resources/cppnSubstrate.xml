@@ -1,0 +1,11 @@
+<substrate>
+	<input id="1">
+		<dim>1</dim>
+		<dim>3</dim>
+		<dim>23</dim>
+	</input>
+	<input id="2">
+	</input>
+	<output id="1">
+	</output>
+</substrate>
