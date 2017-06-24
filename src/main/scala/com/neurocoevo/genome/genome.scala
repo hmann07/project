@@ -10,12 +10,7 @@ import com.neurocoevo.substrate._
 */
 
 class Genome(val substrate: Substrate) {
-	val connections: List[Connection] = {
-		// if there're no hidden then we connect all inputs to all outputs.
-		//if(substrate.hiddenNodes.length == 0){
-			connectionGen(substrate)
-		//}
-	}
+	val connections: List[Connection] = { connectionGen(substrate) }
 
 	
 	/*
