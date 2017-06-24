@@ -13,8 +13,8 @@ import scala.xml.XML
 class Substrate(filepath: String) {
 
 	private val xmlData = XML.loadFile(filepath)
-	val inputNodes = (xmlData \ "input").map {i => { new SubstrateNode(i, "input" + i \ "@id")} }
-	val outputNodes = (xmlData \ "output").map {i => { new SubstrateNode(i, "output" + i \ "@id")} }
-	val hiddenNodes = (xmlData \ "hidden").map {i => { new SubstrateNode(i, "hidden" + i \ "@id")} }
+	val inputNodes = (xmlData \ "input").map {i => { new SubstrateNode(i, "input" + i \ "@id")} }.toList
+	val outputNodes = (xmlData \ "output").map {i => { new SubstrateNode(i, "output" + i \ "@id")} }.toList
+	val hiddenNodes = (xmlData \ "hidden").map {i => { new SubstrateNode(i, "hidden" + i \ "@id")} }.toList
 
 }
