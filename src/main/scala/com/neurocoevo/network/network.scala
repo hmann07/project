@@ -12,7 +12,8 @@ object Network {
 	case class NetworkSettings(
 			confirmedConnections: Int = 0
 		)
-	case class Sensation(value: Double) 
+	case class Sensation(
+			id: Double, values: List[Double], label: List[Double]) 
 
 	def props(genome: Genome): Props = Props(new Network(genome))
 
@@ -30,7 +31,7 @@ class Network(genome: Genome) extends Actor with ActorLogging {
 	val totalConnections: Int = genome.connections.length 
 
 	// create connections based on actor references
-	var actorReferencedConnections = genome.connections.map {c => new ActorConnection(allnodes(c.source.name),allnodes(c.destination.name), c.weight)}
+	val actorReferencedConnections = genome.connections.map {c => new ActorConnection(allnodes(c.source.name),allnodes(c.destination.name), c.weight)}
 
 	// inform all neurons about their incoming and outgoing connections.
 	actorReferencedConnections.foreach {c =>
@@ -39,8 +40,11 @@ class Network(genome: Genome) extends Actor with ActorLogging {
 	}
 
 	println(actorReferencedConnections)
+	
 	/*
+		Not ideal to have three so similar. could introduce the Neuron class as part of the parameter.
   		Generate Neurons: Take a list of SubstrateNodes and create actors for each one.
+  		signature: List of nodes -> Map (actor name -> actor)
   	*/
 
   	def generateInputNeurons(neurons: List[SubstrateNode], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
@@ -86,7 +90,7 @@ class Network(genome: Genome) extends Actor with ActorLogging {
 
   	def readyNetwork(settings: NetworkSettings) : Receive = {
   		
-  		case Sensation(s) => inputs.values.foreach(i => i ! Neuron.Signal(s))
+  		case Sensation(id, v, l) => inputs.values.foreach(i => i ! Neuron.Signal(s))
 
   	}
 
