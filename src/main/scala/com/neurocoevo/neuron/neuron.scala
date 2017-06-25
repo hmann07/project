@@ -1,11 +1,14 @@
 package com.neurocoevo.neuron
 
+import com.neurocoevo.network._
+import com.neurocoevo.activationfunctions._
+
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object Neuron {
 
-	val defaultActivationFunction = (x: Double)  => x
+	val defaultActivationFunction = ActivationFunctions.sigmoid
 	val defaultSignal = 0
 	val defaultSignalsRecieved: Double = 0
 	val defaultOutputs: Map[ActorRef, Double] = Map.empty
@@ -59,6 +62,9 @@ class Neuron extends Actor with ActorLogging {
   	def readyNeuron(settings: NeuronSettings): Receive = {
   		case Signal(v) =>
   			handleSignal(settings, v)
+
+  		case Network.Error(v) =>
+  			println("errror received.")
   	}
 
 
@@ -66,13 +72,13 @@ class Neuron extends Actor with ActorLogging {
   	def handleSignal(s: NeuronSettings,v: Double) = {
   	if (s.signalsReceived + 1 == s.inputs.size){
     		println("hidden got all sigs")
+
 	    	s.outputs.keys.foreach(n =>
-	    		n ! Signal(s.activationFunction(v) * s.outputs(n)))
+	    		n ! Signal(s.activationFunction(s.signal + v) * s.outputs(n)))
 	    	context become readyNeuron(s.copy(signal = s.signal + v, signalsReceived = s.signalsReceived + 1))
     	
     	} else {
     		println("hidden got a new sig")
-    		println(s.inputs.keys.size)
     		context become readyNeuron(s.copy(signal = s.signal + v, signalsReceived = s.signalsReceived + 1))
     	}
   } 
@@ -83,17 +89,20 @@ class InputNeuron() extends Neuron {
 	override def handleSignal(s: NeuronSettings,v: Double) = {
   		println("input got all sigs")
 	    	s.outputs.keys.foreach(n =>
-	    		n ! Signal(s.activationFunction(v) * s.outputs(n)))
+	    		n ! Signal(v * s.outputs(n)))
 	    	context become readyNeuron(s.copy(signal = s.signal + v, signalsReceived = s.signalsReceived+1))
   	} 
 }
 
 class OutputNeuron() extends Neuron {
 	import Neuron._
+	import context._
+
 	override def handleSignal(s: NeuronSettings,v: Double) = {
 		if (s.signalsReceived + 1 == s.inputs.size){
 	  		println("output got all sigs")
 		    println("output = " + (s.signal + v))
+		    parent ! Network.Output(s.signal + v)
 		    context become readyNeuron(s.copy(signal = s.signal + v, signalsReceived = s.signalsReceived+1))
 		} else {
 			println("output got new sig")

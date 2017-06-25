@@ -9,11 +9,16 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object Network {
 
+	case class Output(value: Double)
+
 	case class NetworkSettings(
-			confirmedConnections: Int = 0
+			confirmedConnections: Int = 0,
+			sensations: Map[Double, Sensation] = Map.empty
 		)
 	case class Sensation(
 			id: Double, values: List[Double], label: List[Double]) 
+
+	case class Error(error:Double)
 
 	def props(genome: Genome): Props = Props(new Network(genome))
 
@@ -90,7 +95,14 @@ class Network(genome: Genome) extends Actor with ActorLogging {
 
   	def readyNetwork(settings: NetworkSettings) : Receive = {
   		
-  		case Sensation(id, v, l) => inputs.values.foreach(i => i ! Neuron.Signal(s))
+  		case Sensation(id, v, l) => 
+  			v.zip(inputs.values).foreach({case (v,i) => i ! Neuron.Signal(v)})
+  			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l))))
+  		
+  		case Output(v) =>
+  			println("error is: " + (v - settings.sensations(1).label(0)))
+  			sender() ! Error(v - settings.sensations(1).label(0))
+
 
   	}
 
