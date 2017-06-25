@@ -12,6 +12,7 @@ object Network {
 	case class NetworkSettings(
 			confirmedConnections: Int = 0
 		)
+	case class Sensation(value: Double) 
 
 	def props(genome: Genome): Props = Props(new Network(genome))
 
@@ -58,13 +59,18 @@ class Network(genome: Genome) extends Actor with ActorLogging {
     	case "ConnectionConfirmation"  => {
     			if(settings.confirmedConnections == totalConnections){
     				println("received confirmation of all Connections")
-    				context become initialisingNetwork(settings.copy(confirmedConnections = settings.confirmedConnections + 1))
+    				parent ! "NetworkReady"
+    				context become readyNetwork(settings.copy(confirmedConnections = settings.confirmedConnections + 1))
     			} else {
     				println("received confirmation of Connection")
     				context become initialisingNetwork(settings.copy(confirmedConnections = settings.confirmedConnections + 1))
     			}
     		}
+  	}
 
+  	def readyNetwork(settings: NetworkSettings) : Receive = {
+  		
+  		case Sensation(s) => inputs.values.foreach(i => i ! Neuron.Signal(s))
 
   	}
 

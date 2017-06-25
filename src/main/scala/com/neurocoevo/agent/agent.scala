@@ -35,7 +35,13 @@ class Agent(cppnGenome: Genome) extends Actor with ActorLogging {
     			sender() ! "10"
     			println("10!")
     		}
+
+    	case "NetworkReady" =>
+    		sender() ! Network.Sensation(14.0)
+
   	}
+
+
 
   	
 

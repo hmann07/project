@@ -10,6 +10,4 @@
 [0m[[0mdebug[0m] [0m	C:\Users\Henry\.ivy2\cache\com.typesafe.akka\akka-testkit_2.12\jars\akka-testkit_2.12-2.5.2.jar[0m
 [0m[[0mdebug[0m] [0mWaiting for thread run-main-0 to terminate.[0m
 [0m[[0mdebug[0m] [0m	Thread run-main-0 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread mySystem-akka.actor.default-dispatcher-5 to terminate.[0m
-[0m[[0mdebug[0m] [0m	Thread mySystem-akka.actor.default-dispatcher-5 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread mySystem-akka.actor.default-dispatcher-3 to terminate.[0m
+[0m[[0mdebug[0m] [0mWaiting for thread mySystem-scheduler-1 to terminate.[0m

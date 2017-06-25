@@ -11,6 +11,7 @@ object Neuron {
 	val defaultOutputs: Map[ActorRef, Double] = Map.empty
 	val defaultInput: Map[ActorRef, Double] = Map.empty
 
+	case class Signal(s: Double)
 	case class Destination(destination: Map[ActorRef, Double])
 	case class Source(source: Map[ActorRef, Double])
 	case class NeuronSettings(
