@@ -19,20 +19,33 @@ class Genome(val substrate: Substrate) {
 				 connections between each of these nodes. 
 	*/
 	def connectionGen(substrate: Substrate) : List[Connection] = {
-		connectionGenAux(substrate.inputNodes, substrate.outputNodes, List.empty, substrate.outputNodes)
+		val layers: List[List[SubstrateNode]] = substrate.inputNodes +: substrate.hiddenNodes :+ substrate.outputNodes
+		connectionGenAux(layers.lift(0).get, layers.lift(1).get, List.empty, layers.lift(1).get, layers.drop(2))
 	}
 
-	def connectionGenAux(inputs: List[SubstrateNode], outputs: List[SubstrateNode], connections: List[Connection], staticOutputs: List[SubstrateNode]): List[Connection] = {
-			if(inputs.length == 0){
-				connections		
+	def connectionGenAux(
+		from: List[SubstrateNode], 
+		to: List[SubstrateNode], 
+		connections: List[Connection], 
+		staticOutputs: List[SubstrateNode],
+		toConnect: List[List[SubstrateNode]]): List[Connection] = {
+			
+		if(from.length == 0 && toConnect.length == 0 ){
+			// we've iterated through the whole input list. and there're no subsequent layers to connect
+			connections		
+		} else {
+			if(from.length == 0 && toConnect.length > 0 ){
+				// made all connections for this layer, but there is still more layers to connect, move to the next layer.
+				connectionGenAux(staticOutputs, toConnect.head, connections, toConnect.head, toConnect.tail)	
 			} else {
-				if(outputs.length > 0){
+				if(to.length > 0){
 					// add a connection from first input to current first in the output list, go to next output.
-					connectionGenAux(inputs, outputs.tail, new Connection(inputs.head, outputs.head) :: connections, staticOutputs)
+					connectionGenAux(from, to.tail, new Connection(from.head, to.head) :: connections, staticOutputs, toConnect)
 				}  else {
 					// move to the next input, reset the output list.
-					connectionGenAux(inputs.tail, staticOutputs , connections, staticOutputs)
+					connectionGenAux(from.tail, staticOutputs , connections, staticOutputs, toConnect)
 				}
 			}
 		}
+	}
 }

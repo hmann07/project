@@ -9,8 +9,10 @@
 		<dim>3</dim>
 		<dim>23</dim>
 	</input>
-	<input id="3">
-	</input>
+	<layer id="1">
+		<hidden id="1">
+		</hidden>
+	</layer>
 	<output id="1">
 	</output>
 </substrate>

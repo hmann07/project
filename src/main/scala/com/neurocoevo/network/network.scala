@@ -23,9 +23,10 @@ class Network(genome: Genome) extends Actor with ActorLogging {
 	import Network._
 
 	// create actors for nodes
-	val inputs: Map[String, ActorRef] = generateNeurons(genome.substrate.inputNodes, Map.empty)
-	val outputs: Map[String, ActorRef] = generateNeurons(genome.substrate.outputNodes, Map.empty)
-	val allnodes: Map[String, ActorRef] = inputs ++ outputs
+	val inputs: Map[String, ActorRef] = generateInputNeurons( genome.substrate.inputNodes, Map.empty)
+	val outputs: Map[String, ActorRef] = generateOutputNeurons( genome.substrate.outputNodes, Map.empty)
+	val hidden: Map[String, ActorRef] = generateHiddenNeurons( genome.substrate.hiddenNodes.flatten, Map.empty)
+	val allnodes: Map[String, ActorRef] = inputs ++ hidden ++ outputs 
 	val totalConnections: Int = genome.connections.length 
 
 	// create connections based on actor references
@@ -42,10 +43,24 @@ class Network(genome: Genome) extends Actor with ActorLogging {
   		Generate Neurons: Take a list of SubstrateNodes and create actors for each one.
   	*/
 
-  	def generateNeurons(neurons: List[SubstrateNode], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+  	def generateInputNeurons(neurons: List[SubstrateNode], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
   		neurons.length match {
   			case 0 => agg
-  			case _ => generateNeurons(neurons.tail, agg + (neurons.head.name -> actorOf(Props[Neuron], neurons.head.name)))
+  			case _ => generateInputNeurons(neurons.tail, agg + (neurons.head.name -> actorOf(Props[InputNeuron], neurons.head.name)))
+  		}
+  	}
+
+  	def generateOutputNeurons(neurons: List[SubstrateNode], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+  		neurons.length match {
+  			case 0 => agg
+  			case _ => generateOutputNeurons(neurons.tail, agg + (neurons.head.name -> actorOf(Props[OutputNeuron], neurons.head.name)))
+  		}
+  	}
+
+  	def generateHiddenNeurons(neurons: List[SubstrateNode], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+  		neurons.length match {
+  			case 0 => agg
+  			case _ => generateHiddenNeurons(neurons.tail, agg + (neurons.head.name -> actorOf(Props[Neuron], neurons.head.name)))
   		}
   	}
 
@@ -59,6 +74,7 @@ class Network(genome: Genome) extends Actor with ActorLogging {
     	case "ConnectionConfirmation"  => {
     			if(settings.confirmedConnections == totalConnections){
     				println("received confirmation of all Connections")
+    				children.foreach(c => c ! "Init Complete")
     				parent ! "NetworkReady"
     				context become readyNetwork(settings.copy(confirmedConnections = settings.confirmedConnections + 1))
     			} else {

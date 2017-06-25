@@ -9,10 +9,10 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 
 object Main extends App {
-	val cppnSubstrate = new Substrate("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\cppnSubstrate.xml")
-	val annSubstrate = new Substrate("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\cppnSubstrate.xml")
+	val cppnSubstrate = new Substrate("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
+	val annSubstrate = new Substrate("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
 	cppnSubstrate.inputNodes.foreach(n =>  println(n.dim))
-	cppnSubstrate.hiddenNodes.foreach(n =>  println(n.name))
+	cppnSubstrate.hiddenNodes.foreach(l => l.foreach(n  =>  println(n.name)))
 	cppnSubstrate.outputNodes.foreach(n =>  println(n.name))
 
 	val g = new Genome(cppnSubstrate)
