@@ -1,13 +1,41 @@
-package com.neurocoevo.activationfunctions
+package com.neurocoevo.activationfunction
 
-object ActivationFunctions {
+abstract class ActivationFunction {
 	
-	val bias = (x: Double) => 1
+	def function(x: Double): Double
+
+}
+
+abstract class DifferentiableFunction extends ActivationFunction {
+
+	 def function(x: Double): Double 
 	
-	val gaussian = (x: Double) => 2 * Math.exp(-Math.pow(x * 2.5, 2)) - 1
+	 def derivative(x: Double): Double 
 
-	val sine = (x: Double) => Math.sin(x*2)
+}
 
-	val sigmoid = (x: Double) => 1 / (1 + Math.pow(Math.E, -x))
 
+class Bias extends ActivationFunction {
+
+	def function(x: Double) = 1
+
+}
+	
+class gaussian extends ActivationFunction{
+
+	def function(x: Double) = 2 * Math.exp(-Math.pow(x * 2.5, 2)) - 1
+
+} 
+
+class sine extends ActivationFunction{
+
+	def function(x: Double) = Math.sin(x*2)
+
+} 
+
+class Sigmoid extends DifferentiableFunction {
+	
+	def function(x: Double) = 1 / (1 + Math.pow(Math.E, -x))
+
+	def derivative(x: Double) = function(x)  * (1 -  (1 / (1 + Math.pow(Math.E, -x))))
 }

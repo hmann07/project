@@ -103,6 +103,9 @@ class Network(genome: Genome) extends Actor with ActorLogging {
   			println("error is: " + (v - settings.sensations(1).label(0)))
   			sender() ! Error(v - settings.sensations(1).label(0))
 
+  		case "propagated" =>
+  			println("error propagated")
+
 
   	}
 
