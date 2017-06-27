@@ -39,3 +39,11 @@ class Sigmoid extends DifferentiableFunction {
 
 	def derivative(x: Double) = function(x)  * (1 -  (1 / (1 + Math.pow(Math.E, -x))))
 }
+
+
+class Identity extends DifferentiableFunction {
+	
+	def function(x: Double) = 1
+
+	def derivative(x: Double) = 1
+}

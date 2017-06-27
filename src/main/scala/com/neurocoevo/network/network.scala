@@ -105,6 +105,7 @@ class Network(genome: Genome) extends Actor with ActorLogging {
 
   		case "propagated" =>
   			println("error propagated")
+  			parent ! "propagated"
 
 
   	}
