@@ -103,13 +103,13 @@ class Neuron extends Actor with ActorLogging {
 			s.inputs.keys.foreach(i =>
   			i ! Network.Error(finalErrorGradient))
 
-			// we can also reset the node. ready for oncoming signals
+			// we can also reset the node. ready for incoming forward signals
 
 			context become readyNeuron(s.copy(signal = 0,
 											  signalsReceived = Map.empty,
 											  totalErrorGradient = 0,
 											  errorGradientsReceived = 0,
-											  outputs = s.outputs + (source -> (s.outputs(source) + dWeight))))
+											  outputs = s.outputs + (source -> (s.outputs(source) - dWeight))))
 
 		} else {
 
@@ -122,7 +122,7 @@ class Neuron extends Actor with ActorLogging {
 
 			context become readyNeuron(s.copy(totalErrorGradient = s.totalErrorGradient + (e * s.outputs(source)),
 											  errorGradientsReceived = s.errorGradientsReceived + 1,
-											  outputs = s.outputs + (source -> (s.outputs(source) + dWeight))))
+											  outputs = s.outputs + (source -> (s.outputs(source) - dWeight))))
 		}
   	} 
 }
@@ -134,7 +134,7 @@ class InputNeuron() extends Neuron {
   		println("input got all sigs")
 	    	s.outputs.keys.foreach(n =>
 	    		n ! Signal(v * s.outputs(n)))
-	    	context become readyNeuron(s.copy(activationFunction = new Identity,
+	    	context become readyNeuron(s.copy(activationFunction = new InputFunction,
 	    									  signal = s.signal + v,
 	    									  signalsReceived = s.signalsReceived + (source -> v)))
   	} 
@@ -142,6 +142,10 @@ class InputNeuron() extends Neuron {
   	override def handleError(s: NeuronSettings, e: Double, source: ActorRef) = {
   		super.handleError(s,e,source)
   		println("propagated: " + e)
+  		// In addition to appling error gradient to the weights the input should inform the parent that signal has 
+  		// made it all the way to this end point.
+  		// the parent will be waitng to hear from all inputs.
+
   		parent ! "propagated"
   	}
 }

@@ -41,7 +41,7 @@ class Sigmoid extends DifferentiableFunction {
 }
 
 
-class Identity extends DifferentiableFunction {
+class InputFunction extends DifferentiableFunction {
 	
 	def function(x: Double) = 1
 

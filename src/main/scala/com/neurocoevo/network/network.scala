@@ -16,7 +16,9 @@ object Network {
 			sensations: Map[Double, Sensation] = Map.empty
 		)
 	case class Sensation(
-			id: Double, values: List[Double], label: List[Double]) 
+			 id: Double,
+			 values: List[Double], 
+			 label: List[Double]) 
 
 	case class Error(error:Double)
 

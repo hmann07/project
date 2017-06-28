@@ -4,13 +4,15 @@ import com.neurocoevo.genome._
 import com.neurocoevo.neuron._
 import com.neurocoevo.substrate.SubstrateNode
 import com.neurocoevo.network._
+import com.neurocoevo.experience._
 
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object Agent {
 
-	def props(cppnGenome: Genome): Props = Props(new Agent(cppnGenome))
+	def props(cppnGenome: Genome, experience: ActorRef): Props = Props(new Agent(cppnGenome, experience))
+
 
 }
 
@@ -22,12 +24,12 @@ object Agent {
 
 */
 
-class Agent(cppnGenome: Genome) extends Actor with ActorLogging {
+class Agent(cppnGenome: Genome, experience: ActorRef) extends Actor with ActorLogging {
 	import context._
 
 	println("actor created")
 
-	val cppn = actorOf(Network.props(cppnGenome), "cppn")
+	val ann = actorOf(Network.props(cppnGenome), "ann")
 
 	
 	def receive = {
@@ -37,10 +39,20 @@ class Agent(cppnGenome: Genome) extends Actor with ActorLogging {
     		}
 
     	case "NetworkReady" =>
-    		sender() ! Network.Sensation(1, List(1, 0), List(1))
+
+    		// Network is ready, lets percieve some "things"
+    		experience ! "perceive"
+    		//sender() ! Network.Sensation(1, List(1, 0), List(1))
 
     	case "propagated" =>
-    		sender() ! Network.Sensation(1, List(1, 0), List(1))
+    		
+    		// finished learning form that sensation... give me another.
+    		experience ! "perceive"
+    		//sender() ! Network.Sensation(1, List(1, 0), List(1))
+
+    	case Experience.Event(e, l) =>
+    		ann ! Network.Sensation(1, e, l)
+
   	}
 
 
