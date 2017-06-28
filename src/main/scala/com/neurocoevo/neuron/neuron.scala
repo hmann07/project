@@ -131,7 +131,7 @@ class InputNeuron() extends Neuron {
 	import Neuron._
 	import context._
 	override def handleSignal(s: NeuronSettings,v: Double, source: ActorRef) = {
-  		println("input got all sigs")
+  		//println("input got all sigs: " + v)
 	    	s.outputs.keys.foreach(n =>
 	    		n ! Signal(v * s.outputs(n)))
 	    	context become readyNeuron(s.copy(activationFunction = new InputFunction,

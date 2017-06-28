@@ -98,11 +98,12 @@ class Network(genome: Genome) extends Actor with ActorLogging {
   	def readyNetwork(settings: NetworkSettings) : Receive = {
   		
   		case Sensation(id, v, l) => 
+  			println("preparing to send, expected value: " + l)
   			v.zip(inputs.values).foreach({case (v,i) => i ! Neuron.Signal(v)})
   			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l))))
   		
   		case Output(v) =>
-  			println("error is: " + (v - settings.sensations(1).label(0)))
+  			println("expected: " + settings.sensations(1).label(0) +  " received: " + v + " error is: " + (v - settings.sensations(1).label(0)))
   			sender() ! Error(v - settings.sensations(1).label(0))
 
   		case "propagated" =>

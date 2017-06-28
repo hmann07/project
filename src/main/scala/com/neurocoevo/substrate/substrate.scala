@@ -15,6 +15,6 @@ class Substrate(filepath: String) {
 	private val xmlData = XML.loadFile(filepath)
 	val inputNodes: List[SubstrateNode] = (xmlData \ "input").map {i => { new SubstrateNode(i, "input." + i \ "@id")} }.toList
 	val outputNodes: List[SubstrateNode] = (xmlData \ "output").map {i => { new SubstrateNode(i, "output." + i \ "@id")} }.toList
-	val hiddenNodes: List[List[SubstrateNode]] = (xmlData \ "layer").map {l => { l.map {i => new SubstrateNode(i, "hidden." + l\ "@id" + "." + i \ "@id")} }.toList }.toList
+	val hiddenNodes: List[List[SubstrateNode]] = (xmlData \ "layer").map {l => { (l \ "hidden") map {i => new SubstrateNode(i, "hidden." + l\ "@id" + "." + i \ "@id")} }.toList }.toList
 
 }
