@@ -13,7 +13,8 @@ object Network {
 
 	case class NetworkSettings(
 			confirmedConnections: Int = 0,
-			sensations: Map[Double, Sensation] = Map.empty
+			sensations: Map[Double, Sensation] = Map.empty,
+			confirmedPropagations: Int = 0
 		)
 	case class Sensation(
 			 id: Double,
@@ -83,7 +84,8 @@ class Network(genome: Genome) extends Actor with ActorLogging {
   	def	initialisingNetwork(settings: NetworkSettings): Receive = {
     	
     	case "ConnectionConfirmation"  => {
-    			if(settings.confirmedConnections == totalConnections){
+    			println(totalConnections)
+    			if(settings.confirmedConnections + 1 == (totalConnections * 2)){
     				println("received confirmation of all Connections")
     				children.foreach(c => c ! "Init Complete")
     				parent ! "NetworkReady"
@@ -103,12 +105,18 @@ class Network(genome: Genome) extends Actor with ActorLogging {
   			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l))))
   		
   		case Output(v) =>
-  			println("expected: " + settings.sensations(1).label(0) +  " received: " + v + " error is: " + (v - settings.sensations(1).label(0)))
-  			sender() ! Error(v - settings.sensations(1).label(0))
+  			println("input was: " + settings.sensations(1).values + " expected: " + settings.sensations(1).label(0) +  " received: " + v + " error is: " + (settings.sensations(1).label(0) - v))
+  			sender() ! Error(settings.sensations(1).label(0) - v)
 
   		case "propagated" =>
   			println("error propagated")
-  			parent ! "propagated"
+  			if ( settings.confirmedPropagations + 1 == inputs.size){
+  				parent ! "propagated"
+  				context become readyNetwork(settings.copy(confirmedPropagations = 0))
+  			} else {
+  				context become readyNetwork(settings.copy(confirmedPropagations = settings.confirmedPropagations + 1)) 
+  			}
+  			
 
 
   	}

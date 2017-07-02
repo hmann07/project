@@ -35,9 +35,9 @@ class sine extends ActivationFunction{
 
 class Sigmoid extends DifferentiableFunction {
 	
-	def function(x: Double) = 1 / (1 + Math.pow(Math.E, -x))
+	def function(x: Double) = 1 / (1 + Math.exp(x * -1))
 
-	def derivative(x: Double) = function(x)  * (1 -  (1 / (1 + Math.pow(Math.E, -x))))
+	def derivative(x: Double) = this.function(x)  * (1 - this.function(x))
 }
 
 

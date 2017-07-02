@@ -8,9 +8,9 @@ object Experience {
   	case class Event(event: List[Double], meaning: List[Double]) 
 
   	val events: List[Event] = List(
-  		Event(List(1, 0), List(1)),
+  		Event(List(1, 1), List(0)),
   		Event(List(0, 1), List(1)),
-  		Event(List(1, 1), List(1)),
+  		Event(List(1, 0), List(1)),
   		Event(List(0, 0), List(0)))
 
   	case class ExperienceSettings(experiencesServed: Int = 0)

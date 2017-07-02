@@ -9,5 +9,5 @@ import scala.util.Random
 */
 
 class Connection(val source: SubstrateNode, val destination: SubstrateNode) {
-	val weight = Random.nextDouble
+	val weight = (Random.nextDouble * 2) - 1
 }
