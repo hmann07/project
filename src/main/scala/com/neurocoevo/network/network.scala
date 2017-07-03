@@ -116,6 +116,31 @@ class Network(genome: Genome) extends Actor with ActorLogging {
   			} else {
   				context become readyNetwork(settings.copy(confirmedPropagations = settings.confirmedPropagations + 1)) 
   			}
+
+  		// On snapshot Network should send message to all nodes and get outgoing connection data
+  		// as well as bias information
+  		// and in the case of a CPPN activation function
+  		// The data should then be consumed into a genome to be subjected to NEAT operators
+  		// The issue here is, if we allow back propagation i.e learning outside of evolution, then
+  		// the weights will be updated without the netwrok knowing....
+  		// children can just send their settings object and carry on.
+  		
+  		case "snapshot" => 
+  			children ! "snapshot"
+
+  		case Neuron.NeuronSettings(activationFunction,
+    							   	signal
+    							  	outputs,
+    	                           	inputs,
+    								signalsReceived,
+    								learningRate,
+    								errorGradientsReceived,
+    								totalErrorGradient,
+    								biasValue,
+    								biasWeight) =>
+
+  			
+
   			
 
 

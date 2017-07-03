@@ -9,7 +9,10 @@ import com.neurocoevo.substrate._
 	TODO: come up with a way of dealing with hidden...
 */
 
-class Genome(val substrate: Substrate) {
+class Genome(substrate: Substrate) {
+	val inputNodes: List[SubstrateNode]
+	val outputNodes: List[SubstrateNode]
+	val hiddenNodes: List[List[SubstrateNode]]
 	val connections: List[Connection] = { connectionGen(substrate) }
 
 	

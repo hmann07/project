@@ -77,6 +77,9 @@ class Neuron extends Actor with ActorLogging {
   		case Network.Error(e) =>
 
   			handleError(settings, e, sender)
+
+  		case "snapshot" =>
+  			sender() ! settings
   	}
 
 

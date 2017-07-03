@@ -33,11 +33,7 @@ class Agent(cppnGenome: Genome, experience: ActorRef) extends Actor with ActorLo
 
 	
 	def receive = {
-    	case "10"  => {
-    			sender() ! "10"
-    			println("10!")
-    		}
-
+    	
     	case "NetworkReady" =>
 
     		// Network is ready, lets percieve some "things"
