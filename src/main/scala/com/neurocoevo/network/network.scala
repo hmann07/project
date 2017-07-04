@@ -126,10 +126,10 @@ class Network(genome: Genome) extends Actor with ActorLogging {
   		// children can just send their settings object and carry on.
   		
   		case "snapshot" => 
-  			children ! "snapshot"
+  			children.foreach { c => c ! "snapshot" }
 
   		case Neuron.NeuronSettings(activationFunction,
-    							   	signal
+    							   	signal,
     							  	outputs,
     	                           	inputs,
     								signalsReceived,

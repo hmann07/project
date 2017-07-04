@@ -15,12 +15,6 @@ abstract class DifferentiableFunction extends ActivationFunction {
 }
 
 
-class Bias extends ActivationFunction {
-
-	def function(x: Double) = 1
-
-}
-	
 class gaussian extends ActivationFunction{
 
 	def function(x: Double) = 2 * Math.exp(-Math.pow(x * 2.5, 2)) - 1
