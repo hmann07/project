@@ -2,38 +2,51 @@ package com.neurocoevo.activationfunction
 
 
 
-abstract class ActivationFunction {
-	
-	def function(x: Double): Double
-	def derivative(x: Double): Double
+trait ActivationFunction{
+  def function(x:Double): Double
+  def derivative(x:Double): Double
 }
 
 
+object ActivationFunction {
 
-
-class GAUSSIAN extends ActivationFunction{
+  case class Gaussian() extends ActivationFunction {
 
 	def function(x: Double) = 2 * Math.exp(-Math.pow(x * 2.5, 2)) - 1
 	def derivative(X: Double) = 0.0
-} 
+  } 
 
-class SINE extends ActivationFunction{
+  case class Sine() extends ActivationFunction {
 
 	def function(x: Double) = Math.sin(x*2)
 	def derivative(X: Double) = 0.0
-} 
+  } 
 
-class SIGMOID extends ActivationFunction {
+  case class Sigmoid() extends ActivationFunction {
 	
-	def function(x: Double) = 1 / (1 + Math.exp(x * -1))
-
+    def function(x: Double) = 1 / (1 + Math.exp(x * -1))
 	def derivative(x: Double) = this.function(x)  * (1 - this.function(x))
-}
+  }
 
 
-class INPUTFUNCTION extends ActivationFunction {
+  case class InputFunction() extends ActivationFunction {
 	
 	def function(x: Double) = 1
-
 	def derivative(x: Double) = 1
+  } 
+
+  
+  def apply(fn: String): ActivationFunction = {
+    fn match {
+        case "GAUSSIAN" => Gaussian()
+        case "SINE" => Sine()
+        case "SIGMOID" => Sigmoid()
+        case "INPUTFUNCTION" => InputFunction()
+    }
+  }
+
 }
+
+
+
+

@@ -4,6 +4,9 @@ package com.neurocoevo.genome
 import scala.xml.XML
 import scala.util.Random
 
+import com.neurocoevo.substrate._
+
+
 // SHould be able to create a network Genome based on a number of options... 
 // xml file, or, layer definition
 // Most likely going to be called by the agent.
@@ -39,7 +42,7 @@ object GenomeFactory {
 		
 	}
 
-	def createGenome(substrate: Substrate, cppn: Network): NetworkGenome = {}
+	//def createGenome(substrate: Substrate, cppn: NetworkGenome): NetworkGenome = {}
 
 
 
