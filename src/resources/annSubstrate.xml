@@ -1,10 +1,10 @@
 <substrate>
 	<neurons>
-		<neuron id="1" type="input" activationFunction="identity" layer="0" bias="0"/>
-		<neuron id="2" type="input" activationFunction="identity" layer="0" bias="0"/>
-		<neuron id="3" type="hidden" activationFunction="sigmoid" layer="1" bias="-1"/>
-		<neuron id="4" type="hidden" activationFunction="sigmoid" layer="1" bias="-1"/>
-		<neuron id="5" type="output" activationFunction="sigmoid" layer="2" bias="-1"/>
+		<neuron id="1" type="input" activationFunction="IDENTITY" layer="0" bias="0"/>
+		<neuron id="2" type="input" activationFunction="IDENTITY" layer="0" bias="0"/>
+		<neuron id="3" type="hidden" activationFunction="SIGMOID" layer="1" bias="-1"/>
+		<neuron id="4" type="hidden" activationFunction="SIGMOID" layer="1" bias="-1"/>
+		<neuron id="5" type="output" activationFunction="SIGMOID" layer="2" bias="-1"/>
 	</neurons>
 	<connections>
 		<connection id="1" src-id="1" tgt-id="3" />

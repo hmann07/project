@@ -11,7 +11,7 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object Agent {
 
-	def props(cppnGenome: Genome, experience: ActorRef): Props = Props(new Agent(cppnGenome, experience))
+	def props(cppnGenome: NetworkGenome, experience: ActorRef): Props = Props(new Agent(cppnGenome, experience))
 
 
 }
@@ -24,7 +24,7 @@ object Agent {
 
 */
 
-class Agent(cppnGenome: Genome, experience: ActorRef) extends Actor with ActorLogging {
+class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with ActorLogging {
 	import context._
 
 	println("actor created")

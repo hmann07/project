@@ -23,23 +23,23 @@ object Network {
 
 	case class Error(error:Double)
 
-	def props(genome: Genome): Props = Props(new Network(genome))
+	def props(genome: NetworkGenome): Props = Props(new Network(genome))
 
 }
 
-class Network(genome: Genome) extends Actor with ActorLogging {
+class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	import context._
 	import Network._
 
 	// create actors for nodes
-	val inputs: Map[String, ActorRef] = generateInputNeurons( genome.substrate.inputNodes, Map.empty)
-	val outputs: Map[String, ActorRef] = generateOutputNeurons( genome.substrate.outputNodes, Map.empty)
-	val hidden: Map[String, ActorRef] = generateHiddenNeurons( genome.substrate.hiddenNodes.flatten, Map.empty)
+	val inputs: Map[String, ActorRef] = generateInputNeurons( genome.inputNodes, Map.empty)
+	val outputs: Map[String, ActorRef] = generateOutputNeurons( genome.outputNodes, Map.empty)
+	val hidden: Map[String, ActorRef] = generateHiddenNeurons( genome.hiddenNodes, Map.empty)
 	val allnodes: Map[String, ActorRef] = inputs ++ hidden ++ outputs 
 	val totalConnections: Int = genome.connections.length 
 
 	// create connections based on actor references
-	val actorReferencedConnections = genome.connections.map {c => new ActorConnection(allnodes(c.source.name),allnodes(c.destination.name), c.weight)}
+	val actorReferencedConnections = genome.connections.map {c => new ActorConnection(allnodes(c.from.toString),allnodes(c.to.toString), c.weight)}
 
 	// inform all neurons about their incoming and outgoing connections.
 	actorReferencedConnections.foreach {c =>
@@ -55,24 +55,24 @@ class Network(genome: Genome) extends Actor with ActorLogging {
   		signature: List of nodes -> Map (actor name -> actor)
   	*/
 
-  	def generateInputNeurons(neurons: List[SubstrateNode], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+  	def generateInputNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
   		neurons.length match {
   			case 0 => agg
-  			case _ => generateInputNeurons(neurons.tail, agg + (neurons.head.name -> actorOf(Props[InputNeuron], neurons.head.name)))
+  			case _ => generateInputNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[InputNeuron], neurons.head.innovationId.toString)))
   		}
   	}
 
-  	def generateOutputNeurons(neurons: List[SubstrateNode], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+  	def generateOutputNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
   		neurons.length match {
   			case 0 => agg
-  			case _ => generateOutputNeurons(neurons.tail, agg + (neurons.head.name -> actorOf(Props[OutputNeuron], neurons.head.name)))
+  			case _ => generateOutputNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[OutputNeuron], neurons.head.innovationId.toString)))
   		}
   	}
 
-  	def generateHiddenNeurons(neurons: List[SubstrateNode], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+  	def generateHiddenNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
   		neurons.length match {
   			case 0 => agg
-  			case _ => generateHiddenNeurons(neurons.tail, agg + (neurons.head.name -> actorOf(Props[Neuron], neurons.head.name)))
+  			case _ => generateHiddenNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[Neuron], neurons.head.innovationId.toString)))
   		}
   	}
 

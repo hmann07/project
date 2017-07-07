@@ -8,7 +8,7 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object Neuron {
 
-	val defaultActivationFunction = new Sigmoid
+	val defaultActivationFunction = new SIGMOID
 	val defaultSignal = 0
 	val defaultSignalsRecieved: Map[ActorRef, Double] = Map.empty
 	val defaultOutputs: Map[ActorRef, Double] = Map.empty
@@ -19,7 +19,7 @@ object Neuron {
 	case class Destination(destination: Map[ActorRef, Double])
 	case class Source(source: Map[ActorRef, Double])
 	case class NeuronSettings(
-    	activationFunction: DifferentiableFunction = defaultActivationFunction,
+    	activationFunction: ActivationFunction = defaultActivationFunction,
     	signal: Double = defaultSignal,
     	outputs: Map[ActorRef, Double] = defaultOutputs,
     	inputs: Map[ActorRef, Double] = defaultInput,
@@ -159,7 +159,7 @@ class InputNeuron() extends Neuron {
   		//println("input got all sigs: " + v)
 	    	s.outputs.keys.foreach(n =>
 	    		n ! Signal(v * s.outputs(n)))
-	    	context become readyNeuron(s.copy(activationFunction = new InputFunction,
+	    	context become readyNeuron(s.copy(activationFunction = new INPUTFUNCTION,
 	    									  signal = s.signal + v,
 	    									  signalsReceived = s.signalsReceived + (source -> v),
 	    									  biasValue = 0))

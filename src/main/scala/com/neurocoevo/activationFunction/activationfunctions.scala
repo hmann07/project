@@ -1,33 +1,29 @@
 package com.neurocoevo.activationfunction
 
+
+
 abstract class ActivationFunction {
 	
 	def function(x: Double): Double
-
-}
-
-abstract class DifferentiableFunction extends ActivationFunction {
-
-	 def function(x: Double): Double 
-	
-	 def derivative(x: Double): Double 
-
+	def derivative(x: Double): Double
 }
 
 
-class gaussian extends ActivationFunction{
+
+
+class GAUSSIAN extends ActivationFunction{
 
 	def function(x: Double) = 2 * Math.exp(-Math.pow(x * 2.5, 2)) - 1
-
+	def derivative(X: Double) = 0.0
 } 
 
-class sine extends ActivationFunction{
+class SINE extends ActivationFunction{
 
 	def function(x: Double) = Math.sin(x*2)
-
+	def derivative(X: Double) = 0.0
 } 
 
-class Sigmoid extends DifferentiableFunction {
+class SIGMOID extends ActivationFunction {
 	
 	def function(x: Double) = 1 / (1 + Math.exp(x * -1))
 
@@ -35,7 +31,7 @@ class Sigmoid extends DifferentiableFunction {
 }
 
 
-class InputFunction extends DifferentiableFunction {
+class INPUTFUNCTION extends ActivationFunction {
 	
 	def function(x: Double) = 1
 
