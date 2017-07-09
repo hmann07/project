@@ -11,6 +11,7 @@ object Network {
 
 	case class Output(value: Double)
 
+
 	case class NetworkSettings(
 			confirmedConnections: Int = 0,
 			sensations: Map[Double, Sensation] = Map.empty,
@@ -43,12 +44,12 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	val totalConnections: Int = genome.connections.length 
 
 	// create connections based on actor references
-	val actorReferencedConnections = genome.connections.map {c => new ActorConnection(allnodes(c.from.toString),allnodes(c.to.toString), c.weight)}
+	val actorReferencedConnections = genome.connections.map {c => new ActorConnection(c.innovationId, allnodes(c.from.toString),allnodes(c.to.toString), c.weight)}
 
 	// inform all neurons about their incoming and outgoing connections.
 	actorReferencedConnections.foreach {c =>
-		c.source ! Neuron.Destination(Map(c.destination -> c.weight))
-		c.destination ! Neuron.Source(Map(c.source -> c.weight))
+		c.source ! Neuron.Destination(Map(c.destination -> Neuron.ConnectionDetail(c.innovationId, c.weight)))
+		c.destination ! Neuron.Source(Map(c.source -> Neuron.ConnectionDetail(c.innovationId, c.weight)))
 	}
 
 	//println(actorReferencedConnections)
@@ -125,11 +126,9 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   		
   		case "snapshot" => 
   			children.foreach { c => c ! "snapshot" }
-
-  		case Neuron.NeuronSnapshot(g) =>
-        
-
-  		case "Add Connection" =>
+        context become snapshotting(settings, 0, NetworkGenome(null,null))
+  		  
+      case "Add Connection" =>
 
       // here we select a random connection.... then communicate directly with the innovation engine...	
 
@@ -137,6 +136,30 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
 
   	}
+
+    def snapshotting(s: NetworkSettings, snapshotsReceived: Int, newGenome: NetworkGenome): Receive = {
+
+      case Neuron.NeuronSnapshot(ng, cg) =>
+        
+        if(snapshotsReceived + 1 == allnodes.size){
+          
+          // this is the last snapshot.
+          
+          val g = newGenome.copy(neurons = ng :: genome.neurons, connections = genome.connections ::: cg)
+
+          context become readyNetwork(s)
+
+        } else {
+
+          // still more to wait for 
+
+          val g = newGenome.copy(neurons = ng :: genome.neurons, connections = genome.connections ::: cg)
+
+          context become snapshotting(s, snapshotsReceived + 1 , g)
+
+        }
+    }
+
 
 
 

@@ -3,6 +3,7 @@ package com.neurocoevo.neuron
 import com.neurocoevo.network._
 import com.neurocoevo.activationfunction._
 import com.neurocoevo.genome.NeuronGenome
+import com.neurocoevo.genome.ConnectionGenome
 
 import scala.util.Random
 
@@ -14,18 +15,19 @@ object Neuron {
 	val defaultActivationFunction = ActivationFunction("SIGMOID")
 	val defaultSignal = 0
 	val defaultSignalsRecieved: Map[ActorRef, Double] = Map.empty
-	val defaultOutputs: Map[ActorRef, Double] = Map.empty
-	val defaultInput: Map[ActorRef, Double] = Map.empty
+	val defaultOutputs: Map[ActorRef, ConnectionDetail] = Map.empty
+	val defaultInput: Map[ActorRef, ConnectionDetail] = Map.empty
 	//val defaultBias: Double = Network.networkRandom
 
+	case class ConnectionDetail(id: Int, weight: Double)
 	case class Signal(s: Double)
-	case class Destination(destination: Map[ActorRef, Double])
-	case class Source(source: Map[ActorRef, Double])
+	case class Destination(destination: Map[ActorRef, ConnectionDetail])
+	case class Source(source: Map[ActorRef, ConnectionDetail])
 	case class NeuronSettings(
     	activationFunction: ActivationFunction = defaultActivationFunction,
     	signal: Double = defaultSignal,
-    	outputs: Map[ActorRef, Double] = defaultOutputs,
-    	inputs: Map[ActorRef, Double] = defaultInput,
+    	outputs: Map[ActorRef, ConnectionDetail] = defaultOutputs,
+    	inputs: Map[ActorRef, ConnectionDetail] = defaultInput,
     	signalsReceived: Map[ActorRef, Double] = defaultSignalsRecieved,
     	learningRate: Double = 0.1,
     	errorGradientsReceived: Double = 0,
@@ -33,7 +35,7 @@ object Neuron {
     	biasValue: Int = -1,
     	biasWeight: Double = (Random.nextDouble * 2) - 1)
 
-	case class NeuronSnapshot(g: NeuronGenome)
+	case class NeuronSnapshot(g: NeuronGenome, c: List[ConnectionGenome])
 
 
 }
@@ -82,9 +84,12 @@ class Neuron extends Actor with ActorLogging {
 
   			handleError(settings, e, sender)
 
+
+  		// TODO: type should come in as part of the original genome... even though it's a little agnostic to what its own type is. 
   		case "snapshot" =>
-  			val newGenome = new NeuronGenome(self.path.name.toInt, "SIGMOID", "hidden", settings.biasValue, settings.biasWeight)
-  			sender() ! NeuronSnapshot(newGenome)
+  			val connectionGenome = settings.outputs.map(o => new ConnectionGenome( o._2.id , self.path.name.toInt, o._1.path.name.toInt, o._2.weight )).toList
+  			val ownNeuronGenome = new NeuronGenome(self.path.name.toInt, "SIGMOID", "hidden", settings.biasValue, settings.biasWeight)
+  			sender() ! NeuronSnapshot(ownNeuronGenome, connectionGenome)
   	}
 
 
@@ -96,7 +101,7 @@ class Neuron extends Actor with ActorLogging {
     		val activation = s.activationFunction.function((s.signal + v) + (s.biasWeight * s.biasValue))
 
 	    	s.outputs.keys.foreach(n =>
-	    		n ! Signal(activation * s.outputs(n)))
+	    		n ! Signal(activation * s.outputs(n).weight))
 
 	    	context become readyNeuron(s.copy(signal = s.signal + v,
 	    									  signalsReceived = s.signalsReceived + (source -> v)))
@@ -118,18 +123,18 @@ class Neuron extends Actor with ActorLogging {
 		if(s.errorGradientsReceived + 1 == s.outputs.size){
 			val dWeight = s.learningRate * s.activationFunction.function(s.signal + (s.biasValue * s.biasWeight)) * e
 
-			val finalErrorGradient = s.activationFunction.derivative(s.signal + (s.biasValue * s.biasWeight)) * (s.totalErrorGradient + (e * s.outputs(source)))
+			val finalErrorGradient = s.activationFunction.derivative(s.signal + (s.biasValue * s.biasWeight)) * (s.totalErrorGradient + (e * s.outputs(source).weight))
 			val dBiasWeight = s.learningRate * s.biasValue * finalErrorGradient
 
 			//println(self.path.name + " final error gradient: " + finalErrorGradient)
 			s.inputs.keys.foreach(i =>
   			i ! Network.Error(finalErrorGradient))
 
-
-			val updatedWeight = (source -> (s.outputs(source) + dWeight))
-			val updatedOutputs: Map[ActorRef,Double] = s.outputs + updatedWeight
+			val currentWeight = s.outputs(source).weight
+			val updatedWeight = (source -> s.outputs(source).copy(weight = currentWeight + dWeight))
+			val updatedOutputs: Map[ActorRef, ConnectionDetail] = s.outputs + updatedWeight
   			//println("propagated, weights out now: " + nm )
-  		//println(self.path.name + " new connection weights : " + updatedOutputs )
+  			//println(self.path.name + " new connection weights : " + updatedOutputs )
 			// we can also reset the node. ready for incoming forward signals
 			//println(self.path.name + " new bias: " + (s.biasWeight + dBiasWeight))
 
@@ -145,9 +150,10 @@ class Neuron extends Actor with ActorLogging {
 			// We've not got all gradients yet. carry on waitng.
 			// But update the sum of the error gradient, and update the weight to the output.
 			val dWeight = s.learningRate * s.activationFunction.function(s.signal + (s.biasValue * s.biasWeight)) * e
-		    val errorGradient =  e * s.outputs(source)
-		    val updatedWeight = (source -> (s.outputs(source) + dWeight))
-			val updatedOutputs: Map[ActorRef,Double] = s.outputs + updatedWeight
+		    val errorGradient =  e * s.outputs(source).weight
+		    val currentWeight = s.outputs(source).weight
+			val updatedWeight = (source -> s.outputs(source).copy(weight = currentWeight + dWeight))
+			val updatedOutputs: Map[ActorRef, ConnectionDetail] = s.outputs + updatedWeight
 		    // we can update the weight now... won't be using it again.
 
 			context become readyNeuron(s.copy(totalErrorGradient = s.totalErrorGradient + errorGradient,
@@ -163,7 +169,7 @@ class InputNeuron() extends Neuron {
 	override def handleSignal(s: NeuronSettings,v: Double, source: ActorRef) = {
   		////println("input got all sigs: " + v)
 	    	s.outputs.keys.foreach(n =>
-	    		n ! Signal(v * s.outputs(n)))
+	    		n ! Signal(v * s.outputs(n).weight))
 	    	context become readyNeuron(s.copy(activationFunction = ActivationFunction("INPUTFUNCTION"),
 	    									  signal = s.signal + v,
 	    									  signalsReceived = s.signalsReceived + (source -> v),
@@ -175,8 +181,9 @@ class InputNeuron() extends Neuron {
 			//println(self.path.name + " got error gradient " + e)
   		if(s.errorGradientsReceived + 1 == s.outputs.size){
   			val dWeight = s.learningRate * s.signal * e
-  			val updatedWeight = (source -> (s.outputs(source) + dWeight))
-				val updatedOutputs: Map[ActorRef,Double] = s.outputs + updatedWeight
+  			val currentWeight = s.outputs(source).weight
+			val updatedWeight = (source -> s.outputs(source).copy(weight = currentWeight + dWeight))
+			val updatedOutputs: Map[ActorRef, ConnectionDetail] = s.outputs + updatedWeight
 				//println(self.path.name + " new connection weights : " + updatedOutputs )
   			
 			// In addition to appling error gradient to the weights the input should inform the parent that signal has
@@ -192,8 +199,9 @@ class InputNeuron() extends Neuron {
   		} else {
 
   			val dWeight = s.learningRate * s.signal * e
-  			val updatedWeight = (source -> (s.outputs(source) + dWeight))
-			val updatedOutputs: Map[ActorRef,Double] = s.outputs + updatedWeight
+  			val currentWeight = s.outputs(source).weight
+			val updatedWeight = (source -> s.outputs(source).copy(weight = currentWeight + dWeight))
+			val updatedOutputs: Map[ActorRef, ConnectionDetail] = s.outputs + updatedWeight
 
   			context become readyNeuron(s.copy(errorGradientsReceived = s.errorGradientsReceived + 1,
 											  outputs = updatedOutputs))

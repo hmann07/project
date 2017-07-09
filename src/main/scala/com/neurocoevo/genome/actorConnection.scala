@@ -10,6 +10,6 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 		
 */
 
-class ActorConnection(val source: ActorRef, val destination: ActorRef, val weight: Double) {
+class ActorConnection(val innovationId: Int, val source: ActorRef, val destination: ActorRef, val weight: Double) {
 	
 }
