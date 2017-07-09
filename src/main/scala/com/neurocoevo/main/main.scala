@@ -22,10 +22,10 @@ object Main extends App {
 	val system = ActorSystem("mySystem")
 	val inbox = Inbox.create(system)
 
-	val e = system.actorOf(Props[Experience], "experienceX")
+	
 	val p = system.actorOf(Props[Population], "population")
 
-	inbox.send(p, Population.PopulationSettings(200,networkGenome, e))
+	inbox.send(p, Population.PopulationSettings(10,networkGenome))
 
 	//val agent = system.actorOf(Agent.props(networkGenome, e), "agentX")
 	//val agent2 = system.actorOf(Agent.props(networkGenome, e), "agentY")

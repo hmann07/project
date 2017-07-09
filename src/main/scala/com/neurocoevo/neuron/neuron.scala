@@ -46,25 +46,25 @@ class Neuron extends Actor with ActorLogging {
 	import context._
 	import Neuron._
 
-	println("Neuron created")
+	//println("Neuron created")
 
 	def receive = initialisingNeuron(NeuronSettings())
 
     def initialisingNeuron(settings: NeuronSettings): Receive = {
 
     	case "Init Complete" =>
-    			println(self.path.name + " neuron ready")
-    			println(self.path.name + " inputs: " + settings.inputs)
-    			println(self.path.name + " outputs: " + settings.outputs)
+    			//println(self.path.name + " neuron ready")
+    			//println(self.path.name + " inputs: " + settings.inputs)
+    			//println(self.path.name + " outputs: " + settings.outputs)
     			context become readyNeuron(settings)
 
     	case Destination(d) =>
-    			println("DestConf")
+    			//println("DestConf")
     			sender() ! "ConnectionConfirmation"
     			context become initialisingNeuron(settings.copy(outputs = settings.outputs ++ d))
 
     	case Source(s) =>
-    			println("sourceConf")
+    			//println("sourceConf")
     			sender() ! "ConnectionConfirmation"
     			context become initialisingNeuron(settings.copy(inputs = settings.inputs ++ s))
   	}
@@ -86,7 +86,7 @@ class Neuron extends Actor with ActorLogging {
 
   	def handleSignal(s: NeuronSettings,v: Double, source: ActorRef) = {
   		if (s.signalsReceived.size + 1 == s.inputs.size){
-    		println(self.path.name + " bias is" + s.biasWeight)
+    		//println(self.path.name + " bias is" + s.biasWeight)
 
     		val activation = s.activationFunction.function((s.signal + v) + (s.biasWeight * s.biasValue))
 
@@ -97,7 +97,7 @@ class Neuron extends Actor with ActorLogging {
 	    									  signalsReceived = s.signalsReceived + (source -> v)))
 
     	} else {
-    		//println("hidden got a new sig")
+    		////println("hidden got a new sig")
     		context become readyNeuron(s.copy(signal = s.signal + v,
     										  signalsReceived = s.signalsReceived + (source -> v)))
     	}
@@ -108,7 +108,7 @@ class Neuron extends Actor with ActorLogging {
   		// we need to update the weight to that sender
 
 		// we need to calculate error gradient for this node. We will have to wait for all error gradients to arrive.
-		println(self.path.name + " received error gradient: " + e)
+		//println(self.path.name + " received error gradient: " + e)
 		// We.ve got all gradients can continue propagating
 		if(s.errorGradientsReceived + 1 == s.outputs.size){
 			val dWeight = s.learningRate * s.activationFunction.function(s.signal + (s.biasValue * s.biasWeight)) * e
@@ -116,7 +116,7 @@ class Neuron extends Actor with ActorLogging {
 			val finalErrorGradient = s.activationFunction.derivative(s.signal + (s.biasValue * s.biasWeight)) * (s.totalErrorGradient + (e * s.outputs(source)))
 			val dBiasWeight = s.learningRate * s.biasValue * finalErrorGradient
 
-			println(self.path.name + " final error gradient: " + finalErrorGradient)
+			//println(self.path.name + " final error gradient: " + finalErrorGradient)
 			s.inputs.keys.foreach(i =>
   			i ! Network.Error(finalErrorGradient))
 
@@ -124,9 +124,9 @@ class Neuron extends Actor with ActorLogging {
 			val updatedWeight = (source -> (s.outputs(source) + dWeight))
 			val updatedOutputs: Map[ActorRef,Double] = s.outputs + updatedWeight
   			//println("propagated, weights out now: " + nm )
-  		println(self.path.name + " new connection weights : " + updatedOutputs )
+  		//println(self.path.name + " new connection weights : " + updatedOutputs )
 			// we can also reset the node. ready for incoming forward signals
-			println(self.path.name + " new bias: " + (s.biasWeight + dBiasWeight))
+			//println(self.path.name + " new bias: " + (s.biasWeight + dBiasWeight))
 
 			context become readyNeuron(s.copy(signal = 0,
 											  signalsReceived = Map.empty,
@@ -156,7 +156,7 @@ class InputNeuron() extends Neuron {
 	import Neuron._
 	import context._
 	override def handleSignal(s: NeuronSettings,v: Double, source: ActorRef) = {
-  		//println("input got all sigs: " + v)
+  		////println("input got all sigs: " + v)
 	    	s.outputs.keys.foreach(n =>
 	    		n ! Signal(v * s.outputs(n)))
 	    	context become readyNeuron(s.copy(activationFunction = ActivationFunction("INPUTFUNCTION"),
@@ -167,12 +167,12 @@ class InputNeuron() extends Neuron {
 
   	override def handleError(s: NeuronSettings, e: Double, source: ActorRef) = {
   		//super.handleError(s,e,source)
-			println(self.path.name + " got error gradient " + e)
+			//println(self.path.name + " got error gradient " + e)
   		if(s.errorGradientsReceived + 1 == s.outputs.size){
   			val dWeight = s.learningRate * s.signal * e
   			val updatedWeight = (source -> (s.outputs(source) + dWeight))
 				val updatedOutputs: Map[ActorRef,Double] = s.outputs + updatedWeight
-				println(self.path.name + " new connection weights : " + updatedOutputs )
+				//println(self.path.name + " new connection weights : " + updatedOutputs )
   			parent ! "propagated"
 
   			context become readyNeuron(s.copy(signal = 0,
@@ -209,7 +209,7 @@ class OutputNeuron() extends Neuron {
 	  		val activation = s.activationFunction.function(s.signal + v + (s.biasWeight * s.biasValue))
 	  		//println("output got all sigs")
 		    //println("output = " + activation)
-				println(self.path.name + " bias is" + s.biasWeight)
+		    //println(self.path.name + " bias is" + s.biasWeight)
 		    parent ! Network.Output(activation)
 		    context become readyNeuron(s.copy(signal = s.signal + v, signalsReceived = s.signalsReceived + (source -> v)))
 		} else {
@@ -221,14 +221,14 @@ class OutputNeuron() extends Neuron {
   	override def handleError(s: NeuronSettings, e: Double, source: ActorRef) = {
   		val errorGradient = s.activationFunction.derivative(s.signal + (s.biasValue * s.biasWeight)) * e
 
-			println("Output error: " + errorGradient)
+		//println("Output error: " + errorGradient)
 
   		s.inputs.keys.foreach(i =>
   			i ! Network.Error(errorGradient))
 
   		val dBiasWeight = s.learningRate * errorGradient * s.biasValue
   		// can reset node:
-  		println(self.path.name + " new bias: " + (s.biasWeight + dBiasWeight))
+  		//println(self.path.name + " new bias: " + (s.biasWeight + dBiasWeight))
 
   		context become readyNeuron(s.copy(signal = 0,
 											  signalsReceived = Map.empty,

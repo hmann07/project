@@ -47,7 +47,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
     		//sender() ! Network.Sensation(1, List(1, 0), List(1))
 
     	case Experience.Event(e, l) =>
-    		println(e)
+    		//println(e)
     		ann ! Network.Sensation(1, e, l)
 
   	}

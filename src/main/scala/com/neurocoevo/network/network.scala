@@ -14,7 +14,11 @@ object Network {
 	case class NetworkSettings(
 			confirmedConnections: Int = 0,
 			sensations: Map[Double, Sensation] = Map.empty,
-			confirmedPropagations: Int = 0
+      totalSensationsReceived: Int = 0,
+			confirmedPropagations: Int = 0,
+      
+      tss: Double = 0
+
 		)
 	case class Sensation(
 			 id: Double,
@@ -47,34 +51,9 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 		c.destination ! Neuron.Source(Map(c.source -> c.weight))
 	}
 
-	println(actorReferencedConnections)
+	//println(actorReferencedConnections)
 	
-	/*
-		Not ideal to have three so similar. could introduce the Neuron class as part of the parameter.
-  		Generate Neurons: Take a list of SubstrateNodes and create actors for each one.
-  		signature: List of nodes -> Map (actor name -> actor)
-  	*/
-
-  	def generateInputNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
-  		neurons.length match {
-  			case 0 => agg
-  			case _ => generateInputNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[InputNeuron], neurons.head.innovationId.toString)))
-  		}
-  	}
-
-  	def generateOutputNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
-  		neurons.length match {
-  			case 0 => agg
-  			case _ => generateOutputNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[OutputNeuron], neurons.head.innovationId.toString)))
-  		}
-  	}
-
-  	def generateHiddenNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
-  		neurons.length match {
-  			case 0 => agg
-  			case _ => generateHiddenNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[Neuron], neurons.head.innovationId.toString)))
-  		}
-  	}
+	
 
   	def receive = initialisingNetwork(NetworkSettings())
 
@@ -84,14 +63,14 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   	def	initialisingNetwork(settings: NetworkSettings): Receive = {
     	
     	case "ConnectionConfirmation"  => {
-    			println(totalConnections)
+    			//println(totalConnections)
     			if(settings.confirmedConnections + 1 == (totalConnections * 2)){
-    				println("received confirmation of all Connections")
+    				//println("received confirmation of all Connections")
     				children.foreach(c => c ! "Init Complete")
     				parent ! "NetworkReady"
     				context become readyNetwork(settings.copy(confirmedConnections = settings.confirmedConnections + 1))
     			} else {
-    				println("received confirmation of Connection")
+    				//println("received confirmation of Connection")
     				context become initialisingNetwork(settings.copy(confirmedConnections = settings.confirmedConnections + 1))
     			}
     		}
@@ -100,16 +79,33 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   	def readyNetwork(settings: NetworkSettings) : Receive = {
   		
   		case Sensation(id, v, l) => 
-  			println("preparing to send, expected value: " + l)
+  			//println("preparing to send, expected value: " + l)
   			v.zip(inputs.values).foreach({case (v,i) => i ! Neuron.Signal(v)})
-  			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l))))
+  			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l)),
+                                                    totalSensationsReceived = settings.totalSensationsReceived + 1))
   		
   		case Output(v) =>
-  			println("input was: " + settings.sensations(1).values + " expected: " + settings.sensations(1).label(0) +  " received: " + v + " error is: " + (settings.sensations(1).label(0) - v))
-  			sender() ! Error(settings.sensations(1).label(0) - v)
+
+        val error = settings.sensations(1).label(0) - v
+        val squaredError = math.pow(error, 2)
+
+        settings.totalSensationsReceived % 4 match {
+          case 0 => {
+            println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
+            sender() ! Error(error)
+            context become  readyNetwork(settings.copy(tss = 0))
+          }
+          case _ => {
+            sender() ! Error(error)
+            context become  readyNetwork(settings.copy(tss = settings.tss + squaredError))
+          }
+        }
+        
+  			
+  			
 
   		case "propagated" =>
-  			println("error propagated")
+  			//println("error propagated")
   			if ( settings.confirmedPropagations + 1 == inputs.size){
   				parent ! "propagated"
   				context become readyNetwork(settings.copy(confirmedPropagations = 0))
@@ -145,6 +141,34 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
 
   	}
+
+
+    /*
+    Not ideal to have three so similar. could introduce the Neuron class as part of the parameter.
+      Generate Neurons: Take a list of SubstrateNodes and create actors for each one.
+      signature: List of nodes -> Map (actor name -> actor)
+    */
+
+    def generateInputNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+      neurons.length match {
+        case 0 => agg
+        case _ => generateInputNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[InputNeuron], neurons.head.innovationId.toString)))
+      }
+    }
+
+    def generateOutputNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+      neurons.length match {
+        case 0 => agg
+        case _ => generateOutputNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[OutputNeuron], neurons.head.innovationId.toString)))
+      }
+    }
+
+    def generateHiddenNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+      neurons.length match {
+        case 0 => agg
+        case _ => generateHiddenNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[Neuron], neurons.head.innovationId.toString)))
+      }
+    }
 
 
 }
