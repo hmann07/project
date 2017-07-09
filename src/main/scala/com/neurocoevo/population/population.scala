@@ -18,7 +18,7 @@ import Population._
 	def receive = {
 
 		case PopulationSettings(n, g) =>
-			println("hello")	//1.to(n).
+			
 			1.to(n).foreach(i => {
 				val e = context.actorOf(Props[Experience], "experience" + i)
 				context.actorOf(Agent.props(g, e), "agent"+ i)
@@ -26,6 +26,7 @@ import Population._
 	}
 
 	// MUTATIONS
+	// Genrally it seems mutation does not get applied until cross over has happened...
 
 	// Perturb weights
 		// find a connection

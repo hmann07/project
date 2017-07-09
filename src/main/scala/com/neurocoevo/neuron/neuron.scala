@@ -2,7 +2,10 @@ package com.neurocoevo.neuron
 
 import com.neurocoevo.network._
 import com.neurocoevo.activationfunction._
+import com.neurocoevo.genome.NeuronGenome
+
 import scala.util.Random
+
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
@@ -27,9 +30,10 @@ object Neuron {
     	learningRate: Double = 0.1,
     	errorGradientsReceived: Double = 0,
     	totalErrorGradient: Double = 0,
-    	biasValue: Double = -1,
+    	biasValue: Int = -1,
     	biasWeight: Double = (Random.nextDouble * 2) - 1)
 
+	case class NeuronSnapshot(g: NeuronGenome)
 
 
 }
@@ -79,7 +83,8 @@ class Neuron extends Actor with ActorLogging {
   			handleError(settings, e, sender)
 
   		case "snapshot" =>
-  			sender() ! settings
+  			val newGenome = new NeuronGenome(self.path.name.toInt, "SIGMOID", "hidden", settings.biasValue, settings.biasWeight)
+  			sender() ! NeuronSnapshot(newGenome)
   	}
 
 
@@ -173,6 +178,10 @@ class InputNeuron() extends Neuron {
   			val updatedWeight = (source -> (s.outputs(source) + dWeight))
 				val updatedOutputs: Map[ActorRef,Double] = s.outputs + updatedWeight
 				//println(self.path.name + " new connection weights : " + updatedOutputs )
+  			
+			// In addition to appling error gradient to the weights the input should inform the parent that signal has
+  			// made it all the way to this end point.
+  			// the parent will be waitng to hear from all inputs.
   			parent ! "propagated"
 
   			context become readyNeuron(s.copy(signal = 0,
@@ -190,13 +199,6 @@ class InputNeuron() extends Neuron {
 											  outputs = updatedOutputs))
 
   		}
-
-
-  		// In addition to appling error gradient to the weights the input should inform the parent that signal has
-  		// made it all the way to this end point.
-  		// the parent will be waitng to hear from all inputs.
-
-
   	}
 }
 

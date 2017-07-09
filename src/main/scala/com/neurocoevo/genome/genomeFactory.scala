@@ -21,7 +21,15 @@ object GenomeFactory {
 				new NeuronGenome( (i \ "@id").text.toInt,
 								  (i \ "@activationFuntion").text,
 								  (i \ "@type").text,
-								  (i \ "@bias").text.toInt ) } .toList
+								  (i \ "@bias").text.toInt,
+								  {
+								  	val x = (i \ "@biasWeight").text
+								  	if(x.length == 0){
+								  		Random.nextDouble
+								  	} else {
+								  		x.toDouble 
+								  	}
+								  })} .toList
 
 		val connections: List[ConnectionGenome] = (xmlData \ "connections" \ "connection").map {i => 
 				new ConnectionGenome( (i \ "@id").text.toInt,
@@ -50,9 +58,9 @@ object GenomeFactory {
 
 	def createGenome(inputs: Int, hidden: List[Int], outputs: Int): NetworkGenome = {
 		
-		val inputList: List[NeuronGenome] = 1.to(inputs).toList.map(i => new NeuronGenome(i, "Sigmoid", "input", 0))
-		val hiddenList: List[List[NeuronGenome]] = hidden.map(l => 1.to(l).toList.map(l => new NeuronGenome(l, "Sigmoid", "hidden", -1) ))
-		val outputList: List[NeuronGenome] = 1.to(outputs).toList.map(o => new NeuronGenome(o, "Sigmoid", "output", -1))
+		val inputList: List[NeuronGenome] = 1.to(inputs).toList.map(i => new NeuronGenome(i, "Sigmoid", "input", 0, 0))
+		val hiddenList: List[List[NeuronGenome]] = hidden.map(l => 1.to(l).toList.map(l => new NeuronGenome(l, "Sigmoid", "hidden", -1, Random.nextDouble) ))
+		val outputList: List[NeuronGenome] = 1.to(outputs).toList.map(o => new NeuronGenome(o, "Sigmoid", "output", -1, Random.nextDouble))
 		
 		val combinedNeuronList: List[List[NeuronGenome]] = inputList :: hiddenList.flatten :: outputList :: List.empty
 		val connections = connectionGen(combinedNeuronList)

@@ -50,6 +50,13 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
     		//println(e)
     		ann ! Network.Sensation(1, e, l)
 
+
+        // The agent should control Mutations... it will neeed to decide what it is mutating..i.e. CPPN/ANN. not tha tit matters directly. More jus tthat
+        // One of them will be being mutated.
+
+        case "Mutate" =>
+            ann ! "AddConnection"
+
   	}
 
 

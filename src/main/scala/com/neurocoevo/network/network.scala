@@ -70,7 +70,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
     				parent ! "NetworkReady"
     				context become readyNetwork(settings.copy(confirmedConnections = settings.confirmedConnections + 1))
     			} else {
-    				//println("received confirmation of Connection")
+    				//println("received confirmatio1n of Connection")
     				context become initialisingNetwork(settings.copy(confirmedConnections = settings.confirmedConnections + 1))
     			}
     		}
@@ -91,7 +91,9 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
         settings.totalSensationsReceived % 4 match {
           case 0 => {
-            println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
+            if(settings.totalSensationsReceived % 10 == 0){
+              println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
+            }
             sender() ! Error(error)
             context become  readyNetwork(settings.copy(tss = 0))
           }
@@ -124,23 +126,18 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   		case "snapshot" => 
   			children.foreach { c => c ! "snapshot" }
 
-  		case Neuron.NeuronSettings(activationFunction,
-    							   	signal,
-    							  	outputs,
-    	                           	inputs,
-    								signalsReceived,
-    								learningRate,
-    								errorGradientsReceived,
-    								totalErrorGradient,
-    								biasValue,
-    								biasWeight) =>
+  		case Neuron.NeuronSnapshot(g) =>
+        
 
-  			
+  		case "Add Connection" =>
+
+      // here we select a random connection.... then communicate directly with the innovation engine...	
 
   			
 
 
   	}
+
 
 
     /*
