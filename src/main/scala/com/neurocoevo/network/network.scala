@@ -10,14 +10,13 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 object Network {
 
 	case class Output(value: Double)
-
+  case class Matured(genome: NetworkGenome, error: Double)
 
 	case class NetworkSettings(
 			confirmedConnections: Int = 0,
 			sensations: Map[Double, Sensation] = Map.empty,
       totalSensationsReceived: Int = 0,
 			confirmedPropagations: Int = 0,
-      
       tss: Double = 0
 
 		)
@@ -77,6 +76,10 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
     		}
   	}
 
+
+    // State: ready. Can take signals, deal with outputs coming from neurons and propageted error.
+
+
   	def readyNetwork(settings: NetworkSettings) : Receive = {
   		
   		case Sensation(id, v, l) => 
@@ -90,22 +93,46 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         val error = settings.sensations(1).label(0) - v
         val squaredError = math.pow(error, 2)
 
-        settings.totalSensationsReceived % 4 match {
-          case 0 => {
+        /*settings.totalSensationsReceived match {
+          case 3 => {
             if(settings.totalSensationsReceived % 10 == 0){
               println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
             }
-            sender() ! Error(error)
+            // blanked for evolution ...  //sender() ! Error(error)
+            parent ! Matured(genome, settings.tss + squaredError)
             context become  readyNetwork(settings.copy(tss = 0))
           }
           case _ => {
-            sender() ! Error(error)
+            // blanked for evolution ... //sender() ! Error(error)
+            //parent ! "newSignal"
+            sender() ! "Relax"
             context become  readyNetwork(settings.copy(tss = settings.tss + squaredError))
+          }
+        }*/
+
+        settings.totalSensationsReceived match {
+          case 4 => {
+            println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
+            
+            parent ! Matured(genome, settings.tss + squaredError)
+
+            // Don't need to relax since all sensations have finished.
+
+            context become  readyNetwork(settings.copy(tss = 0))
+          }
+          case _ => {
+            println("need more signals")
+            // blanked for evolution ... //sender() ! Error(error)
+            //parent ! "newSignal"
+            children.foreach(c => c ! "Relax")
+            context become  relaxingNetwork(settings.copy(tss = settings.tss + squaredError), 0)
           }
         }
         
   			
-  			
+  		case "NetworkRelaxed" =>
+        println("NetworkRelaxed")
+        parent ! "newSignal"
 
   		case "propagated" =>
   			//println("error propagated")
@@ -158,6 +185,20 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
           context become snapshotting(s, snapshotsReceived + 1 , g)
 
         }
+    }
+
+
+    def relaxingNetwork(s:NetworkSettings, relaxedConfirmed: Int): Receive = {
+
+      case "NeuronRelaxed" =>
+     
+        if(relaxedConfirmed + 1 == allnodes.size){
+          parent ! "newSignal"
+          context become readyNetwork(s)
+        } else {
+          context become relaxingNetwork(s, relaxedConfirmed+ 1)
+        }
+    
     }
 
 

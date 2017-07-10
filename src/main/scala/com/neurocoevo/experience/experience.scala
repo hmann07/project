@@ -27,7 +27,7 @@ class Experience extends Actor with ActorLogging {
 	def servePerceptions(s: ExperienceSettings): Receive = {
 		
 		case "perceive" =>
-			//println("experience #" + (s.experiencesServed + 1) + events(s.experiencesServed % (events.length)))
+			println("experience #" + (s.experiencesServed + 1) + events(s.experiencesServed % (events.length)))
 			sender ! events(s.experiencesServed % (events.length))
 			context become servePerceptions(s.copy(experiencesServed = s.experiencesServed + 1))
 	}

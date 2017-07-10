@@ -6,6 +6,7 @@ import com.neurocoevo.substrate.SubstrateNode
 import com.neurocoevo.network._
 import com.neurocoevo.experience._
 
+import com.neurocoevo.population._
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
@@ -46,9 +47,24 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
     		experience ! "perceive"
     		//sender() ! Network.Sensation(1, List(1, 0), List(1))
 
+
+
     	case Experience.Event(e, l) =>
     		//println(e)
     		ann ! Network.Sensation(1, e, l)
+
+
+        // Received when a network has completed one signal of a pattern and needs another
+        case "newSignal" =>
+            println("newsg request")
+            // finished processing sensation... give me another.
+            experience ! "perceive"
+            
+
+        //  Received when a network has processed all expected patterns from a test set.    
+        case Network.Matured(g, error) =>
+            println("agent got final network data")
+            parent ! Network.Matured(g, error)
 
 
         // The agent should control Mutations... it will neeed to decide what it is mutating..i.e. CPPN/ANN. not tha tit matters directly. More jus tthat

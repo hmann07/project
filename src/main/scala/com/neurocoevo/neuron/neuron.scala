@@ -90,6 +90,10 @@ class Neuron extends Actor with ActorLogging {
   			val connectionGenome = settings.outputs.map(o => new ConnectionGenome( o._2.id , self.path.name.toInt, o._1.path.name.toInt, o._2.weight )).toList
   			val ownNeuronGenome = new NeuronGenome(self.path.name.toInt, "SIGMOID", "hidden", settings.biasValue, settings.biasWeight)
   			sender() ! NeuronSnapshot(ownNeuronGenome, connectionGenome)
+
+
+  		case "Relax" => 
+  			relax(settings)
   	}
 
 
@@ -161,6 +165,14 @@ class Neuron extends Actor with ActorLogging {
 											  outputs = updatedOutputs))
 		}
   	}
+
+
+  	def relax(s: NeuronSettings) = {
+
+  		sender() ! "NeuronRelaxed"
+  		context become readyNeuron(s.copy(signal = 0, signalsReceived = Map.empty))
+  	}
+
 }
 
 class InputNeuron() extends Neuron {
@@ -208,6 +220,7 @@ class InputNeuron() extends Neuron {
 
   		}
   	}
+
 }
 
 class OutputNeuron() extends Neuron {
