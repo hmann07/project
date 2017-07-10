@@ -40,7 +40,11 @@ import Population._
 				// start the cross over process
 				println("generation complete, get ready for crossover...")
 				val finalAgentsComplete = AgentResults(genome, error) :: agentsComplete
-				val sortedByPerformance = finalAgentsComplete.sortWith((a,b) => a.sse > b.sse )
+				val groupedByPerformance = finalAgentsComplete.sortWith((a,b) => a.sse < b.sse ).grouped(2)
+				groupedByPerformance.foreach(x=> x.foreach(y => println(y.sse)))
+
+				
+				
 
 			} else {
 				context become generations(AgentResults(genome, error) :: agentsComplete, totalAgents)

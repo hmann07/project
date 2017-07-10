@@ -88,18 +88,23 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l)),
                                                     totalSensationsReceived = settings.totalSensationsReceived + 1))
   		
-  		case Output(v) =>
+  		
+      // What happens here is important decision point. If we are going to back propagate error then the output eerror should be 
+      // sent back through the network and next next signal is called for. If we are going to terminate and start genetic operations then we need to
+      // wait until all signals have gone through (relaxing the network on each pass), calculate performance and tell the agent the network is done.  
+
+      case Output(v) =>
 
         val error = settings.sensations(1).label(0) - v
         val squaredError = math.pow(error, 2)
 
-        /*settings.totalSensationsReceived match {
-          case 3 => {
+        // If we are in Back propagation mode.
+        /*settings.totalSensationsReceived % 4 match {
+          case 0 => {
             if(settings.totalSensationsReceived % 10 == 0){
               println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
             }
-            // blanked for evolution ...  //sender() ! Error(error)
-            parent ! Matured(genome, settings.tss + squaredError)
+            sender() ! Error(error)
             context become  readyNetwork(settings.copy(tss = 0))
           }
           case _ => {
@@ -110,6 +115,8 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
           }
         }*/
 
+
+        // If we are in Evolution Only mode.
         settings.totalSensationsReceived match {
           case 4 => {
             println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
