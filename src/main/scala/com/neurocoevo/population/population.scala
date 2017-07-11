@@ -5,6 +5,8 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 import com.neurocoevo.agent.Agent
 import com.neurocoevo.experience._
 import com.neurocoevo.network._
+import scala.util.Random
+
 
 import com.neurocoevo.genome._	
 
@@ -40,17 +42,46 @@ import Population._
 				// start the cross over process
 				println("generation complete, get ready for crossover...")
 				val finalAgentsComplete = AgentResults(genome, error) :: agentsComplete
-				val groupedByPerformance = finalAgentsComplete.sortWith((a,b) => a.sse < b.sse ).grouped(2)
-				groupedByPerformance.foreach(x=> x.foreach(y => println(y.sse)))
+				val groupedByPerformance: List[List[AgentResults]] = finalAgentsComplete.sortWith((a,b) => a.sse < b.sse ).grouped(2).toList
+				//groupedByPerformance.foreach(x=> x.foreach(y => println(y.sse)))
+				val t = groupedByPerformance.map(g=> {
+					 crossover(g)
+					})
+				//println(t)
 
-				
-				
 
 			} else {
 				context become generations(AgentResults(genome, error) :: agentsComplete, totalAgents)
 			}
 
 			
+	}
+
+
+	// CROSSOVER
+	// we could move this to the agents... or perhaps pass it as a function to them...
+	// benefit being it would get done in parallel in large populations this matters.
+
+	def crossover(g: List[AgentResults]): NetworkGenome = {
+
+		//println("here")
+		val networkGenome1 = g(0).crossOverGenomes // Due to the sorting and how the partition data will work. this will always be the strongest.
+		val networkGenome2 = g(1).crossOverGenomes
+
+		val crossedNeurons: List[NeuronGenome] = networkGenome1.neurons.map { n => 
+			val matching = networkGenome2.neurons.find(n2 => n2.innovationId == n.innovationId)
+			if (matching.get != None) {
+				List(n, matching.get)(Random.nextInt(1))
+			} else {
+				n
+			}
+			}.toList
+		
+		println(crossedNeurons)
+
+
+		new NetworkGenome(crossedNeurons, networkGenome2.connections)
+
 	}
 
 	// MUTATIONS
