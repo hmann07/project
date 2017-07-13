@@ -10,6 +10,8 @@ import scala.util.Random
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
+import scala.collection.immutable.HashMap
+
 object Neuron {
 
 	val defaultActivationFunction = ActivationFunction("SIGMOID")
@@ -35,7 +37,7 @@ object Neuron {
     	biasValue: Int = -1,
     	biasWeight: Double = (Random.nextDouble * 2) - 1)
 
-	case class NeuronSnapshot(g: NeuronGenome, c: List[ConnectionGenome])
+	case class NeuronSnapshot(g: (Int, NeuronGenome), c: HashMap[Int, ConnectionGenome])
 
 
 }
@@ -85,14 +87,14 @@ class Neuron extends Actor with ActorLogging {
   			handleError(settings, e, sender)
 
 
-  		// TODO: type should come in as part of the original genome... even though it's a little agnostic to what its own type is. 
+  		// TODO: type should come in as part of the original genome... even though it's a little agnostic to what its own type is.
   		case "snapshot" =>
-  			val connectionGenome = settings.outputs.map(o => new ConnectionGenome( o._2.id , self.path.name.toInt, o._1.path.name.toInt, o._2.weight )).toList
-  			val ownNeuronGenome = new NeuronGenome(self.path.name.toInt, "SIGMOID", "hidden", settings.biasValue, settings.biasWeight)
+  			val connectionGenome = settings.outputs.foldLeft(HashMap[Int, ConnectionGenome]()) {(m, o) => m + ( o._2.id  -> new ConnectionGenome( o._2.id , self.path.name.toInt, o._1.path.name.toInt, o._2.weight ))}
+  			val ownNeuronGenome = (self.path.name.toInt -> new NeuronGenome(self.path.name.toInt, "SIGMOID", "hidden", settings.biasValue, settings.biasWeight))
   			sender() ! NeuronSnapshot(ownNeuronGenome, connectionGenome)
 
 
-  		case "Relax" => 
+  		case "Relax" =>
   			relax(settings)
   	}
 
@@ -197,7 +199,7 @@ class InputNeuron() extends Neuron {
 			val updatedWeight = (source -> s.outputs(source).copy(weight = currentWeight + dWeight))
 			val updatedOutputs: Map[ActorRef, ConnectionDetail] = s.outputs + updatedWeight
 				//println(self.path.name + " new connection weights : " + updatedOutputs )
-  			
+
 			// In addition to appling error gradient to the weights the input should inform the parent that signal has
   			// made it all the way to this end point.
   			// the parent will be waitng to hear from all inputs.
