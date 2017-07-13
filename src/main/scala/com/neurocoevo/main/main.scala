@@ -11,18 +11,20 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 
 object Main extends App {
-	
+
 	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
-	val networkGenome = GenomeFactory.createGenome("C:\\Users\\user\\Documents\\project\\project\\src\\resources\\annSubstrate.xml")
-	networkGenome.inputNodes.foreach(n =>  println(n.innovationId))
+	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\user\\Documents\\project\\project\\src\\resources\\annSubstrate.xml")
+	val networkGenome = GenomeFactory.createGenome("C:\\Users\\HMann\\Desktop\\project-master\\project-master\\src\\resources\\annSubstrate.xml")
+
+	networkGenome.inputNodes.foreach(n =>  println(n._2.innovationId))
 
 	//val annSubstrate2 = GenomeFactory.createGenome(2,List(2), 1)
 	println(networkGenome)
-	
+
 	val system = ActorSystem("mySystem")
 	val inbox = Inbox.create(system)
 
-	
+
 	val p = system.actorOf(Props[Population], "population")
 
 	inbox.send(p, Population.PopulationSettings(10,networkGenome))
@@ -33,7 +35,7 @@ object Main extends App {
 	//val agent4 = system.actorOf(Agent.props(networkGenome, e), "agentA")
 
 	/*
-	
+
 
 	val cppnSubstrate = new Substrate("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
 	val annSubstrate = new Substrate("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
