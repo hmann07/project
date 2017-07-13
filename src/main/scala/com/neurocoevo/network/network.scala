@@ -7,6 +7,8 @@ import com.neurocoevo.substrate.SubstrateNode
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
+import scala.collection.immutable.HashMap
+
 object Network {
 
 	case class Output(value: Double)
@@ -22,8 +24,8 @@ object Network {
 		)
 	case class Sensation(
 			 id: Double,
-			 values: List[Double], 
-			 label: List[Double]) 
+			 values: List[Double],
+			 label: List[Double])
 
 	case class Error(error:Double)
 
@@ -39,11 +41,11 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	val inputs: Map[String, ActorRef] = generateInputNeurons( genome.inputNodes, Map.empty)
 	val outputs: Map[String, ActorRef] = generateOutputNeurons( genome.outputNodes, Map.empty)
 	val hidden: Map[String, ActorRef] = generateHiddenNeurons( genome.hiddenNodes, Map.empty)
-	val allnodes: Map[String, ActorRef] = inputs ++ hidden ++ outputs 
-	val totalConnections: Int = genome.connections.length 
+	val allnodes: Map[String, ActorRef] = inputs ++ hidden ++ outputs
+	val totalConnections: Int = genome.connections.size
 
 	// create connections based on actor references
-	val actorReferencedConnections = genome.connections.map {c => new ActorConnection(c.innovationId, allnodes(c.from.toString),allnodes(c.to.toString), c.weight)}
+	val actorReferencedConnections = genome.connections.map {c => new ActorConnection(c._2.innovationId, allnodes(c._2.from.toString),allnodes(c._2.to.toString), c._2.weight)}
 
 	// inform all neurons about their incoming and outgoing connections.
 	actorReferencedConnections.foreach {c =>
@@ -52,8 +54,8 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	}
 
 	//println(actorReferencedConnections)
-	
-	
+
+
 
   	def receive = initialisingNetwork(NetworkSettings())
 
@@ -61,7 +63,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   	// connections.
 
   	def	initialisingNetwork(settings: NetworkSettings): Receive = {
-    	
+
     	case "ConnectionConfirmation"  => {
     			//println(totalConnections)
     			if(settings.confirmedConnections + 1 == (totalConnections * 2)){
@@ -81,17 +83,17 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
 
   	def readyNetwork(settings: NetworkSettings) : Receive = {
-  		
-  		case Sensation(id, v, l) => 
+
+  		case Sensation(id, v, l) =>
   			//println("preparing to send, expected value: " + l)
   			v.zip(inputs.values).foreach({case (v,i) => i ! Neuron.Signal(v)})
   			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l)),
                                                     totalSensationsReceived = settings.totalSensationsReceived + 1))
-  		
-  		
-      // What happens here is important decision point. If we are going to back propagate error then the output eerror should be 
+
+
+      // What happens here is important decision point. If we are going to back propagate error then the output eerror should be
       // sent back through the network and next next signal is called for. If we are going to terminate and start genetic operations then we need to
-      // wait until all signals have gone through (relaxing the network on each pass), calculate performance and tell the agent the network is done.  
+      // wait until all signals have gone through (relaxing the network on each pass), calculate performance and tell the agent the network is done.
 
       case Output(v) =>
 
@@ -120,7 +122,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         settings.totalSensationsReceived match {
           case 4 => {
             println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
-            
+
             parent ! Matured(genome, settings.tss + squaredError)
 
             // Don't need to relax since all sensations have finished.
@@ -135,8 +137,8 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
             context become  relaxingNetwork(settings.copy(tss = settings.tss + squaredError), 0)
           }
         }
-        
-  			
+
+
   		case "NetworkRelaxed" =>
         println("NetworkRelaxed")
         parent ! "newSignal"
@@ -147,7 +149,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   				parent ! "propagated"
   				context become readyNetwork(settings.copy(confirmedPropagations = 0))
   			} else {
-  				context become readyNetwork(settings.copy(confirmedPropagations = settings.confirmedPropagations + 1)) 
+  				context become readyNetwork(settings.copy(confirmedPropagations = settings.confirmedPropagations + 1))
   			}
 
   		// On snapshot Network should send message to all nodes and get outgoing connection data
@@ -157,16 +159,16 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   		// The issue here is, if we allow back propagation i.e learning outside of evolution, then
   		// the weights will be updated without the netwrok knowing....
   		// children can just send their settings object and carry on.
-  		
-  		case "snapshot" => 
+
+  		case "snapshot" =>
   			children.foreach { c => c ! "snapshot" }
         context become snapshotting(settings, 0, NetworkGenome(null,null))
-  		  
+
       case "Add Connection" =>
 
-      // here we select a random connection.... then communicate directly with the innovation engine...	
+      // here we select a random connection.... then communicate directly with the innovation engine...
 
-  			
+
 
 
   	}
@@ -174,20 +176,20 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
     def snapshotting(s: NetworkSettings, snapshotsReceived: Int, newGenome: NetworkGenome): Receive = {
 
       case Neuron.NeuronSnapshot(ng, cg) =>
-        
+
         if(snapshotsReceived + 1 == allnodes.size){
-          
+
           // this is the last snapshot.
-          
-          val g = newGenome.copy(neurons = ng :: genome.neurons, connections = genome.connections ::: cg)
+
+          val g = newGenome.copy(neurons = genome.neurons + ng, connections = genome.connections ++ cg)
 
           context become readyNetwork(s)
 
         } else {
 
-          // still more to wait for 
+          // still more to wait for
 
-          val g = newGenome.copy(neurons = ng :: genome.neurons, connections = genome.connections ::: cg)
+          val g = newGenome.copy(neurons = genome.neurons + ng, connections = genome.connections ++ cg)
 
           context become snapshotting(s, snapshotsReceived + 1 , g)
 
@@ -198,14 +200,14 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
     def relaxingNetwork(s:NetworkSettings, relaxedConfirmed: Int): Receive = {
 
       case "NeuronRelaxed" =>
-     
+
         if(relaxedConfirmed + 1 == allnodes.size){
           parent ! "newSignal"
           context become readyNetwork(s)
         } else {
           context become relaxingNetwork(s, relaxedConfirmed+ 1)
         }
-    
+
     }
 
 
@@ -217,24 +219,24 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
       signature: List of nodes -> Map (actor name -> actor)
     */
 
-    def generateInputNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
-      neurons.length match {
+    def generateInputNeurons(neurons: HashMap[Int, NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+      neurons.size match {
         case 0 => agg
-        case _ => generateInputNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[InputNeuron], neurons.head.innovationId.toString)))
+        case _ => generateInputNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(Props[InputNeuron], neurons.head._2.innovationId.toString)))
       }
     }
 
-    def generateOutputNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
-      neurons.length match {
+    def generateOutputNeurons(neurons: HashMap[Int, NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+      neurons.size match {
         case 0 => agg
-        case _ => generateOutputNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[OutputNeuron], neurons.head.innovationId.toString)))
+        case _ => generateOutputNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(Props[OutputNeuron], neurons.head._2.innovationId.toString)))
       }
     }
 
-    def generateHiddenNeurons(neurons: List[NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
-      neurons.length match {
+    def generateHiddenNeurons(neurons: HashMap[Int, NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+      neurons.size match {
         case 0 => agg
-        case _ => generateHiddenNeurons(neurons.tail, agg + (neurons.head.innovationId.toString -> actorOf(Props[Neuron], neurons.head.innovationId.toString)))
+        case _ => generateHiddenNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(Props[Neuron], neurons.head._2.innovationId.toString)))
       }
     }
 
