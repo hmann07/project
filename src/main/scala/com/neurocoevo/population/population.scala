@@ -5,6 +5,7 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 import com.neurocoevo.agent.Agent
 import com.neurocoevo.experience._
 import com.neurocoevo.network._
+import com.neurocoevo.innovation._
 import scala.util.Random
 import scala.collection.immutable.HashMap
 
@@ -12,7 +13,8 @@ import com.neurocoevo.genome._
 
 object Population {
 	case class PopulationSettings(n: Int, g: NetworkGenome	)
-	// cross over genomes could become a list at some point in the future.
+	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the 
+	// weights and topologies but also learning rates or functions.
 	case class AgentResults(crossOverGenomes: NetworkGenome, sse: Double )
 }
 
@@ -46,6 +48,10 @@ import Population._
 				//groupedByPerformance.foreach(x=> x.foreach(y => println(y.sse)))
 				val t = groupedByPerformance.map(g=> {
 					 	crossover(g)
+					})
+
+				val tMutate = t.map(g=> {
+					mutateAddConn(g)
 					})
 				//println(t)
 
@@ -110,10 +116,29 @@ import Population._
 		// vary its weight slightly. or a lot. or by something....
 
 	// Add connection
-		// find two nodes without a connection
+		// <decscription> find two nodes without a connection
 		// add the connection.
+		// <param> genome -> the genome due to be mutated.
+		// <return> genome -> A new copy of the genome with a new connection added.
+
+
+	// add node Or splice
+	// find connection between two nodes. deactive connection, replace with two new connections and a node
+
 
 	// add node
-		// find connection between two nodes. deactive connection, replace with two new connections and a node
+	// pick two random nodes. and add a new connected node.
 
+	def mutateAddConn (genome: NetworkGenome) = {
+		1 
+	}
+
+
+	// <param> NetworkGenome: the network genome to be mutated
+	// <return> NetworkGenome: A genome with a new neuron added.
+
+	def mutateAddNeuron (genome: NetworkGenome) = {
+		val connectionToSplit = genome.connections.keys(Random.nextInt(genome.connections.size))
+		innovation ! Innovation.NewNeuronProposal(connectionToSplit.from, connectionToSplit.to)
+	}
 }
