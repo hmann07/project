@@ -3,19 +3,29 @@ package com.neurocoevo.innovation
 import akka.actor.{ActorRef, ActorSystem ,Actor, ActorLogging, Props}
 
 object Innovation {
+	
 	case class NewConnectionProposal(fromNeuron: Int, toNeuron: Int)
+
 	case class NewNeuronProposal(fromNeuron: Int, toNeuron: Int)
 
-	case class TrackerEntry(fromNeuron: Int, toNeuron: Int, id: Int)
+	case class ConnectionTrackerEntry(fromNeuron: Int, toNeuron: Int, innovationId: Int)
 
-	case class Tracker(currentNeuronInnovationId: Int = 0,
-			currentConnectionInnovationId: Int = 0,
-			neuronEntries: List[TrackerEntry] = List.empty
-			connectionEntries: List[TrackerEntry] = List.empty
-			// Map[fromNeuron, Map[toNeuron, Innovation Id]]
-			//entries: Map[Int, Map[Int, Int]]
-			)
-	case class ConnectionConfirmation(c: TrackerEntry)
+	case class NeuronTrackerEntry(
+		fromNeuron: Int, 
+		connection1: Int, 
+		newNeuron: Int, 
+		connection2: Int,
+		toNeuron: Int)
+
+	case class Tracker(
+		currentNeuronInnovationId: Int = 0,
+		currentConnectionInnovationId: Int = 0,
+		neuronEntries: List[NeuronTrackerEntry] = List.empty,
+		connectionEntries: List[ConnectionTrackerEntry] = List.empty)
+
+	case class NewConnectionConfirmation(connectionData: ConnectionTrackerEntry)
+
+	case class NewNeuronConfirmation(neuronData: NeuronTrackerEntry)
 }
 
 	// Key Ideas. Nodes do not need an innovation number as such but will need an ID.
@@ -36,34 +46,37 @@ class Innovation extends Actor with ActorLogging {
 			// need to check if these two nodes, already have a connection between 
 			// them.
 
-			// search for a connection that links n1 to n2
-			val entry = t.connectionEntries.find(te => te.fromNeuron == n1 && te.toNeuron == n2)
+			// search for a connection that links n1 to n2 NOTE. This is directed.
+			val existingEntry = t.connectionEntries.find(te => te.fromNeuron == n1 && te.toNeuron == n2)
 			
+			existingEntry match {
 
-			if(entry.get != None){ 
-				
-				// If there is an existing link between n1 and n2 then sent back the data. 
-				// The exisitng innovation id will be used 
-				
-				sender() ! ConnectionConfirmation(entry.get)
+				case Some(e) => {
 			
-			} else {
+					// If there is an existing link between n1 and n2 then sent back the data. 
+					// The exisitng innovation id will be used 
+					
+					sender() ! NewConnectionConfirmation(e)
+				}
+
+				case None => {
 
 				// There is not an exisitng connection between n1 and n2.
 				// create a new tracker entry
 
-				val newEntry =  new TrackerEntry(n1, n2, t.currentConnectionInnovationId)
+				val newEntry =  new ConnectionTrackerEntry(n1, n2, t.currentConnectionInnovationId)
 
 				// send it to the agent
 
-				sender() ! ConnectionConfirmation(newEntry)
+				sender() ! NewConnectionConfirmation(newEntry)
 
 				// store it for future lookups whilst incrementing the counter.
 
 				context become innovationTracker(t.copy(
 						currentConnectionInnovationId = t.currentConnectionInnovationId + 1,
-						connectionEntries = t.connectionEntries ++ newEntry))
+						connectionEntries = newEntry :: t.connectionEntries))
 			
+				}
 			}
 
 
@@ -72,7 +85,41 @@ class Innovation extends Actor with ActorLogging {
 			// need to check if n1 and n2 have been split before. 
 			// if they have not then we split them, and create a new neuron. which will
 			// get a new id.
-			checkerTracker(n1, n2, 0)
 			
+			val existingEntry = t.neuronEntries.find(te => te.fromNeuron == n1 && te.toNeuron == n2)
+
+			existingEntry match { 
+				
+				case Some(e) => {
+				// we have previously split this connection. 
+				// The exisitng innovation ids will be used 
+	
+					sender() ! NewNeuronConfirmation(e)
+				}
+			
+				case None => {
+
+					// we have not previously added a neuron between n1 and n2
+					// create a new tracker entry with two new connections and one neuron.
+
+					val newEntry =  new NeuronTrackerEntry(
+						n1, 
+						t.currentConnectionInnovationId, 
+						t.currentNeuronInnovationId, 
+						t.currentConnectionInnovationId + 1, 
+						n2)
+
+					// send it to the agent
+
+					sender() ! NewNeuronConfirmation(newEntry)
+
+					// store it for future lookups whilst incrementing the counter.
+
+					context become innovationTracker(t.copy(
+							currentConnectionInnovationId = t.currentConnectionInnovationId + 2,
+							neuronEntries =  newEntry :: t.neuronEntries))
+				}
+			}
+		}		
 	}
-}
+

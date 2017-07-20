@@ -5,6 +5,7 @@ import com.neurocoevo.genome._
 import com.neurocoevo.agent.Agent
 import com.neurocoevo.experience.Experience
 import com.neurocoevo.population.Population
+import com.neurocoevo.innovation.Innovation
 
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}

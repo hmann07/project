@@ -51,7 +51,7 @@ import Population._
 					})
 
 				val tMutate = t.map(g=> {
-					mutateAddConn(g)
+					mutateAddNeuron(g)
 					})
 				//println(t)
 
@@ -59,6 +59,10 @@ import Population._
 			} else {
 				context become generations(AgentResults(genome, error) :: agentsComplete, totalAgents)
 			}
+
+		
+
+
 
 
 	}
@@ -133,12 +137,39 @@ import Population._
 		1 
 	}
 
-
-	// <param> NetworkGenome: the network genome to be mutated
-	// <return> NetworkGenome: A genome with a new neuron added.
+	/* <Description> mutateAddNeuron: As generally described by the hyperneat papers pick a connection, disable it
+					 create two new connections and a new node inbetween.
+	 <param> NetworkGenome: the network genome to be mutated
+	 <return> NetworkGenome: A genome with a new neuron added.
+	*/
 
 	def mutateAddNeuron (genome: NetworkGenome) = {
-		val connectionToSplit = genome.connections.keys(Random.nextInt(genome.connections.size))
-		innovation ! Innovation.NewNeuronProposal(connectionToSplit.from, connectionToSplit.to)
+
+		// First, pick a connection from the genome to split.. Randomly...
+
+		val connIds = genome.connections.keys.toList
+		val connToReplace = connIds(Random.nextInt(genome.connections.size))
+		val connectionToSplit = genome.connections(connToReplace)
+		
+		// Ask the innovation Actor if anyone has already split this connection. If yes, we should use
+		// the same innovation id of both neuron and the two connections
+		context.actorSelection("../innovation")  ! Innovation.NewNeuronProposal(connectionToSplit.from, connectionToSplit.to)
+		context become mutatingGenome(genome, connToReplace)
+	}
+
+
+	def mutatingGenome(genome: NetworkGenome, oldConnection: Int): Receive = {
+		case Innovation.NewNeuronConfirmation(neuronData) =>
+			// using the neuron data change the NetworkGenome 
+			println("got some info... lets mutate that neuron...")
+
+
+			val newCons = genome.connections + 
+					(oldConnection -> genome.connections(oldConnection).copy(enabled = false),
+				     neuronData.connection1 -> new ConnectionGenome(neuronData.connection1, neuronData.fromNeuron, neuronData.newNeuron), 	//new ConnectionGenomes
+				     neuronData.connection2 -> new ConnectionGenome(neuronData.connection2, neuronData.newNeuron, neuronData.toNeuron))  //new ConnectionGenomes 
+			
+			println(newCons.toString)
+
 	}
 }
