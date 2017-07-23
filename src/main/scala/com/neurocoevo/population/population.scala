@@ -15,7 +15,9 @@ object Population {
 	case class PopulationSettings(n: Int, g: NetworkGenome	)
 	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the 
 	// weights and topologies but also learning rates or functions.
-	case class AgentResults(crossOverGenomes: NetworkGenome, sse: Double )
+	case class AgentResults(crossOverGenomes: NetworkGenome, sse: Double, agent: ActorRef)
+
+	case class Crossover(g: List[AgentResults], f: List[AgentResults] => NetworkGenome)
 }
 
 class Population extends Actor with ActorLogging {
@@ -40,26 +42,45 @@ import Population._
 
 		case Network.Matured(genome, error) =>
 
+			// DO we kill the children now? Are they at the end of there lifespan?
+			// It feels wasteful to close them all down and create new ones.
+
 			if (agentsComplete.length + 1 == totalAgents){
 				// start the cross over process
 				println("generation complete, get ready for crossover...")
-				val finalAgentsComplete = AgentResults(genome, error) :: agentsComplete
+				val finalAgentsComplete = AgentResults(genome, error, sender()) :: agentsComplete
+
+				// this is likely to be a bottleneck.
 				val groupedByPerformance: List[List[AgentResults]] = finalAgentsComplete.sortWith((a,b) => a.sse < b.sse ).grouped(2).toList
 				//groupedByPerformance.foreach(x=> x.foreach(y => println(y.sse)))
+				
+
+				// Send to the strongest actor (arbitrary) 2 genomes and a function for crossing them.
 				val t = groupedByPerformance.map(g=> {
-					 	crossover(g)
+					 	g(0).agent ! Crossover(g, crossover)
+
+					 	// Could do anything there, maybe double up the good ones and leave them with slightly differnt values.
+					 	//g(1).agent ! Crossover(g, crossover)
 					})
 
-				val tMutate = t.map(g=> {
-					mutateAddNeuron(g)
-					})
+				// context become spawning("number of expected children", )
+
+				//val tMutate = t.map(g=> {
+				//	mutateAddNeuron(g)
+				//	})
 				//println(t)
 
 
 			} else {
-				context become generations(AgentResults(genome, error) :: agentsComplete, totalAgents)
+				context become generations(AgentResults(genome, error, sender()) :: agentsComplete, totalAgents)
 			}
 
+		case Agent.NewChild(g, name) =>
+
+			val e = context.actorOf(Props[Experience], "experience" + sender().path.name + "." + name)
+			context.actorOf(Agent.props(g, e), sender().path.name + "." + name)
+
+			context become generations(agentsComplete, totalAgents + 1)
 		
 
 
@@ -69,7 +90,7 @@ import Population._
 
 
 	// CROSSOVER
-	// we could move this to the agents... or perhaps pass it as a function to them...
+	// This function will be passed to the agents or the stronger of the agents.
 	// benefit being it would get done in parallel in large populations this matters.
 	// crossover in NEAT actually refers specifically to the connections. Though the Neruons are obviously involved...
 	// the neurons for the new genome can be retrieved by a pass through the new connection genome.
@@ -104,72 +125,13 @@ import Population._
 			m + (n._2.from -> networkGenome1.neurons(n._2.from), n._2.to -> networkGenome1.neurons(n._2.to) )
 
 		  }
-		println(crossedConnections)
-		println(newGenomes)
+		//println(crossedConnections)
+		//println(newGenomes)
 
 
 		new NetworkGenome(networkGenome1.neurons, crossedConnections)
 
 	}
 
-	// MUTATIONS
-	// Genrally it seems mutation does not get applied until cross over has happened...
-
-	// Perturb weights
-		// find a connection
-		// vary its weight slightly. or a lot. or by something....
-
-	// Add connection
-		// <decscription> find two nodes without a connection
-		// add the connection.
-		// <param> genome -> the genome due to be mutated.
-		// <return> genome -> A new copy of the genome with a new connection added.
-
-
-	// add node Or splice
-	// find connection between two nodes. deactive connection, replace with two new connections and a node
-
-
-	// add node
-	// pick two random nodes. and add a new connected node.
-
-	def mutateAddConn (genome: NetworkGenome) = {
-		1 
-	}
-
-	/* <Description> mutateAddNeuron: As generally described by the hyperneat papers pick a connection, disable it
-					 create two new connections and a new node inbetween.
-	 <param> NetworkGenome: the network genome to be mutated
-	 <return> NetworkGenome: A genome with a new neuron added.
-	*/
-
-	def mutateAddNeuron (genome: NetworkGenome) = {
-
-		// First, pick a connection from the genome to split.. Randomly...
-
-		val connIds = genome.connections.keys.toList
-		val connToReplace = connIds(Random.nextInt(genome.connections.size))
-		val connectionToSplit = genome.connections(connToReplace)
-		
-		// Ask the innovation Actor if anyone has already split this connection. If yes, we should use
-		// the same innovation id of both neuron and the two connections
-		context.actorSelection("../innovation")  ! Innovation.NewNeuronProposal(connectionToSplit.from, connectionToSplit.to)
-		context become mutatingGenome(genome, connToReplace)
-	}
-
-
-	def mutatingGenome(genome: NetworkGenome, oldConnection: Int): Receive = {
-		case Innovation.NewNeuronConfirmation(neuronData) =>
-			// using the neuron data change the NetworkGenome 
-			println("got some info... lets mutate that neuron...")
-
-
-			val newCons = genome.connections + 
-					(oldConnection -> genome.connections(oldConnection).copy(enabled = false),
-				     neuronData.connection1 -> new ConnectionGenome(neuronData.connection1, neuronData.fromNeuron, neuronData.newNeuron), 	//new ConnectionGenomes
-				     neuronData.connection2 -> new ConnectionGenome(neuronData.connection2, neuronData.newNeuron, neuronData.toNeuron))  //new ConnectionGenomes 
-			
-			println(newCons.toString)
-
-	}
+	
 }

@@ -28,7 +28,9 @@ object Main extends App {
 
 	val p = system.actorOf(Props[Population], "population")
 
-	val inn = system.actorOf(Props[Innovation], "innovation")
+	// innovation needs substrate so that it can choose the right number to start from
+
+	val inn = system.actorOf(Innovation.props(networkGenome), "innovation")
 
 	inbox.send(p, Population.PopulationSettings(10,networkGenome))
 

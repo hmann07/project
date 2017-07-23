@@ -1,9 +1,17 @@
 package com.neurocoevo.innovation
 
+import com.neurocoevo.genome.NetworkGenome
+
 import akka.actor.{ActorRef, ActorSystem ,Actor, ActorLogging, Props}
 
 object Innovation {
 	
+	// We can assume that all agents being tracked here are members of the same population and therefore also 
+	// share the same seed genome. TODO: What happens if we were restarting an experiment? If there were, for whatever reason,
+	// multiple genomes we would have to pick max from the multiples.
+
+	def props(seedGenome: NetworkGenome): Props = Props(new Innovation(seedGenome))
+
 	case class NewConnectionProposal(fromNeuron: Int, toNeuron: Int)
 
 	case class NewNeuronProposal(fromNeuron: Int, toNeuron: Int)
@@ -32,11 +40,21 @@ object Innovation {
 	// All mutations are essentially based on the connections. 
 
 
-class Innovation extends Actor with ActorLogging {
+class Innovation(seedGenome: NetworkGenome) extends Actor with ActorLogging {
 
 	import Innovation._
 
-	def receive = innovationTracker(Tracker())
+	val latestConnection = seedGenome.connections.keys.max + 1
+	val latestNeuron = seedGenome.neurons.keys.max + 1
+
+
+
+	println(latestConnection)
+	println(latestNeuron)
+	
+	def receive = innovationTracker(Tracker(
+		currentNeuronInnovationId = latestNeuron, 
+		currentConnectionInnovationId = latestConnection))
 
 
 	def innovationTracker(t: Tracker) : Receive = {
@@ -109,6 +127,8 @@ class Innovation extends Actor with ActorLogging {
 						t.currentConnectionInnovationId + 1, 
 						n2)
 
+					println(newEntry.toString)
+
 					// send it to the agent
 
 					sender() ! NewNeuronConfirmation(newEntry)
@@ -117,6 +137,7 @@ class Innovation extends Actor with ActorLogging {
 
 					context become innovationTracker(t.copy(
 							currentConnectionInnovationId = t.currentConnectionInnovationId + 2,
+							currentNeuronInnovationId = t.currentNeuronInnovationId + 1,
 							neuronEntries =  newEntry :: t.neuronEntries))
 				}
 			}

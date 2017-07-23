@@ -33,7 +33,8 @@ object GenomeFactory {
 								  	} else {
 								  		x.toDouble
 								  	}
-								  }))}
+								  },
+								  (i \ "@layer").text.toDouble))}
 
 		val connections: HashMap[Int, ConnectionGenome] = (xmlData \ "connections" \ "connection").foldLeft(HashMap[Int, ConnectionGenome]()) {(m, i) =>
 

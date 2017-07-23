@@ -12,6 +12,5 @@
 [0m[[0mdebug[0m] [0m	Thread run-main-0 exited.[0m
 [0m[[0mdebug[0m] [0mWaiting for thread mySystem-scheduler-1 to terminate.[0m
 [0m[[0mdebug[0m] [0m	Thread mySystem-scheduler-1 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread Thread-1 to terminate.[0m
-[0m[[0mdebug[0m] [0m	Thread Thread-1 exited.[0m
-[0m[[0mdebug[0m] [0mWaiting for thread mySystem-akka.actor.default-dispatcher-22 to terminate.[0m
+[0m[[0mdebug[0m] [0mWaiting for thread mySystem-akka.actor.default-dispatcher-3 to terminate.[0m
+[0m[[0mdebug[0m] [0m	Thread mySystem-akka.actor.default-dispatcher-3 exited.[0m
