@@ -27,14 +27,14 @@ object Main extends App {
 
 
 	val inn = system.actorOf(Innovation.props(networkGenome), "innovation")
-	
+
 	val p = system.actorOf(Props[Population], "population")
 
 	// innovation needs substrate so that it can choose the right number to start from
 
 	
 
-	inbox.send(p, Population.PopulationSettings(10,networkGenome))
+	inbox.send(p, Population.PopulationSettings(16,networkGenome))
 
 	//val agent = system.actorOf(Agent.props(networkGenome, e), "agentX")
 	//val agent2 = system.actorOf(Agent.props(networkGenome, e), "agentY")

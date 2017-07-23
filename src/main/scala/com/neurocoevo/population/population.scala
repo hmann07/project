@@ -45,8 +45,13 @@ import Population._
 			// DO we kill the children now? Are they at the end of there lifespan?
 			// It feels wasteful to close them all down and create new ones.
 
+
+			// this is sort of a generation over point. we should create new, kill old. and get ready for new AgentResults
+			// coming from the new generation.
 			if (agentsComplete.length + 1 == totalAgents){
 				// start the cross over process
+
+
 				println("generation complete, get ready for crossover...")
 				val finalAgentsComplete = AgentResults(genome, error, sender()) :: agentsComplete
 
@@ -63,7 +68,8 @@ import Population._
 					 	//g(1).agent ! Crossover(g, crossover)
 					})
 
-				// context become spawning("number of expected children", )
+				// Handle odd number of agents?
+				context become spawning(totalAgents / 2, List.empty)
 
 				//val tMutate = t.map(g=> {
 				//	mutateAddNeuron(g)
@@ -75,12 +81,7 @@ import Population._
 				context become generations(AgentResults(genome, error, sender()) :: agentsComplete, totalAgents)
 			}
 
-		case Agent.NewChild(g, name) =>
-
-			val e = context.actorOf(Props[Experience], "experience" + sender().path.name + "." + name)
-			context.actorOf(Agent.props(g, e), sender().path.name + "." + name)
-
-			context become generations(agentsComplete, totalAgents + 1)
+		
 		
 
 
@@ -88,7 +89,20 @@ import Population._
 
 	}
 
+	def spawning(expectedChildren: Int, childrenRegistered: List[Agent.NewChild]): Receive = {
 
+		case Agent.NewChild(g, name) =>
+			if(expectedChildren == childrenRegistered.length + 1) {
+				
+				(Agent.NewChild(g, name) :: childrenRegistered).foreach( nc => {
+				val e = context.actorOf(Props[Experience], "experience" + nc.name)
+				context.actorOf(Agent.props(nc.genome, e), nc.name)
+				})
+				context become generations(List.empty, expectedChildren) 
+			} else {
+				context become spawning(expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered ) 
+			}
+	}
 	// CROSSOVER
 	// This function will be passed to the agents or the stronger of the agents.
 	// benefit being it would get done in parallel in large populations this matters.
@@ -108,10 +122,14 @@ import Population._
 		val crossedConnections: HashMap[Int, ConnectionGenome] = networkGenome1.connections.foldLeft(HashMap[Int, ConnectionGenome]()) { (m, c) =>
 
 
-			val matching = networkGenome2.connections(c._1)
-			if (matching != None) {
+			val matching = networkGenome2.connections.contains(c._1)
+
+
+
+			if (matching) {
 				// Randomly take one or other of the genomes.
-				m + (List(c, (matching.innovationId -> matching))(Random.nextInt(2)))
+				val matched = networkGenome2.connections(c._1)
+				m + (List(c, (matched.innovationId -> matched))(Random.nextInt(2)))
 			} else {
 				// This is the stronger genome take its additional parts. discard the other.
 				// TODO: Do we not even want to consider the weaker disjoints or excesss genes. in sharpNeat this appears to be toggled

@@ -17,7 +17,7 @@ object Agent {
 
 	def props(cppnGenome: NetworkGenome, experience: ActorRef): Props = Props(new Agent(cppnGenome, experience))
 
-    case class NewChild(g: NetworkGenome, name: Int)
+    case class NewChild(genome: NetworkGenome, name: String)
 }
 
 
@@ -162,7 +162,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
 
 
             
-            parent ! NewChild(new NetworkGenome(newNeurons, newCons), 1)
+            parent ! NewChild(new NetworkGenome(newNeurons, newCons), self.path.name + ".1")
             //println(newCons.toString)
 
     }
