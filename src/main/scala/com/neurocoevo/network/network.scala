@@ -42,6 +42,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	val outputs: Map[String, ActorRef] = generateOutputNeurons( genome.outputNodes, Map.empty)
 	val hidden: Map[String, ActorRef] = generateHiddenNeurons( genome.hiddenNodes, Map.empty)
 	val allnodes: Map[String, ActorRef] = inputs ++ hidden ++ outputs
+  println(allnodes.toString)
 	val totalConnections: Int = genome.connections.size
 
 	// create connections based on actor references

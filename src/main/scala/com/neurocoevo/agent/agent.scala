@@ -5,8 +5,11 @@ import com.neurocoevo.neuron._
 import com.neurocoevo.substrate.SubstrateNode
 import com.neurocoevo.network._
 import com.neurocoevo.experience._
-
 import com.neurocoevo.population._
+import com.neurocoevo.innovation._
+
+import scala.util.Random
+
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
@@ -39,15 +42,13 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
 
     		// Network is ready, lets percieve some "things"
     		experience ! "perceive"
-    		//sender() ! Network.Sensation(1, List(1, 0), List(1))
+    		
 
     	case "propagated" =>
     		
     		// finished learning form that sensation... give me another.
     		experience ! "perceive"
-    		//sender() ! Network.Sensation(1, List(1, 0), List(1))
-
-
+    		
 
     	case Experience.Event(e, l) =>
     		//println(e)
@@ -72,7 +73,9 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
             // creating a new agent this is going to use the same experience actor.. interesting.
             // also give it a new id. this could be utilised t find familiy trees etc..
             // just add id 1. for now..
-            parent ! NewChild(f(g), 1)
+            
+
+            mutateAddNeuron(f(g))
 
             
             //parent.actorOf(Agent.props(f(g), experience), "agent"+ i + ".1")
@@ -129,23 +132,38 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
         println("split conn innov id: " + connectionToSplit.innovationId + ", which breaks " + connectionToSplit.from + " and " + connectionToSplit.to)
         // Ask the innovation Actor if anyone has already split this connection. If yes, we should use
         // the same innovation id of both neuron and the two connections
-        context.actorSelection("../innovation")  ! Innovation.NewNeuronProposal(connectionToSplit.from, connectionToSplit.to)
+        context.actorSelection("../../innovation")  ! Innovation.NewNeuronProposal(connectionToSplit.from, connectionToSplit.to)
         context become mutatingGenome(genome, connectionToSplit.innovationId)
     }
 
 
     def mutatingGenome(genome: NetworkGenome, oldConnection: Int): Receive = {
+        
         case Innovation.NewNeuronConfirmation(neuronData) =>
             // using the neuron data change the NetworkGenome 
             println("got some info... lets mutate that neuron...")
 
+            val oldConnectionGenome: ConnectionGenome = genome.connections(oldConnection) 
 
             val newCons = genome.connections + 
-                    (oldConnection -> genome.connections(oldConnection).copy(enabled = false),
+                    (oldConnection -> oldConnectionGenome.copy(enabled = false),
                      neuronData.connection1 -> new ConnectionGenome(neuronData.connection1, neuronData.fromNeuron, neuronData.newNeuron),   //new ConnectionGenomes
                      neuronData.connection2 -> new ConnectionGenome(neuronData.connection2, neuronData.newNeuron, neuronData.toNeuron))  //new ConnectionGenomes 
             
-            println(newCons.toString)
+            
+            val newNeurons = genome.neurons + (neuronData.newNeuron-> new NeuronGenome(
+                    neuronData.newNeuron,
+                    "SIGMOID", // In case of CPPN Needs to be randomly selected
+                    "hidden",  // Assume we can't ad or remove inputs or outputs.
+                    -1, // Bias val
+                    Random.nextDouble, // Bias weight
+                    (genome.neurons(oldConnectionGenome.from).layer + genome.neurons(oldConnectionGenome.to).layer) / 2 // Layer. SHould be the sum of the layers of the 2 neurons previously conected / 2 
+                    ))
+
+
+            
+            parent ! NewChild(new NetworkGenome(newNeurons, newCons), 1)
+            //println(newCons.toString)
 
     }
 
