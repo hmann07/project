@@ -31,8 +31,8 @@ import Population._
 		case PopulationSettings(n, g) =>
 
 			1.to(n).foreach(i => {
-				val e = context.actorOf(Props[Experience], "experience" + i)
-				context.actorOf(Agent.props(g, e), "agent"+ i)
+				val e = context.actorOf(Props[Experience], "experience." + i)
+				context.actorOf(Agent.props(g, e), "agent."+ i)
 				})
 			context become generations(List.empty, n, 1, 0)
 	}
@@ -64,6 +64,8 @@ import Population._
 				// Sooooo
 				// need to pick two genomes, then send them off to the agents to be crossed over.
 				// Coommon way to do this is roulette wheel.
+
+				// BOTTLE NECK
 
 				finalAgentsComplete.foreach(a => {
 					val parent1 = RouletteWheel.select(finalAgentsComplete, totalError)
@@ -112,8 +114,10 @@ import Population._
 				val e = context.actorOf(Props[Experience], "experience" + nc.name)
 				context.actorOf(Agent.props(nc.genome, e), nc.name)
 				})
+				context stop sender()
 				context become generations(List.empty, expectedChildren, generationNumber + 1, 0) 
 			} else {
+				context stop sender()
 				context become spawning(expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber ) 
 			}
 	}

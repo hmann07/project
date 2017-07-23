@@ -155,8 +155,18 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
                     ))
 
 
-            
-            parent ! NewChild(new NetworkGenome(newNeurons, newCons), self.path.name + ".1")
+            val naming = {
+                val t = self.path.name.split('.')
+                
+                if (t.length == 2) {
+                    t(0) + "." + t(1) + ".1"
+                } else {
+                    val incr = (t(2).toInt + 1)
+                    t(0) + "." + t(1) + "." + incr
+                }
+
+            }
+            parent ! NewChild(new NetworkGenome(newNeurons, newCons), naming)
             //println(newCons.toString)
 
     }
