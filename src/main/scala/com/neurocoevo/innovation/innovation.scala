@@ -49,8 +49,8 @@ class Innovation(seedGenome: NetworkGenome) extends Actor with ActorLogging {
 
 
 
-	println(latestConnection)
-	println(latestNeuron)
+	//println(latestConnection)
+	//println(latestNeuron)
 	
 	def receive = innovationTracker(Tracker(
 		currentNeuronInnovationId = latestNeuron, 
@@ -127,7 +127,7 @@ class Innovation(seedGenome: NetworkGenome) extends Actor with ActorLogging {
 						t.currentConnectionInnovationId + 1, 
 						n2)
 
-					println(newEntry.toString)
+					//println(newEntry.toString)
 
 					// send it to the agent
 

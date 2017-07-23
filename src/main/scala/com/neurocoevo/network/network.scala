@@ -42,7 +42,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	val outputs: Map[String, ActorRef] = generateOutputNeurons( genome.outputNodes, Map.empty)
 	val hidden: Map[String, ActorRef] = generateHiddenNeurons( genome.hiddenNodes, Map.empty)
 	val allnodes: Map[String, ActorRef] = inputs ++ hidden ++ outputs
-  println(allnodes.toString)
+
 	val totalConnections: Int = genome.connections.size
 
 	// create connections based on actor references
@@ -122,7 +122,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         // If we are in Evolution Only mode.
         settings.totalSensationsReceived match {
           case 4 => {
-            println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
+            //println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
 
             parent ! Matured(genome, settings.tss + squaredError)
 
@@ -131,7 +131,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
             context become  readyNetwork(settings.copy(tss = 0))
           }
           case _ => {
-            println("need more signals")
+            //println("need more signals")
             // blanked for evolution ... //sender() ! Error(error)
             //parent ! "newSignal"
             children.foreach(c => c ! "Relax")

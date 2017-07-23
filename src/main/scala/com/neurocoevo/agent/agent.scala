@@ -31,7 +31,7 @@ object Agent {
 class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with ActorLogging {
 	import context._
     import Agent._
-	println("actor created")
+	//println("actor created")
 
 	val ann = actorOf(Network.props(cppnGenome), "ann")
 
@@ -57,14 +57,14 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
 
         // Received when a network has completed one signal of a pattern and needs another
         case "newSignal" =>
-            println("newsg request")
+            //println("newsg request")
             // finished processing sensation... give me another.
             experience ! "perceive"
             
 
         //  Received when a network has processed all expected patterns from a test set.    
         case Network.Matured(g, error) =>
-            println("agent got final network data")
+            //println("agent got final network data")
             parent ! Network.Matured(g, error)
 
         // receieved some instructions for crossing over two genomes..
@@ -79,14 +79,6 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
 
             
             //parent.actorOf(Agent.props(f(g), experience), "agent"+ i + ".1")
-
-
-
-        // The agent should control Mutations... it will neeed to decide what it is mutating..i.e. CPPN/ANN. not tha tit matters directly. More jus tthat
-        // One of them will be being mutated.
-
-        case "Mutate" =>
-            ann ! "AddConnection"
 
   	}
 
@@ -129,9 +121,11 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
         val connIds: List[Int] = genome.connections.keys.toList
         val connToReplace: Int = connIds(Random.nextInt(genome.connections.size))
         val connectionToSplit: ConnectionGenome = genome.connections(connToReplace)
-        println("split conn innov id: " + connectionToSplit.innovationId + ", which breaks " + connectionToSplit.from + " and " + connectionToSplit.to)
+        
+        //println("split conn innov id: " + connectionToSplit.innovationId + ", which breaks " + connectionToSplit.from + " and " + connectionToSplit.to)
         // Ask the innovation Actor if anyone has already split this connection. If yes, we should use
         // the same innovation id of both neuron and the two connections
+        
         context.actorSelection("../../innovation")  ! Innovation.NewNeuronProposal(connectionToSplit.from, connectionToSplit.to)
         context become mutatingGenome(genome, connectionToSplit.innovationId)
     }
@@ -141,7 +135,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
         
         case Innovation.NewNeuronConfirmation(neuronData) =>
             // using the neuron data change the NetworkGenome 
-            println("got some info... lets mutate that neuron...")
+            //println("got some innovation id data... lets mutate that neuron...")
 
             val oldConnectionGenome: ConnectionGenome = genome.connections(oldConnection) 
 
