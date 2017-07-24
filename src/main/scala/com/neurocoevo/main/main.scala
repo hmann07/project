@@ -14,8 +14,8 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 object Main extends App {
 
 	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
-	val networkGenome = GenomeFactory.createGenome("C:\\Users\\user\\Documents\\project\\project\\src\\resources\\annSubstrate.xml")
-	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\HMann\\Desktop\\project-master\\project-master\\src\\resources\\annSubstrate.xml")
+	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\user\\Documents\\project\\project\\src\\resources\\annSubstrate.xml")
+	val networkGenome = GenomeFactory.createGenome("C:\\Users\\HMann\\Desktop\\project-master (2)\\project-master\\src\\resources\\annSubstrate.xml")
 
 	networkGenome.inputNodes.foreach(n =>  println(n._2.innovationId))
 
@@ -32,9 +32,9 @@ object Main extends App {
 
 	// innovation needs substrate so that it can choose the right number to start from
 
-	
 
-	inbox.send(p, Population.PopulationSettings(16,networkGenome))
+
+	inbox.send(p, Population.PopulationSettings(100,networkGenome))
 
 	//val agent = system.actorOf(Agent.props(networkGenome, e), "agentX")
 	//val agent2 = system.actorOf(Agent.props(networkGenome, e), "agentY")
