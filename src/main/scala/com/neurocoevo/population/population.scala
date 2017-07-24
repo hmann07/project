@@ -15,7 +15,7 @@ import com.neurocoevo.genome._
 
 object Population {
 	case class PopulationSettings(populationSize: Int, g: NetworkGenome	)
-	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the 
+	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the
 	// weights and topologies but also learning rates or functions.
 	case class AgentResults(crossOverGenomes: NetworkGenome, sse: Double, agent: ActorRef)
 
@@ -34,93 +34,83 @@ import Population._
 				val e = context.actorOf(Props[Experience], "experience." + i)
 				context.actorOf(Agent.props(g, e), "agent."+ i)
 				})
-			context become generations(List.empty, n, 1, 0)
+			context become evolving(List.empty, n, 1, 0)
 	}
 
-
-
-	def generations(agentsComplete: List[AgentResults], totalAgents: Int, generationNumber: Int, totalError: Double): Receive = {
+	def evolving(agentsComplete: List[AgentResults], totalAgents: Int, generationNumber: Int, totalError: Double, bestGenome: AgentResults = null): Receive = {
 
 		case Network.Matured(genome, error) =>
-
-			// DO we kill the children now? Are they at the end of there lifespan?
-			// It feels wasteful to close them all down and create new ones.
-
 
 			// this is sort of a generation over point. we should create new, kill old. and get ready for new AgentResults
 			// coming from the new generation.
 			if (agentsComplete.length + 1 == totalAgents){
+
 				// start the cross over process
-				println("completed generation: #" + generationNumber + " pop: " + totalAgents + " total error: " + totalError)
+				val best = {if(bestGenome != null){if(error > bestGenome.sse){bestGenome}else{AgentResults(genome, error, sender())}}else {AgentResults(genome, error, sender())}}
+
+				println("completed generation: #" + generationNumber + " pop: " + totalAgents + " total error: " + totalError + " best genome :" + best.sse)
+
+				// Collect Final list of completed agents.
 
 				val finalAgentsComplete = AgentResults(genome, error, sender()) :: agentsComplete
 
-				// this is likely to be a bottleneck.
-				//val groupedByPerformance: List[List[AgentResults]] = finalAgentsComplete.sortWith((a,b) => a.sse < b.sse ).grouped(2).toList
-				//groupedByPerformance.foreach(x=> x.foreach(y => println(y.sse)))
-				
 
-				// Send to the strongest actor (arbitrary) 2 genomes and a function for crossing them
-				// Sooooo
-				// need to pick two genomes, then send them off to the agents to be crossed over.
-				// Coommon way to do this is roulette wheel.
-
-				// BOTTLE NECK
+				// BOTTLE NECK  roulettewheel is being run twice for all agenets in population.
+				// Nothing else is happening. but simple for now...
 
 				finalAgentsComplete.foreach(a => {
 					val parent1 = RouletteWheel.select(finalAgentsComplete, totalError)
 					val parent2 = RouletteWheel.select(finalAgentsComplete, totalError)
-					a.agent ! Crossover(List(parent1, parent2).sortWith((a,b) => a.sse < b.sse ), crossover)
+					a.agent ! Crossover(List(parent1, parent2), crossover)
 				})
 
-				//val t = groupedByPerformance.map(g=> {
-				//	 	g(0).agent ! Crossover(g, crossover)
-
-					 	// Could do anything there, maybe double up the good ones and leave them with slightly differnt values.
-					 	//g(1).agent ! Crossover(g, crossover)
-				//	})
-
-				// Handle odd number of agents?
 				context become spawning(totalAgents, List.empty, generationNumber)
 
-				//val tMutate = t.map(g=> {
-				//	mutateAddNeuron(g)
-				//	})
-				//println(t)
-
-
 			} else {
-				context become generations(
-					AgentResults(genome, error, sender()) :: agentsComplete, 
-					totalAgents, 
+				context become evolving(
+					AgentResults(genome, error, sender()) :: agentsComplete,
+					totalAgents,
 					generationNumber,
-					totalError + error)
+					totalError + error,
+					{if(bestGenome != null){if(error > bestGenome.sse){bestGenome}else{AgentResults(genome, error, sender())}}else {AgentResults(genome, error, sender())}}
+					)
 			}
-
-		
-		
-
-
-
 
 	}
 
 	def spawning(expectedChildren: Int, childrenRegistered: List[Agent.NewChild], generationNumber: Int): Receive = {
 
+	// TODO: Enable agents to change themselves, rather than creating new ones and killing old ones...
+
 		case Agent.NewChild(g, name) =>
+
+			// Have we received all children?
+
 			if(expectedChildren == childrenRegistered.length + 1) {
-				
+
 				(Agent.NewChild(g, name) :: childrenRegistered).foreach( nc => {
-				val e = context.actorOf(Props[Experience], "experience" + nc.name)
-				context.actorOf(Agent.props(nc.genome, e), nc.name)
+					val e = context.actorOf(Props[Experience], "experience" + nc.name)
+					context.actorOf(Agent.props(nc.genome, e), nc.name)
 				})
+
+				// Stop the last agent.
 				context stop sender()
-				context become generations(List.empty, expectedChildren, generationNumber + 1, 0) 
+
+				// start evolving again
+				context become evolving(List.empty, expectedChildren, generationNumber + 1, 0, null)
+
 			} else {
+
+				// Stop the agent
 				context stop sender()
-				context become spawning(expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber ) 
+
+				// Wait for rest..
+				context become spawning(expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber )
 			}
 	}
+
+
+
 	// CROSSOVER
 	// This function will be passed to the agents or the stronger of the agents.
 	// benefit being it would get done in parallel in large populations this matters.
@@ -135,9 +125,9 @@ import Population._
 
 		g.length match {
 			case 2 => {
-
-				val networkGenome1 = g(0).crossOverGenomes // Due to the sorting and how the partition data will work. this will always be the strongest.
-				val networkGenome2 = g(1).crossOverGenomes
+				val performanceSortedGenomes = g.sortWith((a,b) => a.sse < b.sse )
+				val networkGenome1 = performanceSortedGenomes(0).crossOverGenomes // Due to the previous sort this will always be the strongest.
+				val networkGenome2 = performanceSortedGenomes(1).crossOverGenomes
 
 				val crossedConnections: HashMap[Int, ConnectionGenome] = networkGenome1.connections.foldLeft(HashMap[Int, ConnectionGenome]()) { (m, c) =>
 
@@ -169,9 +159,9 @@ import Population._
 
 				new NetworkGenome(networkGenome1.neurons, crossedConnections)
 			}
-			
+
 			case _ => {
-				// this is lazy if signleton genome... just return the existing one.. 
+				// this is lazy if signleton genome... just return the existing one..
 				new NetworkGenome(g(0).crossOverGenomes.neurons, g(0).crossOverGenomes.connections)
 			}
 		}
