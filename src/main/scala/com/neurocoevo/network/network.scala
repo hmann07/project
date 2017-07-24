@@ -19,8 +19,8 @@ object Network {
 			sensations: Map[Double, Sensation] = Map.empty,
       totalSensationsReceived: Int = 0,
 			confirmedPropagations: Int = 0,
-      tss: Double = 0
-
+      tss: Double = 0,
+			performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.sqrt(math.pow(expectedValue - networkOutput, 2))
 		)
 	case class Sensation(
 			 id: Double,
@@ -101,43 +101,50 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         val error = settings.sensations(1).label(0) - v
         val squaredError = math.pow(error, 2)
 
+				val performanceValue = settings.performanceFunction(v, settings.sensations(1).label(0))
+
         // If we are in Back propagation mode.
-        /*settings.totalSensationsReceived % 4 match {
+        /*
+				settings.totalSensationsReceived % 4 match {
           case 0 => {
             if(settings.totalSensationsReceived % 10 == 0){
               println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
             }
+
+						// backwards propagate error
             sender() ! Error(error)
+
+						// reset the squared error for pattern. ready for next iteration
             context become  readyNetwork(settings.copy(tss = 0))
           }
           case _ => {
-            // blanked for evolution ... //sender() ! Error(error)
-            //parent ! "newSignal"
-            sender() ! "Relax"
+
+						sender() ! Error(error)
+
             context become  readyNetwork(settings.copy(tss = settings.tss + squaredError))
           }
-        }*/
+        }
+				*/
 
 
         // If we are in Evolution Only mode.
+				///*
         settings.totalSensationsReceived match {
           case 4 => {
-            //println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
 
-            parent ! Matured(genome, settings.tss + squaredError)
+						parent ! Matured(genome, 1 / (settings.tss + performanceValue))
 
             // Don't need to relax since all sensations have finished.
 
             context become  readyNetwork(settings.copy(tss = 0))
           }
           case _ => {
-            //println("need more signals")
-            // blanked for evolution ... //sender() ! Error(error)
-            //parent ! "newSignal"
+
             children.foreach(c => c ! "Relax")
-            context become  relaxingNetwork(settings.copy(tss = settings.tss + squaredError), 0)
+            context become  relaxingNetwork(settings.copy(tss = settings.tss + performanceValue), 0)
           }
         }
+				//*/
 
 
   		case "NetworkRelaxed" =>
