@@ -34,7 +34,7 @@ object Main extends App {
 
 
 
-	inbox.send(p, Population.PopulationSettings(100,networkGenome))
+	inbox.send(p, Population.PopulationSettings(10,networkGenome))
 
 	//val agent = system.actorOf(Agent.props(networkGenome, e), "agentX")
 	//val agent2 = system.actorOf(Agent.props(networkGenome, e), "agentY")
