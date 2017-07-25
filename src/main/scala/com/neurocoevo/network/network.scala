@@ -20,7 +20,7 @@ object Network {
       totalSensationsReceived: Int = 0,
 			confirmedPropagations: Int = 0,
       tss: Double = 0,
-			performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.sqrt(math.pow(expectedValue - networkOutput, 2))
+			performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => 1 / math.pow(expectedValue - networkOutput, 2)
 		)
 	case class Sensation(
 			 id: Double,
@@ -101,14 +101,13 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         val error = settings.sensations(1).label(0) - v
         val squaredError = math.pow(error, 2)
 
-				val performanceValue = settings.performanceFunction(v, settings.sensations(1).label(0))
-
-        // If we are in Back propagation mode.
+				// If we are in Back propagation mode.
         /*
 				settings.totalSensationsReceived % 4 match {
           case 0 => {
             if(settings.totalSensationsReceived % 10 == 0){
-              println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError))
+							val ts = System.currentTimeMillis()
+              println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError) + ", " + ts)
             }
 
 						// backwards propagate error
@@ -129,27 +128,27 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
         // If we are in Evolution Only mode.
 				///*
+
+				val fitnessValue = settings.performanceFunction(v, settings.sensations(1).label(0))
+
         settings.totalSensationsReceived match {
           case 4 => {
-
-						parent ! Matured(genome, 1 / (settings.tss + performanceValue))
-
+						val ts = System.currentTimeMillis()
+						//parent ! Matured(genome,  (settings.tss + fitnessValue))
+						println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + fitnessValue))
             // Don't need to relax since all sensations have finished.
+						children.foreach(c => c ! "Relax")
 
-            context become  readyNetwork(settings.copy(tss = 0))
+						context become readyNetwork(settings.copy(tss = 0))
           }
           case _ => {
-
+						println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + fitnessValue))
             children.foreach(c => c ! "Relax")
-            context become  relaxingNetwork(settings.copy(tss = settings.tss + performanceValue), 0)
+            context become  relaxingNetwork(settings.copy(tss = settings.tss + fitnessValue), 0)
           }
         }
 				//*/
 
-
-  		case "NetworkRelaxed" =>
-        println("NetworkRelaxed")
-        parent ! "newSignal"
 
   		case "propagated" =>
   			//println("error propagated")
