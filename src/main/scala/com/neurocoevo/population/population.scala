@@ -17,7 +17,7 @@ object Population {
 	case class PopulationSettings(populationSize: Int, g: NetworkGenome	)
 	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the
 	// weights and topologies but also learning rates or functions.
-	case class AgentResults(crossOverGenomes: NetworkGenome, sse: Double, agent: ActorRef)
+	case class AgentResults(crossOverGenomes: NetworkGenome, sse: Double, fitnessValue: Double, agent: ActorRef)
 
 	case class Crossover(g: List[AgentResults], f: List[AgentResults] => NetworkGenome)
 }
@@ -37,30 +37,39 @@ import Population._
 			context become evolving(List.empty, n, 1, 0)
 	}
 
-	def evolving(agentsComplete: List[AgentResults], totalAgents: Int, generationNumber: Int, totalError: Double, bestGenome: AgentResults = null): Receive = {
+	def evolving(agentsComplete: List[AgentResults], totalAgents: Int, generationNumber: Int, totalfitnessValue: Double, bestGenome: AgentResults = null): Receive = {
 
-		case Network.Matured(genome, error) =>
+		case Network.Matured(genome, fitnessValue, sse) =>
 
 			// this is sort of a generation over point. we should create new, kill old. and get ready for new AgentResults
 			// coming from the new generation.
 			if (agentsComplete.length + 1 == totalAgents){
 
 				// start the cross over process
-				val best = {if(bestGenome != null){if(error > bestGenome.sse){bestGenome}else{AgentResults(genome, error, sender())}}else {AgentResults(genome, error, sender())}}
 
-				println("completed generation: #" + generationNumber + " pop: " + totalAgents + " total error: " + totalError + " best genome :" + best.sse)
+
+				// check the best.
+				val best = {if(bestGenome != null){if(sse > bestGenome.sse){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}}
+
+				// calc final values
+
+				val finalAgentsComplete = AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete
+				val finalFitnessValue = totalfitnessValue + fitnessValue
+
+
+				println(generationNumber + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.sse)
+				//println("completed generation: #" + generationNumber + " pop: " + totalAgents + " fitness: " + finalFitnessValue + " best genome :" + best.sse)
 
 				// Collect Final list of completed agents.
 
-				val finalAgentsComplete = AgentResults(genome, error, sender()) :: agentsComplete
 
 
 				// BOTTLE NECK  roulettewheel is being run twice for all agenets in population.
 				// Nothing else is happening. but simple for now...
 
 				finalAgentsComplete.foreach(a => {
-					val parent1 = RouletteWheel.select(finalAgentsComplete, totalError)
-					val parent2 = RouletteWheel.select(finalAgentsComplete, totalError)
+					val parent1 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
+					val parent2 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
 					a.agent ! Crossover(List(parent1, parent2), crossover)
 				})
 
@@ -68,11 +77,11 @@ import Population._
 
 			} else {
 				context become evolving(
-					AgentResults(genome, error, sender()) :: agentsComplete,
+					AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete,
 					totalAgents,
 					generationNumber,
-					totalError + error,
-					{if(bestGenome != null){if(error > bestGenome.sse){bestGenome}else{AgentResults(genome, error, sender())}}else {AgentResults(genome, error, sender())}}
+					totalfitnessValue + fitnessValue,
+					{if(bestGenome != null){if(sse > bestGenome.sse){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}}
 					)
 			}
 

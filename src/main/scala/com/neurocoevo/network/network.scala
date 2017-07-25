@@ -12,15 +12,16 @@ import scala.collection.immutable.HashMap
 object Network {
 
 	case class Output(value: Double)
-  case class Matured(genome: NetworkGenome, error: Double)
+  case class Matured(genome: NetworkGenome, error: Double, sse: Double)
 
 	case class NetworkSettings(
 			confirmedConnections: Int = 0,
 			sensations: Map[Double, Sensation] = Map.empty,
       totalSensationsReceived: Int = 0,
 			confirmedPropagations: Int = 0,
-      tss: Double = 0,
-			performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => 1 / math.pow(expectedValue - networkOutput, 2)
+      sse: Double = 0,
+      fitnessValue: Double = 0.00000000001,
+			performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput, 2)
 		)
 	case class Sensation(
 			 id: Double,
@@ -107,20 +108,20 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
           case 0 => {
             if(settings.totalSensationsReceived % 10 == 0){
 							val ts = System.currentTimeMillis()
-              println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + squaredError) + ", " + ts)
+              println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.sse + squaredError) + ", " + ts)
             }
 
 						// backwards propagate error
             sender() ! Error(error)
 
 						// reset the squared error for pattern. ready for next iteration
-            context become  readyNetwork(settings.copy(tss = 0))
+            context become  readyNetwork(settings.copy(sse = 0))
           }
           case _ => {
 
 						sender() ! Error(error)
 
-            context become  readyNetwork(settings.copy(tss = settings.tss + squaredError))
+            context become  readyNetwork(settings.copy(sse = settings.sse + squaredError))
           }
         }
 				*/
@@ -134,17 +135,19 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         settings.totalSensationsReceived match {
           case 4 => {
 						val ts = System.currentTimeMillis()
-						//parent ! Matured(genome,  (settings.tss + fitnessValue))
-						println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + fitnessValue))
+						parent ! Matured(genome,   1 / ((settings.fitnessValue + fitnessValue)), settings.sse )
+						//println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived }+ ", " + v + ", " + settings.sensations(1).label(0))
             // Don't need to relax since all sensations have finished.
 						children.foreach(c => c ! "Relax")
 
-						context become readyNetwork(settings.copy(tss = 0))
+						context become readyNetwork(settings.copy(sse = 0, fitnessValue = 0))
           }
           case _ => {
-						println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.tss + fitnessValue))
+						//println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived } + ", " + v + ", " + settings.sensations(1).label(0))
             children.foreach(c => c ! "Relax")
-            context become  relaxingNetwork(settings.copy(tss = settings.tss + fitnessValue), 0)
+            context become  relaxingNetwork(settings.copy(
+              sse = settings.sse + squaredError, 
+              fitnessValue = settings.fitnessValue + fitnessValue), 0)
           }
         }
 				//*/

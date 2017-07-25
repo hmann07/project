@@ -20,7 +20,7 @@ object Experience {
 
 class Experience extends Actor with ActorLogging {
 	import Experience._
-
+	import context._
 
 	def receive =  servePerceptions(ExperienceSettings())
 
@@ -30,5 +30,8 @@ class Experience extends Actor with ActorLogging {
 			//println("experience #" + (s.experiencesServed + 1) + events(s.experiencesServed % (events.length)))
 			sender ! events(s.experiencesServed % (events.length))
 			context become servePerceptions(s.copy(experiencesServed = s.experiencesServed + 1))
+
+		case "STOP" =>
+			context stop self
 	}
 }

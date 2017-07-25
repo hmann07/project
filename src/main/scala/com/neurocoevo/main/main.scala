@@ -14,8 +14,8 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 object Main extends App {
 
 	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
-	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\user\\Documents\\project\\project\\src\\resources\\annSubstrate.xml")
-	val networkGenome = GenomeFactory.createGenome("C:\\Users\\HMann\\Desktop\\project-master (2)\\project-master\\src\\resources\\annSubstrate.xml")
+	val networkGenome = GenomeFactory.createGenome("C:\\Users\\user\\Documents\\project\\project\\src\\resources\\annSubstrate.xml")
+	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\HMann\\Desktop\\project-master (2)\\project-master\\src\\resources\\annSubstrate.xml")
 
 	networkGenome.inputNodes.foreach(n =>  println(n._2.innovationId))
 

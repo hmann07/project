@@ -33,6 +33,12 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
     import Agent._
 	//println("actor created")
 
+    override def postStop() {
+    
+        experience ! "STOP"
+
+    }
+
 	val ann = actorOf(Network.props(cppnGenome), "ann")
 
 
@@ -63,9 +69,9 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
 
 
         //  Received when a network has processed all expected patterns from a test set.
-        case Network.Matured(g, error) =>
+        case Network.Matured(g, fitnessValue, sse) =>
             //println("agent got final network data")
-            parent ! Network.Matured(g, error)
+            parent ! Network.Matured(g, fitnessValue, sse)
 
         // receieved some instructions for crossing over two genomes..
         case Population.Crossover(g, f) =>
