@@ -29,7 +29,7 @@ object GenomeFactory {
 								  {
 								  	val x = (i \ "@biasWeight").text
 								  	if(x.length == 0){
-								  		Random.nextDouble
+								  		(Random.nextDouble * 2) - 1
 								  	} else {
 								  		x.toDouble
 								  	}
@@ -46,7 +46,7 @@ object GenomeFactory {
 								  {
 								  	val x = (i \ "@weight").text
 								  	if(x.length == 0){
-								  		Random.nextDouble
+								  		(Random.nextDouble * 2) - 1
 								  	} else {
 								  		x.toDouble
 								  	}
