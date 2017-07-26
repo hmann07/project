@@ -137,8 +137,8 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 						val ts = System.currentTimeMillis()
 						parent ! Matured(genome,   1 / ((settings.fitnessValue + fitnessValue)), settings.sse )
 						//println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived }+ ", " + v + ", " + settings.sensations(1).label(0))
-            // Don't need to relax since all sensations have finished.
-						children.foreach(c => c ! "Relax")
+            // Don't need to relax since all sensations have finished. This also causes deadletters.
+						// children.foreach(c => c ! "Relax")
 
 						context become readyNetwork(settings.copy(sse = 0, fitnessValue = 0))
           }
@@ -146,7 +146,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 						//println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived } + ", " + v + ", " + settings.sensations(1).label(0))
             children.foreach(c => c ! "Relax")
             context become  relaxingNetwork(settings.copy(
-              sse = settings.sse + squaredError, 
+              sse = settings.sse + squaredError,
               fitnessValue = settings.fitnessValue + fitnessValue), 0)
           }
         }
