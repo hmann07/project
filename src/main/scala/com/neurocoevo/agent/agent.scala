@@ -9,6 +9,7 @@ import com.neurocoevo.population._
 import com.neurocoevo.innovation._
 
 import scala.util.Random
+import scala.collection.immutable.HashMap
 
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
@@ -34,7 +35,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
 	//println("actor created")
 
     override def postStop() {
-    
+
         experience ! "STOP"
 
     }
@@ -74,14 +75,29 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
             parent ! Network.Matured(g, fitnessValue, sse)
 
         // receieved some instructions for crossing over two genomes..
-        case Population.Crossover(g, f) =>
 
-            // and add a mutation of some sort...
-            //mutateAddNeuron(f(g))
-						//mutatePerturbWeight(g(0).crossOverGenomes)
+				case Population.Elite(genome) =>
 
-						if(Random.nextDouble < 0.5){
-							val naming = {
+
+						val naming = {
+							val t = self.path.name.split('.')
+							if (t.length == 2) {
+								t(0) + "." + t(1) + ".1"
+							} else {
+								val incr = (t(2).toInt + 1)
+								t(0) + "." + t(1) + "." + incr
+							}
+						}
+
+						parent ! NewChild(genome, naming)
+
+				case Population.Mutate(genome) =>
+
+						mutate(genome)
+
+				case Population.Crossover(g, f) =>
+
+          		val naming = {
 								val t = self.path.name.split('.')
 								if (t.length == 2) {
 									t(0) + "." + t(1) + ".1"
@@ -92,9 +108,6 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
 							}
 							parent ! NewChild(f(g), naming)
 
-						} else {
-							mutate(g(0).crossOverGenomes)
-						}
   	}
 
     // MUTATIONS
@@ -106,7 +119,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
 		def mutate(genome: NetworkGenome) = {
 
 			//val mutationFunctions = List(mutatePerturbWeight, mutateAddConnection, mutateAddNeuron)
-			val mutationFunctions = List(mutatePerturbWeight(_))
+			val mutationFunctions = List(mutatePerturbWeight(_), mutateAddNeuron(_))
 			val randomPick = Random.nextInt(mutationFunctions.length)
 			val mutationFunction = mutationFunctions(randomPick)
 
@@ -134,32 +147,50 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
 					// Currently go 50.50 on whether or not to change bias or connection weight...
 					// currently separate since I am keeping Bias inside the neuron rather than the connection.
 
-					if(Random.nextDouble < 0.5) {
-							// change connection weight
-							val connections = genome.connections.values.toList
-							val totalConnections = connections.length
-							val connectionToChange = connections(Random.nextInt(totalConnections))
+					// should this be parameterised?...
 
-							// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
-							val perturbedConnection = connectionToChange.copy(weight = connectionToChange.weight + ((Random.nextDouble * 3) - 1.5))
+					if(Random.nextDouble < Random.nextDouble) {
 
-							val newConnections = genome.connections + (perturbedConnection.innovationId -> perturbedConnection )
+									// change connection weight
+									// HyperNeat Implementation doesn't just change one it changes multiple.The number of changes is based on a random number or a fixed quantity,
+									// whilst always making sure at least one is changes.
 
-			 				parent ! NewChild(new NetworkGenome(genome.neurons, newConnections), naming)
-					} else {
-							// change bias weight
-							val neurons = genome.neurons.values.toList
-							val totalNeurons = neurons.length
-							val neuronToChange = neurons(Random.nextInt(totalNeurons))
+									val connections = genome.connections.values
+									//val totalConnections = connections.length
+									//val connectionToChange = connections(Random.nextInt(totalConnections))
 
-							// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
-							val perturbedNeuron = neuronToChange.copy(biasWeight = neuronToChange.biasWeight + ((Random.nextDouble * 3) - 1.5))
+									val newConnections: HashMap[Int, ConnectionGenome] = genome.connections ++ connections.foldLeft(HashMap[Int, ConnectionGenome]()) {(conns, connection) =>
 
-							val newNeurons = genome.neurons + (perturbedNeuron.innovationId -> perturbedNeuron )
+											conns + (connection.innovationId -> {
 
-							parent ! NewChild(new NetworkGenome(newNeurons, genome.connections), naming)
+												if(Random.nextDouble < Random.nextDouble) {
 
-					}
+																// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
+																val c = connection.copy(weight = connection.weight + ((Random.nextDouble * 8) - 4) * Random.nextDouble)
+																c
+
+														} else {
+															connection
+														}
+												})
+									}
+
+									parent ! NewChild(new NetworkGenome(genome.neurons, newConnections), naming)
+
+							} else {
+									// change bias weight
+									val neurons = genome.neurons.values.toList
+									val totalNeurons = neurons.length
+									val neuronToChange = neurons(Random.nextInt(totalNeurons))
+
+									// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
+									val perturbedNeuron = neuronToChange.copy(biasWeight = neuronToChange.biasWeight + ((Random.nextDouble * 8) - 4) * Random.nextDouble)
+
+									val newNeurons = genome.neurons + (perturbedNeuron.innovationId -> perturbedNeuron )
+
+									parent ! NewChild(new NetworkGenome(newNeurons, genome.connections), naming)
+
+							}
 		}
 
     // Add connection
