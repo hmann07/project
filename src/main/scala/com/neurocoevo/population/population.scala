@@ -14,12 +14,22 @@ import scala.collection.immutable.HashMap
 import com.neurocoevo.genome._
 
 object Population {
-	case class PopulationSettings(populationSize: Int, g: NetworkGenome	)
+	case class PopulationSettings(
+			populationSize: Int,
+			genome: NetworkGenome,
+			elitism: Double = 0.2,
+			crossoverRate: Double = 0.5,
+			mutationRate: Double = 0.5)
 	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the
 	// weights and topologies but also learning rates or functions.
-	case class AgentResults(crossOverGenomes: NetworkGenome, sse: Double, fitnessValue: Double, agent: ActorRef)
+	case class AgentResults(genome: NetworkGenome, sse: Double, fitnessValue: Double, agent: ActorRef)
 
 	case class Crossover(g: List[AgentResults], f: List[AgentResults] => NetworkGenome)
+
+	case class Mutate(genome: NetworkGenome)
+
+	case class Elite(genome: NetworkGenome)
+
 }
 
 class Population extends Actor with ActorLogging {
@@ -28,16 +38,16 @@ import Population._
 
 	def receive = {
 
-		case PopulationSettings(n, g) =>
+		case PopulationSettings(n, g, elitism, crossoverRate, mutationRate) =>
 
 			1.to(n).foreach(i => {
 				val e = context.actorOf(Props[Experience], "experience." + i)
 				context.actorOf(Agent.props(g, e), "agent."+ i)
 				})
-			context become evolving(List.empty, n, 1, 0)
+			context become evolving(PopulationSettings(n, g, elitism, crossoverRate, mutationRate), List.empty, n, 1, 0)
 	}
 
-	def evolving(agentsComplete: List[AgentResults], totalAgents: Int, generationNumber: Int, totalfitnessValue: Double, bestGenome: AgentResults = null): Receive = {
+	def evolving(settings: PopulationSettings, agentsComplete: List[AgentResults], totalAgents: Int, generationNumber: Int, totalfitnessValue: Double, bestGenome: AgentResults = null): Receive = {
 
 		case Network.Matured(genome, fitnessValue, sse) =>
 
@@ -53,7 +63,7 @@ import Population._
 
 				// calc final values
 
-				val finalAgentsComplete = AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete
+				val finalAgentsComplete = (AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete).sortWith((a,b) => a.sse < b.sse )
 				val finalFitnessValue = totalfitnessValue + fitnessValue
 
 
@@ -62,21 +72,46 @@ import Population._
 
 				// Collect Final list of completed agents.
 
+				val eliteGenomes = math.min(settings.populationSize, settings.populationSize * settings.elitism).toInt
+				val crossingGenomes = ((settings.populationSize - eliteGenomes) * settings.crossoverRate).toInt
+				val mutatingGenomes = ((settings.populationSize - eliteGenomes) * settings.mutationRate).toInt
 
+				// println(eliteGenomes + ", " + crossingGenomes + ", " +  mutatingGenomes)
 
 				// BOTTLE NECK  roulettewheel is being run twice for all agenets in population.
 				// Nothing else is happening. but simple for now...
 
-				finalAgentsComplete.foreach(a => {
-					val parent1 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
-					val parent2 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
-					a.agent ! Crossover(List(parent1, parent2), crossover)
+				val actionsToPerform = List.fill(eliteGenomes)("ELITE") ::: List.fill(crossingGenomes)("CROSS") ::: List.fill(mutatingGenomes)("MUTATE")
+
+
+				// Create a list of actions and the agents that are going to perfom them
+				val actionsZippedWithAgents = actionsToPerform.zip(finalAgentsComplete)
+
+				actionsZippedWithAgents.foreach(a => {
+
+					a._1 match {
+
+						case "ELITE" =>
+								val elite = finalAgentsComplete.take(1)
+								a._2.agent ! Elite(elite(0).genome)
+
+						case "CROSS" =>
+								val parent1 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
+								val parent2 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
+								a._2.agent ! Crossover(List(parent1, parent2), crossover)
+
+						case "MUTATE" =>
+								val parent1 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
+								a._2.agent ! Mutate(parent1.genome)
+					}
+
 				})
 
-				context become spawning(totalAgents, List.empty, generationNumber)
+				context become spawning(settings, totalAgents, List.empty, generationNumber)
 
 			} else {
 				context become evolving(
+					settings,
 					AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete,
 					totalAgents,
 					generationNumber,
@@ -87,7 +122,7 @@ import Population._
 
 	}
 
-	def spawning(expectedChildren: Int, childrenRegistered: List[Agent.NewChild], generationNumber: Int): Receive = {
+	def spawning(settings: PopulationSettings, expectedChildren: Int, childrenRegistered: List[Agent.NewChild], generationNumber: Int): Receive = {
 
 	// TODO: Enable agents to change themselves, rather than creating new ones and killing old ones...
 
@@ -106,7 +141,7 @@ import Population._
 				context stop sender()
 
 				// start evolving again
-				context become evolving(List.empty, expectedChildren, generationNumber + 1, 0, null)
+				context become evolving(settings, List.empty, expectedChildren, generationNumber + 1, 0, null)
 
 			} else {
 
@@ -114,7 +149,7 @@ import Population._
 				context stop sender()
 
 				// Wait for rest..
-				context become spawning(expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber )
+				context become spawning(settings, expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber )
 			}
 	}
 
@@ -135,8 +170,8 @@ import Population._
 		g.length match {
 			case 2 => {
 				val performanceSortedGenomes = g.sortWith((a,b) => a.sse < b.sse )
-				val networkGenome1 = performanceSortedGenomes(0).crossOverGenomes // Due to the previous sort this will always be the strongest.
-				val networkGenome2 = performanceSortedGenomes(1).crossOverGenomes
+				val networkGenome1 = performanceSortedGenomes(0).genome // Due to the previous sort this will always be the strongest.
+				val networkGenome2 = performanceSortedGenomes(1).genome
 
 				val crossedConnections: HashMap[Int, ConnectionGenome] = networkGenome1.connections.foldLeft(HashMap[Int, ConnectionGenome]()) { (m, c) =>
 
@@ -171,7 +206,7 @@ import Population._
 
 			case _ => {
 				// this is lazy if signleton genome... just return the existing one..
-				new NetworkGenome(g(0).crossOverGenomes.neurons, g(0).crossOverGenomes.connections)
+				new NetworkGenome(g(0).genome.neurons, g(0).genome.connections)
 			}
 		}
 	}
