@@ -7,9 +7,9 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 /*
 		Connection class holds source and destination connections. along with a randomised weight
-		
+
 */
 
-class ActorConnection(val innovationId: Int, val source: ActorRef, val destination: ActorRef, val weight: Double) {
-	
+class ActorConnection(val innovationId: Int, val source: ActorRef, val destination: ActorRef, val weight: Double, val recurrent: Boolean) {
+
 }
