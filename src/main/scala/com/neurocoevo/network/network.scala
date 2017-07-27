@@ -47,12 +47,23 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	val totalConnections: Int = genome.connections.size
 
 	// create connections based on actor references
-	val actorReferencedConnections = genome.connections.map {c => new ActorConnection(c._2.innovationId, allnodes(c._2.from.toString),allnodes(c._2.to.toString), c._2.weight)}
+	val actorReferencedConnections = genome.connections.map {c => new ActorConnection(
+		c._2.innovationId,
+		allnodes(c._2.from.toString),
+		allnodes(c._2.to.toString),
+		c._2.weight,
+		{if(!c._2.recurrent){
+				// just double check... but also catch genomes from substrate that might not define them properly.
+				genome.neurons(c._2.to).layer  <= genome.neurons(c._2.from).layer
+			} else {
+				c._2.recurrent // should always be true.
+			}
+		})}
 
 	// inform all neurons about their incoming and outgoing connections.
 	actorReferencedConnections.foreach {c =>
-		c.source ! Neuron.Destination(Map(c.destination -> Neuron.ConnectionDetail(c.innovationId, c.weight)))
-		c.destination ! Neuron.Source(Map(c.source -> Neuron.ConnectionDetail(c.innovationId, c.weight)))
+		c.source ! Neuron.Destination(Map(c.destination -> Neuron.ConnectionDetail(c.innovationId, c.weight, c.recurrent)))
+		c.destination ! Neuron.Source(Map(c.source -> Neuron.ConnectionDetail(c.innovationId, c.weight, c.recurrent)))
 	}
 
 	//println(actorReferencedConnections)
@@ -88,7 +99,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
   		case Sensation(id, v, l) =>
   			//println("preparing to send, expected value: " + l)
-  			v.zip(inputs.values).foreach({case (v,i) => i ! Neuron.Signal(v)})
+  			v.zip(inputs.values).foreach({case (v,i) => i ! Neuron.Signal(v, false)})
   			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l)),
                                                     totalSensationsReceived = settings.totalSensationsReceived + 1))
 
@@ -124,11 +135,11 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
             context become  readyNetwork(settings.copy(sse = settings.sse + squaredError))
           }
         }
-				*/
+		*/
 
 
         // If we are in Evolution Only mode.
-				///*
+			//	/*
 
 				val fitnessValue = settings.performanceFunction(v, settings.sensations(1).label(0))
 
