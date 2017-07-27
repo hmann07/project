@@ -13,5 +13,6 @@
 		<connection id="4" src-id="2" tgt-id="4" />
 		<connection id="5" src-id="3" tgt-id="5" />
 		<connection id="6" src-id="4" tgt-id="5" />
+		<connection id="7" src-id="5" tgt-id="5" />		
 	</connections>
 </substrate>
