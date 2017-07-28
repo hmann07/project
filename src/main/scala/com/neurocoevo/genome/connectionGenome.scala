@@ -9,3 +9,10 @@ case class ConnectionGenome(
 	val weight: Double = (Random.nextDouble * 2) - 1,
 	val enabled: Boolean = true,
 	val recurrent: Boolean = false)
+
+
+	object ConnectionGenome {
+
+		implicit def orderingByInnovation[A <: ConnectionGenome]: Ordering[A] = Ordering.by(e => e.innovationId)
+
+	}
