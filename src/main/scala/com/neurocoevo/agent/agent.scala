@@ -250,7 +250,11 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
 
         // First, pick a connection from the genome to split.. Randomly...
 
-        val connIds: List[Int] = genome.connections.keys.toList
+		// Avoid splitting a recurrent connection.. for now... In theory it creates unnecessary structure..
+		// though perhaps fine tunes the signal and seems at face value to converge quicker. it's behaviour is a little difficult to reason about in terms of recurrency
+        val connIds: List[Int] = genome.connections.filter(x=> !x._2.recurrent).keys.toList
+		//val connIds: List[Int] = genome.connections.keys.toList
+
         val connToReplace: Int = connIds(Random.nextInt(genome.connections.size))
         val connectionToSplit: ConnectionGenome = genome.connections(connToReplace)
 
