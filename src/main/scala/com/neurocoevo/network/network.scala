@@ -15,13 +15,13 @@ object Network {
   case class Matured(genome: NetworkGenome, error: Double, sse: Double)
 
 	case class NetworkSettings(
-			confirmedConnections: Int = 0,
-			sensations: Map[Double, Sensation] = Map.empty,
-      totalSensationsReceived: Int = 0,
-			confirmedPropagations: Int = 0,
-      sse: Double = 0,
-      fitnessValue: Double = 0.00000000001,
-			performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput, 2)
+		confirmedConnections: Int = 0,
+		sensations: Map[Double, Sensation] = Map.empty,
+      	totalSensationsReceived: Int = 0,
+		confirmedPropagations: Int = 0,
+      	sse: Double = 0,
+      	fitnessValue: Double = 0.00000000001,
+		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput, 2)
 		)
 	case class Sensation(
 			 id: Double,
@@ -202,7 +202,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
           // this is the last snapshot.
 
-          val g = newGenome.copy(neurons = genome.neurons + ng, connections = genome.connections ++ cg)
+          val g = newGenome.copy(neurons = genome.neurons + ng, connections1 = genome.connections1 ++ cg)
 
           context become readyNetwork(s)
 
@@ -210,7 +210,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
           // still more to wait for
 
-          val g = newGenome.copy(neurons = genome.neurons + ng, connections = genome.connections ++ cg)
+          val g = newGenome.copy(neurons = genome.neurons + ng, connections1 = genome.connections1 ++ cg)
 
           context become snapshotting(s, snapshotsReceived + 1 , g)
 
