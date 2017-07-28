@@ -7,6 +7,7 @@ import com.neurocoevo.experience._
 import com.neurocoevo.network._
 import com.neurocoevo.innovation._
 import com.neurocoevo.evolution.RouletteWheel
+import com.neurocoevo.speciation.SpeciationParameters
 
 import scala.util.Random
 import scala.collection.immutable.HashMap
@@ -67,7 +68,7 @@ import Population._
 				val finalFitnessValue = totalfitnessValue + fitnessValue
 
 
-				println(generationNumber + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.sse)
+				println(generationNumber + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size+ ", " + best.genome.compareTo(finalAgentsComplete(Random.nextInt(totalAgents)).genome, SpeciationParameters(1,1,1)))
 				//println("completed generation: #" + generationNumber + " pop: " + totalAgents + " fitness: " + finalFitnessValue + " best genome :" + best.sse)
 
 				// Collect Final list of completed agents.
