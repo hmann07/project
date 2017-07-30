@@ -50,7 +50,10 @@ object GenomeFactory {
 								  	} else {
 								  		x.toDouble
 								  	}
-								  }))}
+								  },
+								  true, // enabled by default
+								  { neurons((i \ "@src-id").text.toInt).layer >= neurons((i \ "@tgt-id").text.toInt).layer }
+								  ))}
 
 
 		new NetworkGenome(neurons, connections)

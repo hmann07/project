@@ -68,7 +68,8 @@ import Population._
 				val finalFitnessValue = totalfitnessValue + fitnessValue
 
 
-				println(generationNumber + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size+ ", " + best.genome.compareTo(finalAgentsComplete(Random.nextInt(totalAgents)).genome, SpeciationParameters(1,1,1)))
+				//println(generationNumber + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size+ ", " + best.genome.compareTo(finalAgentsComplete(Random.nextInt(totalAgents)).genome, SpeciationParameters(1,1,1)))
+				println(generationNumber + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size)
 				//println("completed generation: #" + generationNumber + " pop: " + totalAgents + " fitness: " + finalFitnessValue + " best genome :" + best.sse)
 
 				// Collect Final list of completed agents.
@@ -134,7 +135,7 @@ import Population._
 			if(expectedChildren == childrenRegistered.length + 1) {
 
 				(Agent.NewChild(g, name) :: childrenRegistered).foreach( nc => {
-					val e = context.actorOf(Props[Experience], "experience" + nc.name)
+					val e = context.actorOf(Props[Experience], "experience-" + nc.name)
 					context.actorOf(Agent.props(nc.genome, e), nc.name)
 				})
 

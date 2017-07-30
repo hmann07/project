@@ -54,7 +54,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 		c._2.weight,
 		{if(!c._2.recurrent){
 				// just double check... but also catch genomes from substrate that might not define them properly.
-				genome.neurons(c._2.to).layer  <= genome.neurons(c._2.from).layer
+				genome.neurons(c._2.from).layer  >= genome.neurons(c._2.to).layer
 			} else {
 				c._2.recurrent // should always be true.
 			}

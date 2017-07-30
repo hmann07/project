@@ -84,6 +84,7 @@ class Neuron extends Actor with ActorLogging {
 				// we also don't need to worry about back prop for now... since recurrent weights will be learned by evolution
 
 				if(s.head._2.recurrent){
+					
 					sender() ! "ConnectionConfirmation"
 					// no need to do anything.
 					context become initialisingNeuron(settings)
@@ -131,7 +132,7 @@ class Neuron extends Actor with ActorLogging {
 					accumulateRecurrent = true))
 			} else {
 				context become readyNeuron(s.copy(
-					recurrentAccumulatedSignal  = v))
+					recurrentAccumulatedSignal  = s.recurrentAccumulatedSignal + v))
 			}
 		}
 
@@ -289,7 +290,7 @@ class OutputNeuron() extends Neuron {
 					accumulateRecurrent = true))
 			} else {
 				context become readyNeuron(s.copy(
-					recurrentAccumulatedSignal  = v))
+					recurrentAccumulatedSignal  = s.recurrentAccumulatedSignal + v))
 			}
 		}
 
