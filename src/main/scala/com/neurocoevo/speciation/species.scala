@@ -1,10 +1,8 @@
 package com.neurocoevo.speciation
 
-import com.neurocoevo.population.Population.AgentResults
+import com.neurocoevo.genome.NetworkGenome
 
-class Species(val id: Int) {
-	val champion: AgentResults = null
-	val members: List[AgentResults] = null
-
-
-}
+case class Species(
+	val champion: NetworkGenome = null,
+	val members: List[NetworkGenome] = null
+)

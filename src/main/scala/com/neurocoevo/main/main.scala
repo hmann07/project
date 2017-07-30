@@ -17,11 +17,6 @@ object Main extends App {
 	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\user\\Documents\\project\\project\\src\\resources\\annSubstrate.xml")
 	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\HMann\\Desktop\\project-master (3)\\project-master\\src\\resources\\annSubstrate.xml")
 
-	networkGenome.inputNodes.foreach(n =>  println(n._2.innovationId))
-
-	//val annSubstrate2 = GenomeFactory.createGenome(2,List(2), 1)
-	println(networkGenome)
-
 	val system = ActorSystem("mySystem")
 	val inbox = Inbox.create(system)
 

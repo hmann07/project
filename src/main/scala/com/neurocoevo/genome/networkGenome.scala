@@ -8,10 +8,12 @@ case class NetworkGenome(val neurons: HashMap[Int, NeuronGenome],
 					val connections1: HashMap[Int, ConnectionGenome]){
 
 	///a little bit bad design here. Naming could be imporved.
+	// and also NEAT paper suggests that disabled genes could be re-enabled.
 	val connections = connections1.filter(x=> x._2.enabled)
 	val inputNodes: HashMap[Int, NeuronGenome] = neurons.filter(n => n._2.neuronType == "input")
 	val outputNodes: HashMap[Int, NeuronGenome] = neurons.filter(n => n._2.neuronType == "output")
 	val hiddenNodes: HashMap[Int, NeuronGenome] = neurons.filter(n => n._2.neuronType == "hidden")
+
 
 	def compareTo(genome: NetworkGenome, params: SpeciationParameters): Double = {
 
@@ -22,6 +24,8 @@ case class NetworkGenome(val neurons: HashMap[Int, NeuronGenome],
 		// these maxes might be more efficient if captured as the genomes mutate...
 		val g1max = g1.max
 		val g2max = g2.max
+
+		val biggestSize = {if (g1.size > g2.size) g1.size else g2.size}
 
 		// excess genes by definition will only appear in one of the genomes.
 
@@ -41,9 +45,15 @@ case class NetworkGenome(val neurons: HashMap[Int, NeuronGenome],
 
 		// disjoint genes are those that appear in one or the other but not both. Xor essentially. or the compliment of the union with respect to the intersection
 
-		val disjointGenes = (g1 | g2).diff((g1 & g2))
+		val intersection = (g1 & g2)
 
-		(excessGenes.size * params.c1) + (disjointGenes.size * params.c2) * params.c3
+		val disjointGenes = (g1 | g2).diff(intersection)
+
+		val matchedGenes: Double = intersection.foldLeft(0.0)((r,c) => r + (connections(c).weight + genome.connections(c).weight).toDouble ) / intersection.size
+
+		((excessGenes.size / biggestSize) * params.c1) + ((disjointGenes.size / biggestSize) * params.c2) + (matchedGenes * params.c3)
 
 	}
+
+
 }

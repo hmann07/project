@@ -8,6 +8,7 @@ import com.neurocoevo.network._
 import com.neurocoevo.innovation._
 import com.neurocoevo.evolution.RouletteWheel
 import com.neurocoevo.speciation.SpeciationParameters
+import com.neurocoevo.speciation.Species
 
 import scala.util.Random
 import scala.collection.immutable.HashMap
@@ -20,7 +21,8 @@ object Population {
 			genome: NetworkGenome,
 			elitism: Double = 0.2,
 			crossoverRate: Double = 0.5,
-			mutationRate: Double = 0.5)
+			mutationRate: Double = 0.5,
+			speciationThreshold: Double = 3.0)
 	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the
 	// weights and topologies but also learning rates or functions.
 	case class AgentResults(genome: NetworkGenome, sse: Double, fitnessValue: Double, agent: ActorRef)
@@ -39,16 +41,23 @@ import Population._
 
 	def receive = {
 
-		case PopulationSettings(n, g, elitism, crossoverRate, mutationRate) =>
+		case PopulationSettings(n, g, elitism, crossoverRate, mutationRate, speciationThreshold) =>
 
 			1.to(n).foreach(i => {
 				val e = context.actorOf(Props[Experience], "experience." + i)
 				context.actorOf(Agent.props(g, e), "agent."+ i)
 				})
-			context become evolving(PopulationSettings(n, g, elitism, crossoverRate, mutationRate), List.empty, n, 1, 0)
+			context become evolving(PopulationSettings(n, g, elitism, crossoverRate, mutationRate, speciationThreshold), List.empty, n, 1, 0)
 	}
 
-	def evolving(settings: PopulationSettings, agentsComplete: List[AgentResults], totalAgents: Int, generationNumber: Int, totalfitnessValue: Double, bestGenome: AgentResults = null): Receive = {
+	def evolving(
+		settings: PopulationSettings, 
+		agentsComplete: List[AgentResults], 
+		totalAgents: Int, 
+		generationNumber: Int, 
+		totalfitnessValue: Double, 
+		bestGenome: AgentResults = null,
+		species: HashMap[Int, Species] = HashMap.empty): Receive = {
 
 		case Network.Matured(genome, fitnessValue, sse) =>
 
@@ -109,7 +118,7 @@ import Population._
 
 				})
 
-				context become spawning(settings, totalAgents, List.empty, generationNumber)
+				context become spawning(settings, totalAgents, List.empty, generationNumber, species)
 
 			} else {
 				context become evolving(
@@ -118,13 +127,14 @@ import Population._
 					totalAgents,
 					generationNumber,
 					totalfitnessValue + fitnessValue,
-					{if(bestGenome != null){if(sse > bestGenome.sse){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}}
+					{if(bestGenome != null){if(sse > bestGenome.sse){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}},
+					species
 					)
 			}
 
 	}
 
-	def spawning(settings: PopulationSettings, expectedChildren: Int, childrenRegistered: List[Agent.NewChild], generationNumber: Int): Receive = {
+	def spawning(settings: PopulationSettings, expectedChildren: Int, childrenRegistered: List[Agent.NewChild], generationNumber: Int, species: HashMap[Int, Species]): Receive = {
 
 	// TODO: Enable agents to change themselves, rather than creating new ones and killing old ones...
 
@@ -133,6 +143,10 @@ import Population._
 			// Have we received all children?
 
 			if(expectedChildren == childrenRegistered.length + 1) {
+
+				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold) 
+				println(speciesDesignation.size)
+
 
 				(Agent.NewChild(g, name) :: childrenRegistered).foreach( nc => {
 					val e = context.actorOf(Props[Experience], "experience-" + nc.name)
@@ -143,15 +157,20 @@ import Population._
 				context stop sender()
 
 				// start evolving again
-				context become evolving(settings, List.empty, expectedChildren, generationNumber + 1, 0, null)
+				context become evolving(settings, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDesignation)
 
 			} else {
+
+
+				// check speciation of new agent.
+				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold) 
+				//println(speciesDesignation)
 
 				// Stop the agent
 				context stop sender()
 
 				// Wait for rest..
-				context become spawning(settings, expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber )
+				context become spawning(settings, expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber, speciesDesignation )
 			}
 	}
 
@@ -211,5 +230,29 @@ import Population._
 				new NetworkGenome(g(0).genome.neurons, g(0).genome.connections)
 			}
 		}
+	}
+
+	def speciateAgent(genome: NetworkGenome, species: HashMap[Int,Species], threshold: Double): (Int, Species) = {
+
+		val newHMIdx = species.size + 1
+
+
+		if(species.isEmpty) {
+			
+			(newHMIdx -> Species(genome, List(genome)))
+		} 
+		else if(genome.compareTo(species.head._2.champion, SpeciationParameters(1,1,0.4)) < threshold) 
+		{
+			// then we have found a suitable species.
+			(species.head._1 -> species.head._2.copy(members = genome :: species.head._2.members ))
+		} 
+		else if(species.tail.size > 0){
+			// there a still some other species this could belong to
+			speciateAgent(genome, species.tail, threshold)
+		} else {
+			// there are no more possibilites so we have to create a new species
+			(newHMIdx -> Species(genome, List(genome)))
+		}
+
 	}
 }

@@ -50,6 +50,8 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
     		// Network is ready, lets percieve some "things"
     		experience ! "perceive"
 
+    		// we also have created the genome so
+
 
     	case "propagated" =>
 
