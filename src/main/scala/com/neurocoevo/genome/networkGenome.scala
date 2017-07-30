@@ -49,7 +49,7 @@ case class NetworkGenome(val neurons: HashMap[Int, NeuronGenome],
 
 		val disjointGenes = (g1 | g2).diff(intersection)
 
-		val matchedGenes: Double = intersection.foldLeft(0.0)((r,c) => r + (connections(c).weight + genome.connections(c).weight).toDouble ) / intersection.size
+		val matchedGenes: Double = intersection.foldLeft(0.0)((r,c) => r + math.abs(connections(c).weight + genome.connections(c).weight).toDouble ) / intersection.size
 
 		((excessGenes.size / biggestSize) * params.c1) + ((disjointGenes.size / biggestSize) * params.c2) + (matchedGenes * params.c3)
 

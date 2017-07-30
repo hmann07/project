@@ -22,7 +22,7 @@ object Population {
 			elitism: Double = 0.2,
 			crossoverRate: Double = 0.5,
 			mutationRate: Double = 0.5,
-			speciationThreshold: Double = 3.0)
+			speciationThreshold: Double = 2.5)
 	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the
 	// weights and topologies but also learning rates or functions.
 	case class AgentResults(genome: NetworkGenome, sse: Double, fitnessValue: Double, agent: ActorRef)
@@ -118,7 +118,9 @@ import Population._
 
 				})
 
-				context become spawning(settings, totalAgents, List.empty, generationNumber, species)
+				// CHECK! currently blanking species each iteration...
+
+				context become spawning(settings, totalAgents, List.empty, generationNumber, HashMap.empty)
 
 			} else {
 				context become evolving(
@@ -144,7 +146,7 @@ import Population._
 
 			if(expectedChildren == childrenRegistered.length + 1) {
 
-				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold) 
+				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold, species.size) 
 				println(speciesDesignation.size)
 
 
@@ -163,7 +165,7 @@ import Population._
 
 
 				// check speciation of new agent.
-				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold) 
+				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold, species.size) 
 				//println(speciesDesignation)
 
 				// Stop the agent
@@ -232,24 +234,28 @@ import Population._
 		}
 	}
 
-	def speciateAgent(genome: NetworkGenome, species: HashMap[Int,Species], threshold: Double): (Int, Species) = {
+	def speciateAgent(genome: NetworkGenome, species: HashMap[Int,Species], threshold: Double, speciesCounter: Int): (Int, Species) = {
 
-		val newHMIdx = species.size + 1
-
-
+		val newHMIdx = speciesCounter + 1
+		//println(newHMIdx)
 		if(species.isEmpty) {
-			
+			// we have no existing species, add this genome to a new species.
+			//println("empty species, adding first at " + newHMIdx)
 			(newHMIdx -> Species(genome, List(genome)))
 		} 
-		else if(genome.compareTo(species.head._2.champion, SpeciationParameters(1,1,0.4)) < threshold) 
+		else if(genome.compareTo(species.head._2.members(Random.nextInt(species.head._2.members.size)), SpeciationParameters(1,1,0.4)) < threshold) 
 		{
 			// then we have found a suitable species.
+			//println(genome.compareTo(species.head._2.members(Random.nextInt(species.head._2.members.size)), SpeciationParameters(1,1,0.4)))
+			//println("found an appropriate species: " + species.head._1) 
 			(species.head._1 -> species.head._2.copy(members = genome :: species.head._2.members ))
 		} 
 		else if(species.tail.size > 0){
 			// there a still some other species this could belong to
-			speciateAgent(genome, species.tail, threshold)
+			//println("not an appropriate species, thare are still " + species.tail.size )
+			speciateAgent(genome, species.tail, threshold, newHMIdx)
 		} else {
+			//println("run out of options, create a new species at: " +  newHMIdx)
 			// there are no more possibilites so we have to create a new species
 			(newHMIdx -> Species(genome, List(genome)))
 		}
