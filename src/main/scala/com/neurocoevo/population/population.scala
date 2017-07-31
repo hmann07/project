@@ -51,15 +51,15 @@ import Population._
 	}
 
 	def evolving(
-		settings: PopulationSettings, 
-		agentsComplete: List[AgentResults], 
-		totalAgents: Int, 
-		generationNumber: Int, 
-		totalfitnessValue: Double, 
+		settings: PopulationSettings,
+		agentsComplete: List[AgentResults],
+		totalAgents: Int,
+		generationNumber: Int,
+		totalfitnessValue: Double,
 		bestGenome: AgentResults = null,
 		species: HashMap[Int, Species] = HashMap.empty): Receive = {
 
-		case Network.Matured(genome, fitnessValue, sse) =>
+		case Agent.Matured(genome, fitnessValue, sse, speciesIdx) =>
 
 			// this is sort of a generation over point. we should create new, kill old. and get ready for new AgentResults
 			// coming from the new generation.
@@ -82,6 +82,21 @@ import Population._
 				//println("completed generation: #" + generationNumber + " pop: " + totalAgents + " fitness: " + finalFitnessValue + " best genome :" + best.sse)
 
 				// Collect Final list of completed agents.
+
+				// Do we need to use the pop total fitness???
+				// species.TargetSize = (int)Math.Round((species.MeanFitness / pop.TotalSpeciesMeanFitness) * pop.PopulationSize);
+				// where species.MeanFitness = species.TotalFitness / species.Members.Count;
+				// and pop.TotalSpeciesMeanFitness = sum(species.meanFitness)
+
+				// update the species totalFitness
+				val updatedSpecies = {
+					if(speciesIdx==0){
+						species
+					} else {
+						println(species(1).speciesTotalFitness)
+				  		species + (speciesIdx -> species(speciesIdx).copy(speciesTotalFitness = species(speciesIdx).speciesTotalFitness + fitnessValue))
+					}}
+
 
 				val eliteGenomes = math.min(settings.populationSize, settings.populationSize * settings.elitism).toInt
 				val crossingGenomes = ((settings.populationSize - eliteGenomes) * settings.crossoverRate).toInt
@@ -123,6 +138,15 @@ import Population._
 				context become spawning(settings, totalAgents, List.empty, generationNumber, HashMap.empty)
 
 			} else {
+
+				// update the species totalFitness
+				val updatedSpecies = {
+					if(speciesIdx==0){
+						species
+					} else {
+				  		species + (speciesIdx -> species(speciesIdx).copy(speciesTotalFitness = species(speciesIdx).speciesTotalFitness + fitnessValue))
+					}}
+
 				context become evolving(
 					settings,
 					AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete,
@@ -130,7 +154,7 @@ import Population._
 					generationNumber,
 					totalfitnessValue + fitnessValue,
 					{if(bestGenome != null){if(sse > bestGenome.sse){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}},
-					species
+					 updatedSpecies
 					)
 			}
 
@@ -146,14 +170,25 @@ import Population._
 
 			if(expectedChildren == childrenRegistered.length + 1) {
 
-				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold, species.size) 
+				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold, species.size)
 				println(speciesDesignation.size)
 
 
+				// create all the new children.
+				/*
 				(Agent.NewChild(g, name) :: childrenRegistered).foreach( nc => {
 					val e = context.actorOf(Props[Experience], "experience-" + nc.name)
 					context.actorOf(Agent.props(nc.genome, e), nc.name)
 				})
+				*/
+
+				speciesDesignation.foreach( nc => {
+					nc._2.members.foreach  { genome =>
+						val e = context.actorOf(Props[Experience], "experience-" + Random.nextDouble.toString)
+						context.actorOf(Agent.props(genome, e, nc._1), Random.nextDouble.toString)
+						}
+					})
+
 
 				// Stop the last agent.
 				context stop sender()
@@ -165,7 +200,7 @@ import Population._
 
 
 				// check speciation of new agent.
-				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold, species.size) 
+				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold, species.size)
 				//println(speciesDesignation)
 
 				// Stop the agent
@@ -242,14 +277,14 @@ import Population._
 			// we have no existing species, add this genome to a new species.
 			//println("empty species, adding first at " + newHMIdx)
 			(newHMIdx -> Species(genome, List(genome)))
-		} 
-		else if(genome.compareTo(species.head._2.members(Random.nextInt(species.head._2.members.size)), SpeciationParameters(1,1,0.4)) < threshold) 
+		}
+		else if(genome.compareTo(species.head._2.members(Random.nextInt(species.head._2.members.size)), SpeciationParameters(1,1,0.4)) < threshold)
 		{
 			// then we have found a suitable species.
 			//println(genome.compareTo(species.head._2.members(Random.nextInt(species.head._2.members.size)), SpeciationParameters(1,1,0.4)))
-			//println("found an appropriate species: " + species.head._1) 
+			//println("found an appropriate species: " + species.head._1)
 			(species.head._1 -> species.head._2.copy(members = genome :: species.head._2.members ))
-		} 
+		}
 		else if(species.tail.size > 0){
 			// there a still some other species this could belong to
 			//println("not an appropriate species, thare are still " + species.tail.size )
