@@ -88,16 +88,20 @@ import Population._
 				// where species.MeanFitness = species.TotalFitness / species.Members.Count;
 				// and pop.TotalSpeciesMeanFitness = sum(species.meanFitness)
 
-				// update the species totalFitness
+				// update the species totalFitness and average fitness
 				val updatedSpecies = {
 					if(speciesIdx==0){
 						species
 					} else {
-						println(species(1).speciesTotalFitness)
-				  		species + (speciesIdx -> species(speciesIdx).copy(speciesTotalFitness = species(speciesIdx).speciesTotalFitness + fitnessValue))
+						//println(species(1).speciesTotalFitness)
+				  		species + (speciesIdx -> species(speciesIdx).copy(
+				  			speciesTotalFitness = species(speciesIdx).speciesTotalFitness + fitnessValue,
+				  			speciesMeanFitness = (species(speciesIdx).speciesTotalFitness + fitnessValue) / (species(speciesIdx).membersCount + 1) 
+
+				  			))
 					}}
 
-
+					
 				val eliteGenomes = math.min(settings.populationSize, settings.populationSize * settings.elitism).toInt
 				val crossingGenomes = ((settings.populationSize - eliteGenomes) * settings.crossoverRate).toInt
 				val mutatingGenomes = ((settings.populationSize - eliteGenomes) * settings.mutationRate).toInt
@@ -276,14 +280,14 @@ import Population._
 		if(species.isEmpty) {
 			// we have no existing species, add this genome to a new species.
 			//println("empty species, adding first at " + newHMIdx)
-			(newHMIdx -> Species(genome, List(genome)))
+			(newHMIdx -> Species(genome, List(genome), 1))
 		}
 		else if(genome.compareTo(species.head._2.members(Random.nextInt(species.head._2.members.size)), SpeciationParameters(1,1,0.4)) < threshold)
 		{
 			// then we have found a suitable species.
 			//println(genome.compareTo(species.head._2.members(Random.nextInt(species.head._2.members.size)), SpeciationParameters(1,1,0.4)))
 			//println("found an appropriate species: " + species.head._1)
-			(species.head._1 -> species.head._2.copy(members = genome :: species.head._2.members ))
+			(species.head._1 -> species.head._2.copy(members = genome :: species.head._2.members, membersCount = species.head._2.membersCount + 1 ))
 		}
 		else if(species.tail.size > 0){
 			// there a still some other species this could belong to
@@ -292,7 +296,7 @@ import Population._
 		} else {
 			//println("run out of options, create a new species at: " +  newHMIdx)
 			// there are no more possibilites so we have to create a new species
-			(newHMIdx -> Species(genome, List(genome)))
+			(newHMIdx -> Species(genome, List(genome), 1))
 		}
 
 	}
