@@ -16,9 +16,11 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object Agent {
 
-	def props(cppnGenome: NetworkGenome, experience: ActorRef): Props = Props(new Agent(cppnGenome, experience))
+	def props(cppnGenome: NetworkGenome, experience: ActorRef, species: Int = 0): Props = Props(new Agent(cppnGenome, experience, species))
 
     case class NewChild(genome: NetworkGenome, name: String)
+
+	case class Matured(genome: NetworkGenome, error: Double, sse: Double, species: Int)
 }
 
 
@@ -29,7 +31,7 @@ object Agent {
 
 */
 
-class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with ActorLogging {
+class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) extends Actor with ActorLogging {
 	import context._
     import Agent._
 	//println("actor created")
@@ -74,7 +76,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef) extends Actor with 
         //  Received when a network has processed all expected patterns from a test set.
         case Network.Matured(g, fitnessValue, sse) =>
             //println("agent got final network data")
-            parent ! Network.Matured(g, fitnessValue, sse)
+            parent ! Matured(g, fitnessValue, sse, species)
 
         // receieved some instructions for crossing over two genomes..
 
