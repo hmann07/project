@@ -45,7 +45,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	val allnodes: Map[String, ActorRef] = inputs ++ hidden ++ outputs
 
 	val totalConnections: Int = genome.connections.size
-	
+
 	// create connections based on actor references
 	val actorReferencedConnections = genome.connections.map {c => new ActorConnection(
 		c._2.innovationId,
@@ -183,7 +183,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
   		case "snapshot" =>
   			children.foreach { c => c ! "snapshot" }
-        context become snapshotting(settings, 0, NetworkGenome(null,null))
+        context become snapshotting(settings, 0, NetworkGenome(0,null,null))
 
       case "Add Connection" =>
 
