@@ -4,7 +4,9 @@ import scala.collection.immutable.HashMap
 import scala.util.Random
 import com.neurocoevo.speciation.SpeciationParameters
 
-case class NetworkGenome(val neurons: HashMap[Int, NeuronGenome],
+case class NetworkGenome(
+					val id: Int,
+					val neurons: HashMap[Int, NeuronGenome],
 					val connections1: HashMap[Int, ConnectionGenome]){
 
 	///a little bit bad design here. Naming could be imporved.
