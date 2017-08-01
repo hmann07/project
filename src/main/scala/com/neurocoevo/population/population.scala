@@ -9,6 +9,7 @@ import com.neurocoevo.innovation._
 import com.neurocoevo.evolution.RouletteWheel
 import com.neurocoevo.speciation.SpeciationParameters
 import com.neurocoevo.speciation.Species
+import com.neurocoevo.speciation.SpeciesMember
 
 import scala.util.Random
 import scala.collection.immutable.HashMap
@@ -18,20 +19,23 @@ import com.neurocoevo.genome._
 object Population {
 	case class PopulationSettings(
 			populationSize: Int,
-			genome: NetworkGenome,
+			genomePath: String,
 			elitism: Double = 0.2,
 			crossoverRate: Double = 0.5,
 			mutationRate: Double = 0.5,
 			speciationThreshold: Double = 2.5)
+
 	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the
 	// weights and topologies but also learning rates or functions.
 	case class AgentResults(genome: NetworkGenome, sse: Double, fitnessValue: Double, agent: ActorRef)
 
-	case class Crossover(g: List[AgentResults], f: List[AgentResults] => NetworkGenome)
+	// All mutation operators are given an id to give to the children..
 
-	case class Mutate(genome: NetworkGenome)
+	case class Crossover(g: List[AgentResults], f: (List[AgentResults], Int) => NetworkGenome, genomeNumber: Int)
 
-	case class Elite(genome: NetworkGenome)
+	case class Mutate(genome: NetworkGenome, genomeNumber: Int)
+
+	case class Elite(genome: NetworkGenome, genomeNumber: Int)
 
 }
 
@@ -41,17 +45,21 @@ import Population._
 
 	def receive = {
 
-		case PopulationSettings(n, g, elitism, crossoverRate, mutationRate, speciationThreshold) =>
+		case PopulationSettings(n, genomePath, elitism, crossoverRate, mutationRate, speciationThreshold) =>
 
 			1.to(n).foreach(i => {
+
+				val g = GenomeFactory.createGenome(genomePath, i)
+
 				val e = context.actorOf(Props[Experience], "experience." + i)
 				context.actorOf(Agent.props(g, e), "agent."+ i)
 				})
-			context become evolving(PopulationSettings(n, g, elitism, crossoverRate, mutationRate, speciationThreshold), List.empty, n, 1, 0)
+			context become evolving(PopulationSettings(n,  genomePath, elitism, crossoverRate, mutationRate, speciationThreshold), n, List.empty, n, 1, 0)
 	}
 
 	def evolving(
 		settings: PopulationSettings,
+		currentGenomeNumber: Int,
 		agentsComplete: List[AgentResults],
 		totalAgents: Int,
 		generationNumber: Int,
@@ -96,12 +104,16 @@ import Population._
 						//println(species(1).speciesTotalFitness)
 				  		species + (speciesIdx -> species(speciesIdx).copy(
 				  			speciesTotalFitness = species(speciesIdx).speciesTotalFitness + fitnessValue,
-				  			speciesMeanFitness = (species(speciesIdx).speciesTotalFitness + fitnessValue) / (species(speciesIdx).membersCount + 1) 
-
+				  			speciesMeanFitness = (species(speciesIdx).speciesTotalFitness + fitnessValue) / (species(speciesIdx).membersCount + 1),
+							members = species(speciesIdx).members + (genome.id -> SpeciesMember(genome, fitnessValue))
 				  			))
 					}}
 
-					
+
+				// now send off the genomes to be crossed or mutated. Within their species.
+
+	
+
 				val eliteGenomes = math.min(settings.populationSize, settings.populationSize * settings.elitism).toInt
 				val crossingGenomes = ((settings.populationSize - eliteGenomes) * settings.crossoverRate).toInt
 				val mutatingGenomes = ((settings.populationSize - eliteGenomes) * settings.mutationRate).toInt
@@ -117,29 +129,31 @@ import Population._
 				// Create a list of actions and the agents that are going to perfom them
 				val actionsZippedWithAgents = actionsToPerform.zip(finalAgentsComplete)
 
-				actionsZippedWithAgents.foreach(a => {
+				val actionsPerformed = actionsZippedWithAgents.foldLeft(currentGenomeNumber + 1)((counter, a) => {
 
 					a._1 match {
 
 						case "ELITE" =>
 								val elite = finalAgentsComplete.take(1)
-								a._2.agent ! Elite(elite(0).genome)
+								a._2.agent ! Elite(elite(0).genome, counter)
 
 						case "CROSS" =>
 								val parent1 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
 								val parent2 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
-								a._2.agent ! Crossover(List(parent1, parent2), crossover)
+								a._2.agent ! Crossover(List(parent1, parent2), crossover, counter)
 
 						case "MUTATE" =>
 								val parent1 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
-								a._2.agent ! Mutate(parent1.genome)
+								a._2.agent ! Mutate(parent1.genome, counter)
 					}
+
+					counter + 1
 
 				})
 
 				// CHECK! currently blanking species each iteration...
 
-				context become spawning(settings, totalAgents, List.empty, generationNumber, HashMap.empty)
+				context become spawning(settings, totalAgents, List.empty, generationNumber, actionsPerformed, HashMap.empty)
 
 			} else {
 
@@ -148,11 +162,14 @@ import Population._
 					if(speciesIdx==0){
 						species
 					} else {
-				  		species + (speciesIdx -> species(speciesIdx).copy(speciesTotalFitness = species(speciesIdx).speciesTotalFitness + fitnessValue))
+				  		species + (speciesIdx -> species(speciesIdx).copy(
+							speciesTotalFitness = species(speciesIdx).speciesTotalFitness + fitnessValue,
+							members = species(speciesIdx).members + (genome.id -> SpeciesMember(genome, fitnessValue))))
 					}}
 
 				context become evolving(
 					settings,
+					currentGenomeNumber,
 					AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete,
 					totalAgents,
 					generationNumber,
@@ -164,7 +181,7 @@ import Population._
 
 	}
 
-	def spawning(settings: PopulationSettings, expectedChildren: Int, childrenRegistered: List[Agent.NewChild], generationNumber: Int, species: HashMap[Int, Species]): Receive = {
+	def spawning(settings: PopulationSettings, expectedChildren: Int, childrenRegistered: List[Agent.NewChild], generationNumber: Int, currentGenomeNumber: Int , species: HashMap[Int, Species]): Receive = {
 
 	// TODO: Enable agents to change themselves, rather than creating new ones and killing old ones...
 
@@ -188,8 +205,8 @@ import Population._
 
 				speciesDesignation.foreach( nc => {
 					nc._2.members.foreach  { genome =>
-						val e = context.actorOf(Props[Experience], "experience-" + Random.nextDouble.toString)
-						context.actorOf(Agent.props(genome, e, nc._1), Random.nextDouble.toString)
+						val e = context.actorOf(Props[Experience], "experience-" + genome._2.genome.id)
+						context.actorOf(Agent.props(genome._2.genome, e, nc._1), "agent-" + genome._2.genome.id)
 						}
 					})
 
@@ -198,7 +215,7 @@ import Population._
 				context stop sender()
 
 				// start evolving again
-				context become evolving(settings, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDesignation)
+				context become evolving(settings, currentGenomeNumber, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDesignation)
 
 			} else {
 
@@ -211,7 +228,7 @@ import Population._
 				context stop sender()
 
 				// Wait for rest..
-				context become spawning(settings, expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber, speciesDesignation )
+				context become spawning(settings, expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber, currentGenomeNumber, speciesDesignation )
 			}
 	}
 
@@ -227,7 +244,7 @@ import Population._
 	// to include mutation of the activation function. Could take neuron
 	// randomly or that of the fittest.
 
-	def crossover(g: List[AgentResults]): NetworkGenome = {
+	def crossover(g: List[AgentResults], genomeNumber: Int): NetworkGenome = {
 
 		g.length match {
 			case 2 => {
@@ -263,40 +280,50 @@ import Population._
 				//println(newGenomes)
 
 
-				new NetworkGenome(networkGenome1.neurons, crossedConnections)
+				new NetworkGenome(genomeNumber, networkGenome1.neurons, crossedConnections)
 			}
 
 			case _ => {
 				// this is lazy if signleton genome... just return the existing one..
-				new NetworkGenome(g(0).genome.neurons, g(0).genome.connections)
+				new NetworkGenome(genomeNumber, g(0).genome.neurons, g(0).genome.connections)
 			}
 		}
 	}
+
+	// speciate agent called while the populatation is spawning, i.e. when an agent has create an offspring, this function will be called to put the new offspring in the correct species.
 
 	def speciateAgent(genome: NetworkGenome, species: HashMap[Int,Species], threshold: Double, speciesCounter: Int): (Int, Species) = {
 
 		val newHMIdx = speciesCounter + 1
 		//println(newHMIdx)
 		if(species.isEmpty) {
+
 			// we have no existing species, add this genome to a new species.
 			//println("empty species, adding first at " + newHMIdx)
-			(newHMIdx -> Species(genome, List(genome), 1))
+
+			(newHMIdx -> Species(genome, HashMap(genome.id -> SpeciesMember(genome, 0) ), 1))
+
 		}
-		else if(genome.compareTo(species.head._2.members(Random.nextInt(species.head._2.members.size)), SpeciationParameters(1,1,0.4)) < threshold)
+		else if(genome.compareTo(species.head._2.members(species.head._2.members.keys.toList(Random.nextInt(species.head._2.members.size))).genome, SpeciationParameters(1,1,0.4)) < threshold)
 		{
 			// then we have found a suitable species.
 			//println(genome.compareTo(species.head._2.members(Random.nextInt(species.head._2.members.size)), SpeciationParameters(1,1,0.4)))
 			//println("found an appropriate species: " + species.head._1)
-			(species.head._1 -> species.head._2.copy(members = genome :: species.head._2.members, membersCount = species.head._2.membersCount + 1 ))
+
+			(species.head._1 -> species.head._2.copy(members = species.head._2.members + (genome.id -> SpeciesMember(genome, 0)) , membersCount = species.head._2.membersCount + 1 ))
+
 		}
 		else if(species.tail.size > 0){
 			// there a still some other species this could belong to
 			//println("not an appropriate species, thare are still " + species.tail.size )
 			speciateAgent(genome, species.tail, threshold, newHMIdx)
 		} else {
+
 			//println("run out of options, create a new species at: " +  newHMIdx)
 			// there are no more possibilites so we have to create a new species
-			(newHMIdx -> Species(genome, List(genome), 1))
+
+			(newHMIdx -> Species(genome, HashMap(genome.id -> SpeciesMember(genome, 0) ), 1))
+
 		}
 
 	}
