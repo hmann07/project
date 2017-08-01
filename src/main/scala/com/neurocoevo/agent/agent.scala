@@ -18,7 +18,7 @@ object Agent {
 
 	def props(cppnGenome: NetworkGenome, experience: ActorRef, species: Int = 0): Props = Props(new Agent(cppnGenome, experience, species))
 
-    case class NewChild(genome: NetworkGenome, name: String)
+    case class NewChild(genome: NetworkGenome, name: Int)
 
 	case class Matured(genome: NetworkGenome, error: Double, sse: Double, species: Int)
 }
@@ -80,37 +80,18 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
         // receieved some instructions for crossing over two genomes..
 
-		case Population.Elite(genome) =>
+		case Population.Elite(genome, genomeNumber) =>
 
 
-			val naming = {
-				val t = self.path.name.split('.')
-				if (t.length == 2) {
-					t(0) + "." + t(1) + ".1"
-				} else {
-					val incr = (t(2).toInt + 1)
-					t(0) + "." + t(1) + "." + incr
-				}
-			}
+			parent ! NewChild(genome.copy(id = genomeNumber), genomeNumber)
 
-			parent ! NewChild(genome, naming)
+		case Population.Mutate(genome, genomeNumber) =>
 
-		case Population.Mutate(genome) =>
+				mutate(genome, genomeNumber)
 
-				mutate(genome)
+		case Population.Crossover(g, f, genomeNumber) =>
 
-		case Population.Crossover(g, f) =>
-
-  		val naming = {
-						val t = self.path.name.split('.')
-						if (t.length == 2) {
-							t(0) + "." + t(1) + ".1"
-						} else {
-							val incr = (t(2).toInt + 1)
-							t(0) + "." + t(1) + "." + incr
-						}
-					}
-					parent ! NewChild(f(g), naming)
+  			parent ! NewChild(f(g, genomeNumber), genomeNumber)
 
   	}
 
@@ -120,14 +101,14 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 		// a general function that will return a function that will mutate a genome based on a random probability.
 
-		def mutate(genome: NetworkGenome) = {
+		def mutate(genome: NetworkGenome, genomeNumber: Int) = {
 
 			//val mutationFunctions = List(mutatePerturbWeight, mutateAddConnection, mutateAddNeuron)
-			val mutationFunctions = List(mutatePerturbWeight(_), mutateAddNeuron(_), mutateAddConnection(_))
+			val mutationFunctions = List(mutatePerturbWeight(_, _), mutateAddNeuron(_, _), mutateAddConnection(_, _))
 			val randomPick = Random.nextInt(mutationFunctions.length)
 			val mutationFunction = mutationFunctions(randomPick)
 
-			mutationFunction(genome)
+			mutationFunction(genome, genomeNumber)
 
 		}
 
@@ -136,17 +117,8 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
         // find a connection
         // vary its weight slightly. or a lot. or by something....
 
-			def mutatePerturbWeight(genome: NetworkGenome) = {
+			def mutatePerturbWeight(genome: NetworkGenome, genomeNumber: Int) = {
 
-					val naming = {
-						val t = self.path.name.split('.')
-						if (t.length == 2) {
-							t(0) + "." + t(1) + ".1"
-						} else {
-							val incr = (t(2).toInt + 1)
-							t(0) + "." + t(1) + "." + incr
-						}
-					}
 
 					// Currently go 50.50 on whether or not to change bias or connection weight...
 					// currently separate since I am keeping Bias inside the neuron rather than the connection.
@@ -179,7 +151,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 												})
 									}
 
-									parent ! NewChild(new NetworkGenome(genome.neurons, newConnections), naming)
+									parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
 
 							} else {
 									// change bias weight
@@ -192,7 +164,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 									val newNeurons = genome.neurons + (perturbedNeuron.innovationId -> perturbedNeuron )
 
-									parent ! NewChild(new NetworkGenome(newNeurons, genome.connections), naming)
+									parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, genome.connections), genomeNumber)
 
 							}
 		}
@@ -211,7 +183,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
     // add node
     // pick two random nodes. and add a new connected node.
 
-    def mutateAddConnection (genome: NetworkGenome) = {
+    def mutateAddConnection (genome: NetworkGenome, genomeNumber: Int) = {
 
         // first take all the keys / innovation ids for the neurons
 				val validSrcNeurons = genome.neurons.keys.toList
@@ -233,27 +205,14 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 						// these two are already connected so just return the genome.
 						// TODO: We can probably have a few goes at this.. say try 4 times if no success then give up.
 
-						val naming = {
-			                val t = self.path.name.split('.')
-
-			                if (t.length == 2) {
-			                    t(0) + "." + t(1) + ".1"
-			                } else {
-			                    val incr = (t(2).toInt + 1)
-			                    t(0) + "." + t(1) + "." + incr
-			                }
-
-			            }
-
-
-						parent ! NewChild(genome, naming)
+						parent ! NewChild(genome.copy(id = genomeNumber), genomeNumber)
 
 					}
 
 					case None => {
 						// the connection does not exist already, in this network, check innovation number in case elsewhere.
 						context.actorSelection("../../innovation")  ! Innovation.NewConnectionProposal(n1, n2)
-		        		context become mutatingGenomeAddConnection(genome)
+		        		context become mutatingGenomeAddConnection(genome, genomeNumber)
 					}
 				}
     }
@@ -264,7 +223,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
      <return> NetworkGenome: A genome with a new neuron added.
     */
 
-    def mutateAddNeuron (genome: NetworkGenome) = {
+    def mutateAddNeuron (genome: NetworkGenome, genomeNumber: Int) = {
 
         // First, pick a connection from the genome to split.. Randomly...
 
@@ -281,11 +240,11 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
         // the same innovation id of both neuron and the two connections
 
         context.actorSelection("../../innovation")  ! Innovation.NewNeuronProposal(connectionToSplit.from, connectionToSplit.to)
-        context become mutatingGenome(genome, connectionToSplit.innovationId)
+        context become mutatingGenome(genome, connectionToSplit.innovationId, genomeNumber)
     }
 
 
-    def mutatingGenome(genome: NetworkGenome, oldConnection: Int): Receive = {
+    def mutatingGenome(genome: NetworkGenome, oldConnection: Int, genomeNumber: Int): Receive = {
 
         case Innovation.NewNeuronConfirmation(neuronData) =>
             // using the neuron data change the NetworkGenome
@@ -309,23 +268,12 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
                     ))
 
 
-            val naming = {
-                val t = self.path.name.split('.')
-
-                if (t.length == 2) {
-                    t(0) + "." + t(1) + ".1"
-                } else {
-                    val incr = (t(2).toInt + 1)
-                    t(0) + "." + t(1) + "." + incr
-                }
-
-            }
-            parent ! NewChild(new NetworkGenome(newNeurons, newCons), naming)
+            parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, newCons), genomeNumber)
             //println(newCons.toString)
 
     }
 
-		def mutatingGenomeAddConnection(genome: NetworkGenome): Receive = {
+		def mutatingGenomeAddConnection(genome: NetworkGenome, genomeNumber: Int): Receive = {
 
 				case Innovation.NewConnectionConfirmation(connectionData) =>
 
@@ -342,18 +290,9 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 						true, // enabled
 						{ genome.neurons(connectionData.fromNeuron).layer >= genome.neurons(connectionData.toNeuron).layer })) // recurrent
 
-					val naming = {
-                		val t = self.path.name.split('.')
 
-                		if (t.length == 2) {
-                   			t(0) + "." + t(1) + ".1"
-                		} else {
-                    		val incr = (t(2).toInt + 1)
-                    		t(0) + "." + t(1) + "." + incr
-                		}
-            		}
 
-	 			parent ! NewChild(new NetworkGenome(genome.neurons, newConnections), naming)
+	 			parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
 
 
 
