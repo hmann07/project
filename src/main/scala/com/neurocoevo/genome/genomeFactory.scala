@@ -14,7 +14,7 @@ import scala.collection.immutable.HashMap
 
 object GenomeFactory {
 
-	def createGenome(filepath: String): NetworkGenome = {
+	def createGenome(filepath: String, id: Int): NetworkGenome = {
 
 		val xmlData = XML.loadFile(filepath)
 
@@ -56,7 +56,7 @@ object GenomeFactory {
 								  ))}
 
 
-		new NetworkGenome(neurons, connections)
+		new NetworkGenome(id, neurons, connections)
 
 
 	}
