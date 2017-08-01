@@ -13,13 +13,16 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object Main extends App {
 
-	val networkGenome = GenomeFactory.createGenome("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
-	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\user\\Documents\\project\\project\\src\\resources\\annSubstrate.xml")
-	//val networkGenome = GenomeFactory.createGenome("C:\\Users\\HMann\\Desktop\\project-master (3)\\project-master\\src\\resources\\annSubstrate.xml")
+	//val networkGenomePath = GenomeFactory.createGenome("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
+	//val networkGenomePath = GenomeFactory.createGenome("C:\\Users\\user\\Documents\\project\\project\\src\\resources\\annSubstrate.xml")
+	val networkGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (5)\\project-master\\src\\resources\\annSubstrate.xml"
 
 	val system = ActorSystem("mySystem")
 	val inbox = Inbox.create(system)
 
+
+	// Need to give the structure of the genome that is going to be used to seed the population..
+	val networkGenome = GenomeFactory.createGenome(networkGenomePath, 0)
 
 	val inn = system.actorOf(Innovation.props(networkGenome), "innovation")
 
@@ -29,7 +32,7 @@ object Main extends App {
 
 
 
-	inbox.send(p, Population.PopulationSettings(150,networkGenome))
+	inbox.send(p, Population.PopulationSettings(150,networkGenomePath))
 
 	//val agent = system.actorOf(Agent.props(networkGenome, e), "agentX")
 	//val agent2 = system.actorOf(Agent.props(networkGenome, e), "agentY")
