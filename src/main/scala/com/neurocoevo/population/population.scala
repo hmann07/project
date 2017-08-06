@@ -20,10 +20,12 @@ object Population {
 	case class PopulationSettings(
 			populationSize: Int,
 			genomePath: String,
-			elitism: Double = 0.2,
-			crossoverRate: Double = 0.5,
-			mutationRate: Double = 0.5,
-			speciationThreshold: Double = 2.5)
+			speciationThreshold: Double = 3.0)
+
+	case class OffspringSettings(
+			elitism: Double = 0.1,
+			crossoverRate: Double = 0.50,
+			mutationRate: Double = 0.50)
 
 	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the
 	// weights and topologies but also learning rates or functions.
@@ -31,11 +33,15 @@ object Population {
 
 	// All mutation operators are given an id to give to the children..
 
-	case class Crossover(g: List[AgentResults], f: (List[AgentResults], Int) => NetworkGenome, genomeNumber: Int)
+	case class Crossover(g: List[SpeciesMember], f: (List[SpeciesMember], Int) => NetworkGenome, genomeNumber: Int)
 
 	case class Mutate(genome: NetworkGenome, genomeNumber: Int)
 
 	case class Elite(genome: NetworkGenome, genomeNumber: Int)
+
+	case class SpeciesDirectoryEntry(champion: SpeciesMember, previousChampion: SpeciesMember, actor: ActorRef, totalFitness: Double, memberCount: Double)
+
+	case class SelectParents(totalMeanfitnessValue: Double, populationSize: Int, settings: OffspringSettings)
 
 }
 
@@ -45,7 +51,7 @@ import Population._
 
 	def receive = {
 
-		case PopulationSettings(n, genomePath, elitism, crossoverRate, mutationRate, speciationThreshold) =>
+		case PopulationSettings(n, genomePath, speciationThreshold) =>
 
 			1.to(n).foreach(i => {
 
@@ -54,7 +60,7 @@ import Population._
 				val e = context.actorOf(Props[Experience], "experience." + i)
 				context.actorOf(Agent.props(g, e), "agent."+ i)
 				})
-			context become evolving(PopulationSettings(n,  genomePath, elitism, crossoverRate, mutationRate, speciationThreshold), n, List.empty, n, 1, 0)
+			context become evolving(PopulationSettings(n,  genomePath, speciationThreshold), n, List.empty, n, 1, 0)
 	}
 
 	def evolving(
@@ -65,107 +71,58 @@ import Population._
 		generationNumber: Int,
 		totalfitnessValue: Double,
 		bestGenome: AgentResults = null,
-		species: HashMap[Int, Species] = HashMap.empty): Receive = {
+		speciesDirectory: HashMap[Int, SpeciesDirectoryEntry] = HashMap.empty): Receive = {
 
+
+		// Matches when an agent has processed a set of patterns form the environment.
 		case Agent.Matured(genome, fitnessValue, sse, speciesIdx) =>
 
 			// this is sort of a generation over point. we should create new, kill old. and get ready for new AgentResults
 			// coming from the new generation.
 			if (agentsComplete.length + 1 == totalAgents){
-
-				// start the cross over process
-
-
-				// check the best.
+				println("all agents complete")
+				// check the population best.
 				val best = {if(bestGenome != null){if(sse > bestGenome.sse){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}}
 
 				// calc final values
-
 				val finalAgentsComplete = (AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete).sortWith((a,b) => a.sse < b.sse )
 				val finalFitnessValue = totalfitnessValue + fitnessValue
 
+				println(generationNumber + ", " + speciesDirectory.size + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.fitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size)
+				//println(best.genome)
+				
+				
+				// Work out which species each genome is most compatible with.
+				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)
 
-				//println(generationNumber + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size+ ", " + best.genome.compareTo(finalAgentsComplete(Random.nextInt(totalAgents)).genome, SpeciationParameters(1,1,1)))
-				println(generationNumber + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size)
-				//println("completed generation: #" + generationNumber + " pop: " + totalAgents + " fitness: " + finalFitnessValue + " best genome :" + best.sse)
-
-				// Collect Final list of completed agents.
-
-				// Do we need to use the pop total fitness???
-				// species.TargetSize = (int)Math.Round((species.MeanFitness / pop.TotalSpeciesMeanFitness) * pop.PopulationSize);
-				// where species.MeanFitness = species.TotalFitness / species.Members.Count;
-				// and pop.TotalSpeciesMeanFitness = sum(species.meanFitness)
-
-				// update the species totalFitness and average fitness
-				val updatedSpecies = {
-					if(speciesIdx==0){
-						species
-					} else {
-						//println(species(1).speciesTotalFitness)
-				  		species + (speciesIdx -> species(speciesIdx).copy(
-				  			speciesTotalFitness = species(speciesIdx).speciesTotalFitness + fitnessValue,
-				  			speciesMeanFitness = (species(speciesIdx).speciesTotalFitness + fitnessValue) / (species(speciesIdx).membersCount + 1),
-							members = species(speciesIdx).members + (genome.id -> SpeciesMember(genome, fitnessValue))
-				  			))
-					}}
+			
+				// need to get the sum of the mean fitnesses for each species. 
+				// i.e. the sum of the shared fitness values.
 
 
-				// now send off the genomes to be crossed or mutated. Within their species.
+				//TODO:::: UPDATE previous champion to new champion.
 
-	
-
-				val eliteGenomes = math.min(settings.populationSize, settings.populationSize * settings.elitism).toInt
-				val crossingGenomes = ((settings.populationSize - eliteGenomes) * settings.crossoverRate).toInt
-				val mutatingGenomes = ((settings.populationSize - eliteGenomes) * settings.mutationRate).toInt
-
-				// println(eliteGenomes + ", " + crossingGenomes + ", " +  mutatingGenomes)
-
-				// BOTTLE NECK  roulettewheel is being run twice for all agenets in population.
-				// Nothing else is happening. but simple for now...
-
-				val actionsToPerform = List.fill(eliteGenomes)("ELITE") ::: List.fill(crossingGenomes)("CROSS") ::: List.fill(mutatingGenomes)("MUTATE")
+				val totalMeanfitnessValue =  speciesDirectory.foldLeft(0.0)((acc, species) =>
+						acc + species._2.totalFitness / species._2.memberCount
+					)
 
 
-				// Create a list of actions and the agents that are going to perfom them
-				val actionsZippedWithAgents = actionsToPerform.zip(finalAgentsComplete)
+				// all genomes allocated a species. now we tell the species to create their volunteers.
+				println("startspecies")
+				val finalSpeciesDirectory = speciesDirectory.foldLeft(HashMap[Int, SpeciesDirectoryEntry]())((directory, dirEntry) => {
+					dirEntry._2.actor ! SelectParents(totalMeanfitnessValue, settings.populationSize, OffspringSettings())
+					directory + (dirEntry._1 ->  dirEntry._2.copy(previousChampion = dirEntry._2.champion))
+				}
+					)
+					
 
-				val actionsPerformed = actionsZippedWithAgents.foldLeft(currentGenomeNumber + 1)((counter, a) => {
 
-					a._1 match {
+				context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber + 1, speciesDirectory.size, 0, List.empty, finalSpeciesDirectory)
 
-						case "ELITE" =>
-								val elite = finalAgentsComplete.take(1)
-								a._2.agent ! Elite(elite(0).genome, counter)
-
-						case "CROSS" =>
-								val parent1 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
-								val parent2 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
-								a._2.agent ! Crossover(List(parent1, parent2), crossover, counter)
-
-						case "MUTATE" =>
-								val parent1 = RouletteWheel.select(finalAgentsComplete, finalFitnessValue)
-								a._2.agent ! Mutate(parent1.genome, counter)
-					}
-
-					counter + 1
-
-				})
-
-				// CHECK! currently blanking species each iteration...
-
-				context become spawning(settings, totalAgents, List.empty, generationNumber, actionsPerformed, HashMap.empty)
 
 			} else {
-
-				// update the species totalFitness
-				val updatedSpecies = {
-					if(speciesIdx==0){
-						species
-					} else {
-				  		species + (speciesIdx -> species(speciesIdx).copy(
-							speciesTotalFitness = species(speciesIdx).speciesTotalFitness + fitnessValue,
-							members = species(speciesIdx).members + (genome.id -> SpeciesMember(genome, fitnessValue))))
-					}}
+				
+				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)				
 
 				context become evolving(
 					settings,
@@ -175,61 +132,144 @@ import Population._
 					generationNumber,
 					totalfitnessValue + fitnessValue,
 					{if(bestGenome != null){if(sse > bestGenome.sse){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}},
-					 updatedSpecies
+					 newSpeciesDirectory
 					)
 			}
 
 	}
 
-	def spawning(settings: PopulationSettings, expectedChildren: Int, childrenRegistered: List[Agent.NewChild], generationNumber: Int, currentGenomeNumber: Int , species: HashMap[Int, Species]): Receive = {
+	def spawning(
+		settings: PopulationSettings, 
+		expectedChildren: Int, 
+		childrenRegistered: List[Agent.NewChild], 
+		generationNumber: Int, 
+		currentGenomeNumber: Int , 
+		speciesDirectory: HashMap[Int, SpeciesDirectoryEntry],
+		agentMessages: List[Any] ): Receive = {
 
 	// TODO: Enable agents to change themselves, rather than creating new ones and killing old ones...
 
+		case "Ready" => 
+			//println("agent ready")
+			
+			if(!agentMessages.isEmpty){
+
+			//println("sending " + agentMessages.head)
+			sender() ! agentMessages.head
+
+			context become spawning(settings, expectedChildren,  childrenRegistered, generationNumber, currentGenomeNumber, speciesDirectory, agentMessages.tail )
+			
+			} else {
+			//	println("run out of messages")
+			}
 		case Agent.NewChild(g, name) =>
 
+			//println("received " + Agent.NewChild(g, name))
 			// Have we received all children?
-
+			//println(expectedChildren + ", " + (childrenRegistered.length + 1))
+			
 			if(expectedChildren == childrenRegistered.length + 1) {
-
-				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold, species.size)
-				println(speciesDesignation.size)
-
-
-				// create all the new children.
-				/*
-				(Agent.NewChild(g, name) :: childrenRegistered).foreach( nc => {
-					val e = context.actorOf(Props[Experience], "experience-" + nc.name)
-					context.actorOf(Agent.props(nc.genome, e), nc.name)
-				})
-				*/
-
-				speciesDesignation.foreach( nc => {
-					nc._2.members.foreach  { genome =>
-						val e = context.actorOf(Props[Experience], "experience-" + genome._2.genome.id)
-						context.actorOf(Agent.props(genome._2.genome, e, nc._1), "agent-" + genome._2.genome.id)
-						}
-					})
-
 
 				// Stop the last agent.
 				context stop sender()
-
+				//println("All children received")
+				// create new actors
+				(Agent.NewChild(g, name) :: childrenRegistered).foreach(c => {
+					val e = context.actorOf(Props[Experience], "experience." + c.genome.id)
+					context.actorOf(Agent.props(c.genome, e), "agent."+ c.genome.id)
+				}
+				)
 				// start evolving again
-				context become evolving(settings, currentGenomeNumber, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDesignation)
+				//println("start evovling new population")
+				context become evolving(settings, currentGenomeNumber, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDirectory)
 
 			} else {
 
 
-				// check speciation of new agent.
-				val speciesDesignation = species + speciateAgent(g, species, settings.speciationThreshold, species.size)
-				//println(speciesDesignation)
-
+				
 				// Stop the agent
-				context stop sender()
+				sender() ! "ProcessRequest"
 
 				// Wait for rest..
-				context become spawning(settings, expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber, currentGenomeNumber, speciesDesignation )
+				context become spawning(settings, expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber, currentGenomeNumber, speciesDirectory, agentMessages)
 			}
+	}
+
+	def speciating(settings: PopulationSettings, finalAgentsComplete: List[AgentResults], generationNumber: Int, currentGenomeNumber: Int, totalSpecies: Int, finishedSpecies: Int, agentMessages: List[Any] , speciesDirectory:HashMap[Int, SpeciesDirectoryEntry]): Receive = {
+
+		//prinln("started speciating")
+
+		case "AllParentsSelected" =>
+
+			//println(totalSpecies + ", " + (finishedSpecies + 1))
+			// when allllll sepecies heard back from then kick out a load of messages to children 
+			if (totalSpecies == (finishedSpecies + 1)) {
+				//println("All parents selected")
+				//println("agent messages: " + agentMessages.length )
+				//println("number of species: " + totalSpecies + ", " + speciesDirectory.size )
+				finalAgentsComplete.foreach(c =>
+					c.agent ! "ProcessRequest")
+				context become spawning(settings, agentMessages.length, List.empty, generationNumber, currentGenomeNumber, speciesDirectory, agentMessages)
+
+			} else {
+				 context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber, totalSpecies, finishedSpecies + 1, agentMessages, speciesDirectory)
+				}
+
+		case Species.Extinct(speciesId) =>
+
+			context stop sender()
+
+			if (totalSpecies == (finishedSpecies + 1)) {
+
+				finalAgentsComplete.foreach(c =>
+					c.agent ! "ProcessRequest")
+				context become spawning(settings, agentMessages.length, List.empty, generationNumber, currentGenomeNumber, speciesDirectory - speciesId, agentMessages)
+
+			} else {
+				 context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber, totalSpecies - 1, finishedSpecies, agentMessages, speciesDirectory - speciesId)
+				}
+
+		case Species.Crossover(p1,p2) =>
+
+
+			//println("crossover")
+
+			context become speciating(
+				settings,
+				finalAgentsComplete,
+				generationNumber,
+				currentGenomeNumber + 1, 
+				totalSpecies, 
+				finishedSpecies,  
+				Crossover(List(p1,p2), crossover, currentGenomeNumber) :: agentMessages,
+				speciesDirectory
+				)
+
+		case Species.Mutate(p1) => 
+			//println("mutate")
+		
+			context become speciating(
+				settings,
+				finalAgentsComplete,
+				generationNumber,
+				currentGenomeNumber + 1, 
+				totalSpecies, 
+				finishedSpecies,  
+				Mutate(p1.genome, currentGenomeNumber) :: agentMessages,
+				speciesDirectory)
+
+		case Species.Elite(e1) =>
+			//println("elite")
+
+			context become speciating(
+				settings,
+				finalAgentsComplete,
+				generationNumber,
+				currentGenomeNumber + 1, 
+				totalSpecies, 
+				finishedSpecies,  
+				Elite(e1.genome, currentGenomeNumber) :: agentMessages,
+				speciesDirectory)
 	}
 
 
@@ -244,11 +284,12 @@ import Population._
 	// to include mutation of the activation function. Could take neuron
 	// randomly or that of the fittest.
 
-	def crossover(g: List[AgentResults], genomeNumber: Int): NetworkGenome = {
+	
+	def crossover(g: List[SpeciesMember], genomeNumber: Int): NetworkGenome = {
 
 		g.length match {
 			case 2 => {
-				val performanceSortedGenomes = g.sortWith((a,b) => a.sse < b.sse )
+				val performanceSortedGenomes = g.sortWith((a,b) => a.fitness > b.fitness )
 				val networkGenome1 = performanceSortedGenomes(0).genome // Due to the previous sort this will always be the strongest.
 				val networkGenome2 = performanceSortedGenomes(1).genome
 
@@ -284,45 +325,67 @@ import Population._
 			}
 
 			case _ => {
-				// this is lazy if signleton genome... just return the existing one..
+				// this is lazy if signleton genome... just return the existing one.. NEAT software actaully mutates it..
 				new NetworkGenome(genomeNumber, g(0).genome.neurons, g(0).genome.connections)
 			}
 		}
 	}
 
-	// speciate agent called while the populatation is spawning, i.e. when an agent has create an offspring, this function will be called to put the new offspring in the correct species.
+	def checkBestSpecies(genome: NetworkGenome, fitnessValue: Double, speciesIdx: Int, speciesDirectory: HashMap[Int, SpeciesDirectoryEntry], speciationThreshold: Double): HashMap[Int, SpeciesDirectoryEntry] =  {
 
-	def speciateAgent(genome: NetworkGenome, species: HashMap[Int,Species], threshold: Double, speciesCounter: Int): (Int, Species) = {
+		val speciationParameters = SpeciationParameters()
 
-		val newHMIdx = speciesCounter + 1
-		//println(newHMIdx)
-		if(species.isEmpty) {
+		if(speciesDirectory.contains(speciesIdx) && genome.compareTo(speciesDirectory(speciesIdx).previousChampion.genome, speciationParameters) < speciationThreshold) {
+			// there is a species and the genome is compatible with it.
+			
+			val existingEntry = speciesDirectory(speciesIdx)
+			
+			// check who the best in species is...
+			val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue) 
+			
+			existingEntry.actor ! SpeciesMember(genome, fitnessValue) 
+			
+			speciesDirectory + (speciesIdx -> SpeciesDirectoryEntry(
+					newChampion, 
+					existingEntry.previousChampion, // keep previous champion the same... for subsequent comparisons. 
+					existingEntry.actor, 
+					existingEntry.totalFitness + fitnessValue,
+					existingEntry.memberCount + 1))
 
-			// we have no existing species, add this genome to a new species.
-			//println("empty species, adding first at " + newHMIdx)
-
-			(newHMIdx -> Species(genome, HashMap(genome.id -> SpeciesMember(genome, 0) ), 1))
-
-		}
-		else if(genome.compareTo(species.head._2.members(species.head._2.members.keys.toList(Random.nextInt(species.head._2.members.size))).genome, SpeciationParameters(1,1,0.4)) < threshold)
-		{
-			// then we have found a suitable species.
-			//println(genome.compareTo(species.head._2.members(Random.nextInt(species.head._2.members.size)), SpeciationParameters(1,1,0.4)))
-			//println("found an appropriate species: " + species.head._1)
-
-			(species.head._1 -> species.head._2.copy(members = species.head._2.members + (genome.id -> SpeciesMember(genome, 0)) , membersCount = species.head._2.membersCount + 1 ))
-
-		}
-		else if(species.tail.size > 0){
-			// there a still some other species this could belong to
-			//println("not an appropriate species, thare are still " + species.tail.size )
-			speciateAgent(genome, species.tail, threshold, newHMIdx)
 		} else {
+			
+			val possibleSpecies = speciesDirectory.find( (x: (Int, SpeciesDirectoryEntry)) => genome.compareTo(x._2.previousChampion.genome, speciationParameters) < speciationThreshold ) 
 
-			//println("run out of options, create a new species at: " +  newHMIdx)
-			// there are no more possibilites so we have to create a new species
+			possibleSpecies match {
+				
+				case Some((i,s)) => 
+					
+					val existingEntry = s
 
-			(newHMIdx -> Species(genome, HashMap(genome.id -> SpeciesMember(genome, 0) ), 1))
+					val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue) 
+
+					existingEntry.actor ! SpeciesMember(genome, fitnessValue)
+
+					speciesDirectory + (i -> SpeciesDirectoryEntry(
+						newChampion, 
+						existingEntry.previousChampion, // keep previous champion the same... for subsequent comparisons. 
+						existingEntry.actor, 
+						existingEntry.totalFitness + fitnessValue,
+						existingEntry.memberCount + 1))
+
+				case None =>
+
+					//println(speciesDirectory.keys.toList.size)
+
+					val newSpeciesId = {if(speciesDirectory.isEmpty) 1 else ((speciesDirectory.keysIterator.toList.max) + 1)}
+					
+					val newSpeciesActor = context.actorOf(Species.props(newSpeciesId), "species"+ newSpeciesId)
+
+					newSpeciesActor ! SpeciesMember(genome, fitnessValue)
+
+					speciesDirectory + (newSpeciesId -> SpeciesDirectoryEntry(SpeciesMember(genome, fitnessValue),SpeciesMember(genome, fitnessValue), newSpeciesActor, fitnessValue, 1))
+
+			}
 
 		}
 

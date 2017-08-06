@@ -47,12 +47,14 @@ class Innovation(seedGenome: NetworkGenome) extends Actor with ActorLogging {
 	val latestConnection = seedGenome.connections.keys.max + 1
 	val latestNeuron = seedGenome.neurons.keys.max + 1
 
-
+	val connections = seedGenome.connections.map(c => 
+		ConnectionTrackerEntry(c._2.from, c._2.to, c._2.innovationId)).toList
 
 	//println(latestConnection)
 	//println(latestNeuron)
 	
 	def receive = innovationTracker(Tracker(
+		connectionEntries = connections,
 		currentNeuronInnovationId = latestNeuron, 
 		currentConnectionInnovationId = latestConnection))
 
@@ -86,6 +88,7 @@ class Innovation(seedGenome: NetworkGenome) extends Actor with ActorLogging {
 
 				// send it to the agent
 
+				
 				sender() ! NewConnectionConfirmation(newEntry)
 
 				// store it for future lookups whilst incrementing the counter.
@@ -127,6 +130,11 @@ class Innovation(seedGenome: NetworkGenome) extends Actor with ActorLogging {
 						t.currentConnectionInnovationId + 1, 
 						n2)
 
+					val newConnectionEntries = List(
+						ConnectionTrackerEntry(n1, t.currentNeuronInnovationId, t.currentConnectionInnovationId),
+						ConnectionTrackerEntry(t.currentNeuronInnovationId, n2, t.currentConnectionInnovationId + 1)
+						) 
+
 					//println(newEntry.toString)
 
 					// send it to the agent
@@ -138,7 +146,9 @@ class Innovation(seedGenome: NetworkGenome) extends Actor with ActorLogging {
 					context become innovationTracker(t.copy(
 							currentConnectionInnovationId = t.currentConnectionInnovationId + 2,
 							currentNeuronInnovationId = t.currentNeuronInnovationId + 1,
-							neuronEntries =  newEntry :: t.neuronEntries))
+							neuronEntries =  newEntry :: t.neuronEntries,
+							connectionEntries = t.connectionEntries ::: newConnectionEntries
+							))
 				}
 			}
 		}		

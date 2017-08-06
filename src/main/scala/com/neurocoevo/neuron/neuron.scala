@@ -14,6 +14,8 @@ import scala.collection.immutable.HashMap
 
 object Neuron {
 
+	def props(biasWeight: Double): Props = Props(new Neuron(biasWeight))
+
 	val defaultActivationFunction = ActivationFunction("SIGMOID")
 	val defaultAccumulatedSignal = 0
 	val defaultSignalsRecieved: Map[ActorRef, Double] = Map.empty
@@ -45,6 +47,13 @@ object Neuron {
 
 }
 
+object InputNeuron {
+	def props(biasWeight: Double): Props = Props(new InputNeuron(biasWeight))
+}
+object OutputNeuron {
+	def props(biasWeight: Double): Props = Props(new OutputNeuron(biasWeight))
+}
+
 
 /* Agent.
 		Agent will have a genome that defines a CPPN.
@@ -53,13 +62,13 @@ object Neuron {
 
 */
 
-class Neuron extends Actor with ActorLogging {
+class Neuron(biasWeight: Double) extends Actor with ActorLogging {
 	import context._
 	import Neuron._
 
 	//println("Neuron created")
 
-	def receive = initialisingNeuron(NeuronSettings())
+	def receive = initialisingNeuron(NeuronSettings(biasWeight = biasWeight))
 
     def initialisingNeuron(settings: NeuronSettings): Receive = {
 
@@ -86,7 +95,7 @@ class Neuron extends Actor with ActorLogging {
 				if(s.head._2.recurrent){
 					
 					sender() ! "ConnectionConfirmation"
-					// no need to do anything.
+					// no need to do anything. // not going to count for inputs coming recurrently...
 					context become initialisingNeuron(settings)
 				} else {
 					//println("sourceConf")
@@ -134,7 +143,7 @@ class Neuron extends Actor with ActorLogging {
 				context become readyNeuron(s.copy(
 					recurrentAccumulatedSignal  = s.recurrentAccumulatedSignal + v))
 			}
-		}
+		} else {
 
   		if (s.signalsReceived.size + 1 == s.inputs.size){
 
@@ -147,8 +156,10 @@ class Neuron extends Actor with ActorLogging {
 			val finalAccumalatedSignal = (s.accumulatedSignal + v + s.recurrentAccumulatedSignal) + (s.biasWeight * s.biasValue)
     		val activation = s.activationFunction.function(finalAccumalatedSignal)
 
-	    	s.outputs.keys.foreach(n =>
-	    		n ! Signal(activation * s.outputs(n).weight, s.outputs(n).recurrent ))
+	    	s.outputs.keys.foreach(n => {
+	    		
+	    		n ! Signal(activation * s.outputs(n).weight, s.outputs(n).recurrent )
+	    	})
 
 	    	context become readyNeuron(s.copy(
 				accumulatedSignal  = finalAccumalatedSignal,
@@ -160,6 +171,7 @@ class Neuron extends Actor with ActorLogging {
     		context become readyNeuron(s.copy(accumulatedSignal = s.accumulatedSignal + v,
     										  signalsReceived = s.signalsReceived + (source -> v)))
     	}
+    }
   	}
 
   	def handleError(s: NeuronSettings, e: Double, source: ActorRef) = {
@@ -225,14 +237,21 @@ class Neuron extends Actor with ActorLogging {
 
 }
 
-class InputNeuron() extends Neuron {
+class InputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
 	import Neuron._
 	import context._
 	override def handleSignal(s: NeuronSettings,v: Double, source: ActorRef, recurrent: Boolean) = {
   		////println("input got all sigs: " + v)
-	    	s.outputs.keys.foreach(n =>
+	    	s.outputs.keys.foreach(n => {
 				// inputs should never emit or receive recurrent signals
-	    		n ! Signal(v * s.outputs(n).weight, false))
+	    		//println(self.path.name + ", outputs: " + v * s.outputs(n).weight)
+	    		//println(self.path.name + ", connweight: " + s.outputs(n).weight)
+	    		n ! Signal(v * s.outputs(n).weight, false)
+	    		
+	    		})
+
+	    	
+
 	    	context become readyNeuron(s.copy(activationFunction = ActivationFunction("INPUTFUNCTION"),
 	    									  accumulatedSignal = s.accumulatedSignal + v,
 	    									  signalsReceived = s.signalsReceived + (source -> v),
@@ -275,7 +294,7 @@ class InputNeuron() extends Neuron {
 
 }
 
-class OutputNeuron() extends Neuron {
+class OutputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
 	import Neuron._
 	import context._
 
@@ -292,39 +311,48 @@ class OutputNeuron() extends Neuron {
 				context become readyNeuron(s.copy(
 					recurrentAccumulatedSignal  = s.recurrentAccumulatedSignal + v))
 			}
-		}
-
-		if (s.signalsReceived.size + 1 == s.inputs.size){
-
-			val finalAccumalatedSignal = (s.accumulatedSignal + v + s.recurrentAccumulatedSignal) + (s.biasWeight * s.biasValue)
-			val activation = s.activationFunction.function(finalAccumalatedSignal)
-
-			//println("output got all sigs")
-		    //println("output = " + activation)
-		    //println(self.path.name + " bias is" + s.biasWeight)
-			 //println(s.outputs.keys)
-
-			// these should all be recurrent..
-			s.outputs.keys.foreach(n => {
-				//println(n + ", " + s.outputs(n).recurrent)
-	    		n ! Signal(activation * s.outputs(n).weight, s.outputs(n).recurrent )})
-
-			parent ! Network.Output(activation)
-		    context become readyNeuron(s.copy(
-				accumulatedSignal = finalAccumalatedSignal,
-				activationOutput = activation,
-				signalsReceived = s.signalsReceived + (source -> v)))
-
 		} else {
 
+			if (s.signalsReceived.size + 1 == s.inputs.size){
+
+				//println(" output accumulated signal " + (s.accumulatedSignal + v))
+				//println(" recurrent va;: " + s.recurrentAccumulatedSignal)
+				//println(" biaswieght " + s.biasWeight)
+				//println(" bias " + s.biasValue)
+				val finalAccumalatedSignal = (s.accumulatedSignal + v + s.recurrentAccumulatedSignal) + (s.biasWeight * s.biasValue)
+				val activation = s.activationFunction.function(finalAccumalatedSignal)
+
+				//println("output got all sigs")
+			    //println("output = " + activation)
+			    //println(self.path.name + " bias is" + s.biasWeight)
+				 //println(s.outputs.keys)
+
+				// these should all be recurrent..
+				s.outputs.keys.foreach(n => {
+					//println(n + ", " + s.outputs(n).recurrent)
+
+		    		n ! Signal(activation * s.outputs(n).weight, s.outputs(n).recurrent )})
+
+				//println(self.path.name + ", outputs " + activation)
+		    	//println(self.path.name + ", acc signal: " + finalAccumalatedSignal)
+
+				parent ! Network.Output(activation)
+			    context become readyNeuron(s.copy(
+					accumulatedSignal = finalAccumalatedSignal,
+					activationOutput = activation,
+					signalsReceived = s.signalsReceived + (source -> v)))
+			
+		} else {
+
+			//println(" output accumulated signal " + (s.accumulatedSignal + v))
 
 			//println("output got new sig")
 			context become readyNeuron(s.copy(
-				accumulatedSignal = s.accumulatedSignal + v,
-				signalsReceived = s.signalsReceived + (source -> v)))
+			accumulatedSignal = s.accumulatedSignal + v,
+			signalsReceived = s.signalsReceived + (source -> v)))
 		}
   	}
-
+}
   	override def handleError(s: NeuronSettings, e: Double, source: ActorRef) = {
 
 		val errorGradient = s.activationFunction.derivative(s.accumulatedSignal) * e

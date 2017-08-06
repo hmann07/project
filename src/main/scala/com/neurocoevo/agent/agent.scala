@@ -7,6 +7,7 @@ import com.neurocoevo.network._
 import com.neurocoevo.experience._
 import com.neurocoevo.population._
 import com.neurocoevo.innovation._
+import com.neurocoevo.evolution.RouletteWheel
 
 import scala.util.Random
 import scala.collection.immutable.HashMap
@@ -82,7 +83,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 		case Population.Elite(genome, genomeNumber) =>
 
-
+			
 			parent ! NewChild(genome.copy(id = genomeNumber), genomeNumber)
 
 		case Population.Mutate(genome, genomeNumber) =>
@@ -92,6 +93,9 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 		case Population.Crossover(g, f, genomeNumber) =>
 
   			parent ! NewChild(f(g, genomeNumber), genomeNumber)
+
+  		case "ProcessRequest" =>
+  			sender() ! "Ready"
 
   	}
 
@@ -104,9 +108,14 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 		def mutate(genome: NetworkGenome, genomeNumber: Int) = {
 
 			//val mutationFunctions = List(mutatePerturbWeight, mutateAddConnection, mutateAddNeuron)
-			val mutationFunctions = List(mutatePerturbWeight(_, _), mutateAddNeuron(_, _), mutateAddConnection(_, _))
-			val randomPick = Random.nextInt(mutationFunctions.length)
-			val mutationFunction = mutationFunctions(randomPick)
+			val mutationFunctions = List(
+					(mutatePerturbWeight(_, _), 0.8), 
+					(mutateAddNeuron(_, _), 0.1), 
+					(mutateAddConnection(_, _), 0.1)
+					)
+
+			val mutationFunction = RouletteWheel.select(mutationFunctions)
+			
 
 			mutationFunction(genome, genomeNumber)
 
@@ -139,10 +148,10 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 											conns + (connection.innovationId -> {
 
-												if(Random.nextDouble < Random.nextDouble) {
+												if(Random.nextDouble < 0.9) {
 
 																// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
-																val c = connection.copy(weight = connection.weight + ((Random.nextDouble * 8) - 4) * Random.nextDouble)
+																val c = connection.copy(weight = connection.weight + ((Random.nextDouble * 4) - 2) * Random.nextDouble)
 																c
 
 														} else {
@@ -160,9 +169,17 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 									val neuronToChange = neurons(Random.nextInt(totalNeurons))
 
 									// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
-									val perturbedNeuron = neuronToChange.copy(biasWeight = neuronToChange.biasWeight + ((Random.nextDouble * 8) - 4) * Random.nextDouble)
+									//val perturbedNeuron = neuronToChange.copy(biasWeight = neuronToChange.biasWeight + ((Random.nextDouble * 8) - 4) * Random.nextDouble)
 
-									val newNeurons = genome.neurons + (perturbedNeuron.innovationId -> perturbedNeuron )
+									val newNeurons: HashMap[Int, NeuronGenome] = genome.neurons ++ neurons.foldLeft(HashMap[Int, NeuronGenome]()){(acc, currentNeuron) =>
+										acc + (currentNeuron.innovationId -> {
+											if(Random.nextDouble < 0.9) {
+												currentNeuron.copy(biasWeight = neuronToChange.biasWeight + ((Random.nextDouble * 8) - 4) * Random.nextDouble)
+											} else {
+												currentNeuron
+											}
+										})
+									} 
 
 									parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, genome.connections), genomeNumber)
 
@@ -184,6 +201,8 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
     // pick two random nodes. and add a new connected node.
 
     def mutateAddConnection (genome: NetworkGenome, genomeNumber: Int) = {
+
+
 
         // first take all the keys / innovation ids for the neurons
 				val validSrcNeurons = genome.neurons.keys.toList
@@ -268,7 +287,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
                     ))
 
 
-            parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, newCons), genomeNumber)
+            context.parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, newCons), genomeNumber)
             //println(newCons.toString)
 
     }
@@ -292,7 +311,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 
 
-	 			parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
+	 			context.parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
 
 
 

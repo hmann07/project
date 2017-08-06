@@ -51,9 +51,11 @@ case class NetworkGenome(
 
 		val disjointGenes = (g1 | g2).diff(intersection)
 
-		val matchedGenes: Double = intersection.foldLeft(0.0)((r,c) => r + math.abs(connections(c).weight + genome.connections(c).weight).toDouble ) / intersection.size
+		val matchedGenes: Double = (intersection.foldLeft(0.0)((r,c) => r + math.abs(connections(c).weight - genome.connections(c).weight).toDouble )) / intersection.size
 
-		((excessGenes.size / biggestSize) * params.c1) + ((disjointGenes.size / biggestSize) * params.c2) + (matchedGenes * params.c3)
+		//((excessGenes.size / biggestSize) * params.c1) + ((disjointGenes.size / biggestSize) * params.c2) + (matchedGenes * params.c3)
+
+		((excessGenes.size  * params.c1) / biggestSize) + ((disjointGenes.size * params.c2) / biggestSize) + (matchedGenes * params.c3)
 
 	}
 

@@ -17,11 +17,11 @@ object Network {
 	case class NetworkSettings(
 		confirmedConnections: Int = 0,
 		sensations: Map[Double, Sensation] = Map.empty,
-      	totalSensationsReceived: Int = 0,
+    totalSensationsReceived: Int = 0,
 		confirmedPropagations: Int = 0,
-      	sse: Double = 0,
-      	fitnessValue: Double = 0.00000000001,
-		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput, 2)
+    sse: Double = 0,
+    fitnessValue: Double = 0.00000000001,
+		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.abs(expectedValue - networkOutput)
 		)
 	case class Sensation(
 			 id: Double,
@@ -99,6 +99,9 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
   		case Sensation(id, v, l) =>
   			//println("preparing to send, expected value: " + l)
+
+        //println("SIGNAL SENT: " +  genome)
+
   			v.zip(inputs.values).foreach({case (v,i) => i ! Neuron.Signal(v, false)})
   			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l)),
                                                     totalSensationsReceived = settings.totalSensationsReceived + 1))
@@ -146,14 +149,26 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         settings.totalSensationsReceived match {
           case 4 => {
 						val ts = System.currentTimeMillis()
-						parent ! Matured(genome,   1 / ((settings.fitnessValue + fitnessValue)), settings.sse )
+
+
+          //println(squaredError + ", " + settings.sensations + ", " + v)
+          //println(genome)
+          
+
+
+						parent ! Matured(genome,   math.pow(4 - (settings.fitnessValue + fitnessValue),2), settings.sse + squaredError )
 						//println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived }+ ", " + v + ", " + settings.sensations(1).label(0))
             // Don't need to relax since all sensations have finished. This also causes deadletters.
-						// children.foreach(c => c ! "Relax")
+						//children.foreach(c => c ! "Relax")
 
 						context become readyNetwork(settings.copy(sse = 0, fitnessValue = 0))
           }
           case _ => {
+
+
+          //println("SIGNAL RECEIVED: " +  genome)
+          //println(squaredError + ", " + settings.sensations + ", " + v)
+
 						//println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived } + ", " + v + ", " + settings.sensations(1).label(0))
             children.foreach(c => c ! "Relax")
             context become  relaxingNetwork(settings.copy(
@@ -243,21 +258,21 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
     def generateInputNeurons(neurons: HashMap[Int, NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
       neurons.size match {
         case 0 => agg
-        case _ => generateInputNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(Props[InputNeuron], neurons.head._2.innovationId.toString)))
+        case _ => generateInputNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(InputNeuron.props(neurons.head._2.biasWeight), neurons.head._2.innovationId.toString)))
       }
     }
 
     def generateOutputNeurons(neurons: HashMap[Int, NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
       neurons.size match {
         case 0 => agg
-        case _ => generateOutputNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(Props[OutputNeuron], neurons.head._2.innovationId.toString)))
+        case _ => generateOutputNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(OutputNeuron.props(neurons.head._2.biasWeight), neurons.head._2.innovationId.toString)))
       }
     }
 
     def generateHiddenNeurons(neurons: HashMap[Int, NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
       neurons.size match {
         case 0 => agg
-        case _ => generateHiddenNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(Props[Neuron], neurons.head._2.innovationId.toString)))
+        case _ => generateHiddenNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(Neuron.props(neurons.head._2.biasWeight), neurons.head._2.innovationId.toString)))
       }
     }
 
