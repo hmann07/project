@@ -60,6 +60,10 @@ import Population._
 				val e = context.actorOf(Props[Experience], "experience." + i)
 				context.actorOf(Agent.props(g, e), "agent."+ i)
 				})
+
+			// TODO: is it better to make the outputter a member of the netowrk or of the system or of the agent... rather than population?
+			context.actorOf(Props[NetworkOutput], "networkOutput")
+
 			context become evolving(PopulationSettings(n,  genomePath, speciationThreshold), n, List.empty, n, 1, 0)
 	}
 
@@ -89,14 +93,16 @@ import Population._
 				val finalFitnessValue = totalfitnessValue + fitnessValue
 
 				println(generationNumber + ", " + speciesDirectory.size + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.fitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size)
+
 				//println(best.genome)
-				
-				
+
+				// tell the outputter to save down the best genome in JSON format.
+				context.actorSelection("networkOutput") ! NetworkOutput.OutputRequest(best.genome, "JSON")
 				// Work out which species each genome is most compatible with.
 				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)
 
-			
-				// need to get the sum of the mean fitnesses for each species. 
+
+				// need to get the sum of the mean fitnesses for each species.
 				// i.e. the sum of the shared fitness values.
 
 
@@ -114,15 +120,15 @@ import Population._
 					directory + (dirEntry._1 ->  dirEntry._2.copy(previousChampion = dirEntry._2.champion))
 				}
 					)
-					
+
 
 
 				context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber + 1, speciesDirectory.size, 0, List.empty, finalSpeciesDirectory)
 
 
 			} else {
-				
-				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)				
+
+				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)
 
 				context become evolving(
 					settings,
@@ -139,26 +145,26 @@ import Population._
 	}
 
 	def spawning(
-		settings: PopulationSettings, 
-		expectedChildren: Int, 
-		childrenRegistered: List[Agent.NewChild], 
-		generationNumber: Int, 
-		currentGenomeNumber: Int , 
+		settings: PopulationSettings,
+		expectedChildren: Int,
+		childrenRegistered: List[Agent.NewChild],
+		generationNumber: Int,
+		currentGenomeNumber: Int ,
 		speciesDirectory: HashMap[Int, SpeciesDirectoryEntry],
 		agentMessages: List[Any] ): Receive = {
 
 	// TODO: Enable agents to change themselves, rather than creating new ones and killing old ones...
 
-		case "Ready" => 
+		case "Ready" =>
 			//println("agent ready")
-			
+
 			if(!agentMessages.isEmpty){
 
 			//println("sending " + agentMessages.head)
 			sender() ! agentMessages.head
 
 			context become spawning(settings, expectedChildren,  childrenRegistered, generationNumber, currentGenomeNumber, speciesDirectory, agentMessages.tail )
-			
+
 			} else {
 			//	println("run out of messages")
 			}
@@ -167,7 +173,7 @@ import Population._
 			//println("received " + Agent.NewChild(g, name))
 			// Have we received all children?
 			//println(expectedChildren + ", " + (childrenRegistered.length + 1))
-			
+
 			if(expectedChildren == childrenRegistered.length + 1) {
 
 				// Stop the last agent.
@@ -186,7 +192,7 @@ import Population._
 			} else {
 
 
-				
+
 				// Stop the agent
 				sender() ! "ProcessRequest"
 
@@ -202,7 +208,7 @@ import Population._
 		case "AllParentsSelected" =>
 
 			//println(totalSpecies + ", " + (finishedSpecies + 1))
-			// when allllll sepecies heard back from then kick out a load of messages to children 
+			// when allllll sepecies heard back from then kick out a load of messages to children
 			if (totalSpecies == (finishedSpecies + 1)) {
 				//println("All parents selected")
 				//println("agent messages: " + agentMessages.length )
@@ -238,23 +244,23 @@ import Population._
 				settings,
 				finalAgentsComplete,
 				generationNumber,
-				currentGenomeNumber + 1, 
-				totalSpecies, 
-				finishedSpecies,  
+				currentGenomeNumber + 1,
+				totalSpecies,
+				finishedSpecies,
 				Crossover(List(p1,p2), crossover, currentGenomeNumber) :: agentMessages,
 				speciesDirectory
 				)
 
-		case Species.Mutate(p1) => 
+		case Species.Mutate(p1) =>
 			//println("mutate")
-		
+
 			context become speciating(
 				settings,
 				finalAgentsComplete,
 				generationNumber,
-				currentGenomeNumber + 1, 
-				totalSpecies, 
-				finishedSpecies,  
+				currentGenomeNumber + 1,
+				totalSpecies,
+				finishedSpecies,
 				Mutate(p1.genome, currentGenomeNumber) :: agentMessages,
 				speciesDirectory)
 
@@ -265,9 +271,9 @@ import Population._
 				settings,
 				finalAgentsComplete,
 				generationNumber,
-				currentGenomeNumber + 1, 
-				totalSpecies, 
-				finishedSpecies,  
+				currentGenomeNumber + 1,
+				totalSpecies,
+				finishedSpecies,
 				Elite(e1.genome, currentGenomeNumber) :: agentMessages,
 				speciesDirectory)
 	}
@@ -284,7 +290,7 @@ import Population._
 	// to include mutation of the activation function. Could take neuron
 	// randomly or that of the fittest.
 
-	
+
 	def crossover(g: List[SpeciesMember], genomeNumber: Int): NetworkGenome = {
 
 		g.length match {
@@ -337,39 +343,39 @@ import Population._
 
 		if(speciesDirectory.contains(speciesIdx) && genome.compareTo(speciesDirectory(speciesIdx).previousChampion.genome, speciationParameters) < speciationThreshold) {
 			// there is a species and the genome is compatible with it.
-			
+
 			val existingEntry = speciesDirectory(speciesIdx)
-			
+
 			// check who the best in species is...
-			val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue) 
-			
-			existingEntry.actor ! SpeciesMember(genome, fitnessValue) 
-			
+			val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue)
+
+			existingEntry.actor ! SpeciesMember(genome, fitnessValue)
+
 			speciesDirectory + (speciesIdx -> SpeciesDirectoryEntry(
-					newChampion, 
-					existingEntry.previousChampion, // keep previous champion the same... for subsequent comparisons. 
-					existingEntry.actor, 
+					newChampion,
+					existingEntry.previousChampion, // keep previous champion the same... for subsequent comparisons.
+					existingEntry.actor,
 					existingEntry.totalFitness + fitnessValue,
 					existingEntry.memberCount + 1))
 
 		} else {
-			
-			val possibleSpecies = speciesDirectory.find( (x: (Int, SpeciesDirectoryEntry)) => genome.compareTo(x._2.previousChampion.genome, speciationParameters) < speciationThreshold ) 
+
+			val possibleSpecies = speciesDirectory.find( (x: (Int, SpeciesDirectoryEntry)) => genome.compareTo(x._2.previousChampion.genome, speciationParameters) < speciationThreshold )
 
 			possibleSpecies match {
-				
-				case Some((i,s)) => 
-					
+
+				case Some((i,s)) =>
+
 					val existingEntry = s
 
-					val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue) 
+					val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue)
 
 					existingEntry.actor ! SpeciesMember(genome, fitnessValue)
 
 					speciesDirectory + (i -> SpeciesDirectoryEntry(
-						newChampion, 
-						existingEntry.previousChampion, // keep previous champion the same... for subsequent comparisons. 
-						existingEntry.actor, 
+						newChampion,
+						existingEntry.previousChampion, // keep previous champion the same... for subsequent comparisons.
+						existingEntry.actor,
 						existingEntry.totalFitness + fitnessValue,
 						existingEntry.memberCount + 1))
 
@@ -378,7 +384,7 @@ import Population._
 					//println(speciesDirectory.keys.toList.size)
 
 					val newSpeciesId = {if(speciesDirectory.isEmpty) 1 else ((speciesDirectory.keysIterator.toList.max) + 1)}
-					
+
 					val newSpeciesActor = context.actorOf(Species.props(newSpeciesId), "species"+ newSpeciesId)
 
 					newSpeciesActor ! SpeciesMember(genome, fitnessValue)

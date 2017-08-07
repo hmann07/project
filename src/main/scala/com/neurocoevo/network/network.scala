@@ -21,7 +21,7 @@ object Network {
 		confirmedPropagations: Int = 0,
     sse: Double = 0,
     fitnessValue: Double = 0.00000000001,
-		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.abs(expectedValue - networkOutput)
+		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput,2)
 		)
 	case class Sensation(
 			 id: Double,
@@ -153,10 +153,10 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
           //println(squaredError + ", " + settings.sensations + ", " + v)
           //println(genome)
-          
 
 
-						parent ! Matured(genome,   math.pow(4 - (settings.fitnessValue + fitnessValue),2), settings.sse + squaredError )
+
+						parent ! Matured(genome,   1 / (settings.fitnessValue + fitnessValue), settings.sse + squaredError )
 						//println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived }+ ", " + v + ", " + settings.sensations(1).label(0))
             // Don't need to relax since all sensations have finished. This also causes deadletters.
 						//children.foreach(c => c ! "Relax")

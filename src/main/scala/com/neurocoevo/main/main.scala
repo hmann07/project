@@ -14,8 +14,9 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 object Main extends App {
 
 	//val networkGenomePath = GenomeFactory.createGenome("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
-	val networkGenomePath = "C:\\Users\\user\\Documents\\neurocoevo\\project\\src\\resources\\annSubstrate.xml"
-	//val networkGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (5)\\project-master\\src\\resources\\annSubstrate.xml"
+	//val networkGenomePath = "C:\\Users\\user\\Documents\\neurocoevo\\project\\src\\resources\\annSubstrate.xml"
+	//val networkGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (7)\\project-master\\src\\resources\\annSubstrate.xml"
+	val networkGenomePath = "C:\\Users\\Henry\\Downloads\\project-master\\project-master\\src\\resources\\annSubstrate.xml"
 
 	val system = ActorSystem("mySystem")
 	val inbox = Inbox.create(system)
