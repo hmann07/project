@@ -83,7 +83,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 		case Population.Elite(genome, genomeNumber) =>
 
-			
+
 			parent ! NewChild(genome.copy(id = genomeNumber), genomeNumber)
 
 		case Population.Mutate(genome, genomeNumber) =>
@@ -148,11 +148,20 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 											conns + (connection.innovationId -> {
 
+												// a chance that this connection will not be changed at all
 												if(Random.nextDouble < 0.9) {
 
+
+																// a chance that the weight will be completely reset or just changed slightly.
+																if(Random.nextDouble < 0.9) {
 																// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
-																val c = connection.copy(weight = connection.weight + ((Random.nextDouble * 4) - 2) * Random.nextDouble)
-																c
+																	val c = connection.copy(weight = connection.weight + ((Random.nextDouble * 4) - 2) * Random.nextDouble)
+																	c 
+																} else {
+																	val c = connection.copy(weight = (Random.nextDouble * 2) - 1) 
+																	c	
+																}
+
 
 														} else {
 															connection

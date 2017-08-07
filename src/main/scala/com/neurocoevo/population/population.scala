@@ -24,8 +24,8 @@ object Population {
 
 	case class OffspringSettings(
 			elitism: Double = 0.1,
-			crossoverRate: Double = 0.50,
-			mutationRate: Double = 0.50)
+			crossoverRate: Double = 0.25,
+			mutationRate: Double = 0.75)
 
 	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the
 	// weights and topologies but also learning rates or functions.
