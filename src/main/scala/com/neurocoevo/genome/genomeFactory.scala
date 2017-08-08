@@ -4,6 +4,9 @@ package com.neurocoevo.genome
 import scala.xml.XML
 import scala.util.Random
 
+import akka.actor.ActorSystem
+import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
+
 import com.neurocoevo.substrate._
 import scala.collection.immutable.HashMap
 
@@ -109,4 +112,44 @@ object GenomeFactory {
 		}
 	}
  */
+
+	// in this signature we pass in an existing Network genome. which we will pass co-ordinates to.
+	// The netowrk argument will define the weights for this network.
+	// The new network, will define the performance measure, the network argument will be evolved.
+	// we should assume that the netwrok has already been set up and is ready for input.
+
+	def createHyperNeatGenome(filepath: String, id: Int) = {
+
+	// first we read in the cppn substrate file. this must contain some co-ordinates.
+
+		val xmlData = XML.loadFile(filepath)
+
+		val neurons = (xmlData \ "neurons" \ "neuron").foldLeft(HashMap[Int, NeuronGenome]()) {(neuronList, currentNeuron) =>
+
+				neuronList + ((currentNeuron \ "@id").text.toInt ->
+
+				new NeuronGenome( (currentNeuron \ "@id").text.toInt,
+								  (currentNeuron \ "@activationFuntion").text,
+								  (currentNeuron \ "@type").text,
+								  (currentNeuron \ "@bias").text.toInt,
+								  {
+								  	val x = (currentNeuron \ "@biasWeight").text
+								  	if(x.length == 0){
+								  		(Random.nextDouble * 2) - 1
+								  	} else {
+								  		x.toDouble
+								  	}
+								  },
+								  (currentNeuron \ "@layer").text.toDouble,
+								  (currentNeuron \ "dim").foldLeft(Vector[Double]())((location, current) => {
+								  	location :+ (current.text).toDouble
+								  })
+								  ))}
+		
+		// We leave the genome with no connections defined.
+		new NetworkGenome(id, neurons, HashMap.empty)
+
+	}
+
+
 }

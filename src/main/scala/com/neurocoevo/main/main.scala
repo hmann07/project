@@ -15,8 +15,9 @@ object Main extends App {
 
 	//val networkGenomePath = GenomeFactory.createGenome("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
 	//val networkGenomePath = "C:\\Users\\user\\Documents\\neurocoevo\\project\\src\\resources\\annSubstrate.xml"
-	//val networkGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (7)\\project-master\\src\\resources\\annSubstrate.xml"
-	val networkGenomePath = "C:\\Users\\Henry\\Downloads\\project-master\\project-master\\src\\resources\\annSubstrate.xml"
+	val networkGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (8)\\project-master\\src\\resources\\annSubstrate.xml"
+	val cppnGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (8)\\project-master\\src\\resources\\cppnSubstrate.xml"
+	//val networkGenomePath = "C:\\Users\\Henry\\Downloads\\project-master\\project-master\\src\\resources\\annSubstrate.xml"
 
 	val system = ActorSystem("mySystem")
 	val inbox = Inbox.create(system)
@@ -25,15 +26,19 @@ object Main extends App {
 	// Need to give the structure of the genome that is going to be used to seed the population..
 	val networkGenome = GenomeFactory.createGenome(networkGenomePath, 0)
 
+	//val annGenome = GenomeFactory.createGenome(cppnGenomePath, networkGenome, 0)
+
 	val inn = system.actorOf(Innovation.props(networkGenome), "innovation")
+
+
 
 	val p = system.actorOf(Props[Population], "population")
 
 	// innovation needs substrate so that it can choose the right number to start from
 
 
-
-	inbox.send(p, Population.PopulationSettings(150,networkGenomePath))
+//	inbox.send(p, Population.PopulationSettings(150,networkGenomePath, "STD"))
+	inbox.send(p, Population.PopulationSettings(150,networkGenomePath, "HYPER"))
 
 	//val agent = system.actorOf(Agent.props(networkGenome, e), "agentX")
 	//val agent2 = system.actorOf(Agent.props(networkGenome, e), "agentY")

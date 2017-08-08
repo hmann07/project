@@ -11,7 +11,7 @@ import scala.collection.immutable.HashMap
 
 object Network {
 
-	case class Output(value: Double)
+	case class Output(value: Double, signalType: String)
   case class Matured(genome: NetworkGenome, error: Double, sse: Double)
 
 	case class NetworkSettings(
@@ -26,7 +26,8 @@ object Network {
 	case class Sensation(
 			 id: Double,
 			 values: List[Double],
-			 label: List[Double])
+			 label: List[Double],
+       signalType: String)
 
 	case class Error(error:Double)
 
@@ -97,21 +98,26 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
   	def readyNetwork(settings: NetworkSettings) : Receive = {
 
-  		case Sensation(id, v, l) =>
+  		case Sensation(id, v, l, signalType) =>
   			//println("preparing to send, expected value: " + l)
 
         //println("SIGNAL SENT: " +  genome)
 
-  			v.zip(inputs.values).foreach({case (v,i) => i ! Neuron.Signal(v, false)})
-  			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l)),
+  			v.zip(inputs.values).foreach({case (v,i) => i ! Neuron.Signal(v, false, signalType)})
+  			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l, signalType)),
                                                     totalSensationsReceived = settings.totalSensationsReceived + 1))
 
 
       // What happens here is important decision point. If we are going to back propagate error then the output eerror should be
       // sent back through the network and next next signal is called for. If we are going to terminate and start genetic operations then we need to
       // wait until all signals have gone through (relaxing the network on each pass), calculate performance and tell the agent the network is done.
+      case Output(v, "ANNCONFIG") =>
+        println("test sig propagated.")
 
-      case Output(v) =>
+      case Output(v, "TEST") =>
+        println("test sig propagated.")
+        //context.actorSelection("../ann") ! v
+      case Output(v, "EVOLVE") =>
 
         val error = settings.sensations(1).label(0) - v
         val squaredError = math.pow(error, 2)
@@ -144,7 +150,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         // If we are in Evolution Only mode.
 			//	/*
 
-				val fitnessValue = settings.performanceFunction(v, settings.sensations(1).label(0))
+		val fitnessValue = settings.performanceFunction(v, settings.sensations(1).label(0))
 
         settings.totalSensationsReceived match {
           case 4 => {
@@ -199,13 +205,6 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   		case "snapshot" =>
   			children.foreach { c => c ! "snapshot" }
         context become snapshotting(settings, 0, NetworkGenome(0,null,null))
-
-      case "Add Connection" =>
-
-      // here we select a random connection.... then communicate directly with the innovation engine...
-
-
-
 
   	}
 

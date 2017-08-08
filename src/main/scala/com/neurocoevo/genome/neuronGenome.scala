@@ -8,6 +8,7 @@ case class NeuronGenome(val innovationId: Int ,
                    val neuronType: String,
                    val bias: Int = 0,
                    val biasWeight: Double = (Random.nextDouble * 2) - 1,
-                   val layer: Double = 0){
+                   val layer: Double = 0,
+				   val location: Vector[Double] = Vector.empty){
 
 }

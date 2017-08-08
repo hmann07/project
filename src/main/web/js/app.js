@@ -105,7 +105,7 @@ function tick() {
 	        sourceY = d.source.y + (sourcePadding * normY),
 	        targetX = d.target.x - (targetPadding * normX),
 	        targetY = d.target.y - (targetPadding * normY);
-	    return 'M' + sourceX + ',' + sourceY + 'A' + dist + ',' + dist + ' 0 0,1 ' + '' + targetX + ',' + targetY;
+	    return 'M' + sourceX + ',' + sourceY + 'A' + dist + ',' + dist + ' 0 0,'+ (sourceY > targetY && sourceX < targetX?0:1)  +' ' + '' + targetX + ',' + targetY;
 	}
   });
 

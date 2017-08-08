@@ -24,7 +24,7 @@ object Neuron {
 	//val defaultBias: Double = Network.networkRandom
 
 	case class ConnectionDetail(id: Int, weight: Double, recurrent: Boolean)
-	case class Signal(s: Double, recurrent: Boolean)
+	case class Signal(s: Double, recurrent: Boolean, signalType: String)
 	case class Destination(destination: Map[ActorRef, ConnectionDetail])
 	case class Source(source: Map[ActorRef, ConnectionDetail])
 	case class NeuronSettings(
@@ -107,9 +107,9 @@ class Neuron(biasWeight: Double) extends Actor with ActorLogging {
   	}
 
   	def readyNeuron(settings: NeuronSettings): Receive = {
-  		case Signal(v, recurrent) =>
+  		case Signal(v, recurrent, signalType) =>
 
-  			handleSignal(settings, v, sender(), recurrent)
+  			handleSignal(settings, v, sender(), recurrent, signalType)
 
   		case Network.Error(e) =>
 
@@ -129,7 +129,7 @@ class Neuron(biasWeight: Double) extends Actor with ActorLogging {
 
 
 
-  	def handleSignal(s: NeuronSettings,v: Double, source: ActorRef, recurrent: Boolean) = {
+  	def handleSignal(s: NeuronSettings,v: Double, source: ActorRef, recurrent: Boolean, signalType: String) = {
 
 		// if signal coming in has a reccurent flag then this needs to be stored.
 
@@ -158,7 +158,7 @@ class Neuron(biasWeight: Double) extends Actor with ActorLogging {
 
 	    	s.outputs.keys.foreach(n => {
 	    		
-	    		n ! Signal(activation * s.outputs(n).weight, s.outputs(n).recurrent )
+	    		n ! Signal(activation * s.outputs(n).weight, s.outputs(n).recurrent, signalType )
 	    	})
 
 	    	context become readyNeuron(s.copy(
@@ -240,13 +240,13 @@ class Neuron(biasWeight: Double) extends Actor with ActorLogging {
 class InputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
 	import Neuron._
 	import context._
-	override def handleSignal(s: NeuronSettings,v: Double, source: ActorRef, recurrent: Boolean) = {
+	override def handleSignal(s: NeuronSettings,v: Double, source: ActorRef, recurrent: Boolean, signalType: String) = {
   		////println("input got all sigs: " + v)
 	    	s.outputs.keys.foreach(n => {
 				// inputs should never emit or receive recurrent signals
 	    		//println(self.path.name + ", outputs: " + v * s.outputs(n).weight)
 	    		//println(self.path.name + ", connweight: " + s.outputs(n).weight)
-	    		n ! Signal(v * s.outputs(n).weight, false)
+	    		n ! Signal(v * s.outputs(n).weight, false, signalType)
 	    		
 	    		})
 
@@ -298,7 +298,7 @@ class OutputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
 	import Neuron._
 	import context._
 
-	override def handleSignal(s: NeuronSettings,v: Double, source: ActorRef, recurrent: Boolean) = {
+	override def handleSignal(s: NeuronSettings,v: Double, source: ActorRef, recurrent: Boolean, signalType: String) = {
 
 		// in reality there should only ever be one, but it might be that one output node pushes signal to a sibling.  
 		if(recurrent){
@@ -331,12 +331,12 @@ class OutputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
 				s.outputs.keys.foreach(n => {
 					//println(n + ", " + s.outputs(n).recurrent)
 
-		    		n ! Signal(activation * s.outputs(n).weight, s.outputs(n).recurrent )})
+		    		n ! Signal(activation * s.outputs(n).weight, s.outputs(n).recurrent, signalType)})
 
 				//println(self.path.name + ", outputs " + activation)
 		    	//println(self.path.name + ", acc signal: " + finalAccumalatedSignal)
 
-				parent ! Network.Output(activation)
+				parent ! Network.Output(activation, signalType)
 			    context become readyNeuron(s.copy(
 					accumulatedSignal = finalAccumalatedSignal,
 					activationOutput = activation,

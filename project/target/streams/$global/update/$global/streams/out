@@ -6009,7 +6009,7 @@
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-sbt#template-resolver;0.1!template-resolver.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang#jline;2.10.6!jline.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.fusesource.jansi#jansi;1.4!jansi.jar[0m
-[0m[[0mdebug[0m] [0m:: resolution report :: resolve 2784ms :: artifacts dl 66ms[0m
+[0m[[0mdebug[0m] [0m:: resolution report :: resolve 1339ms :: artifacts dl 41ms[0m
 [0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT compile produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-compile.xml[0m
 [0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT runtime produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-runtime.xml[0m
 [0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT test produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-test.xml[0m
@@ -6023,5 +6023,5 @@
 [0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT docs produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-docs.xml[0m
 [0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT pom produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-pom.xml[0m
 [0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT scala-tool produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-scala-tool.xml[0m
-[0m[[0mdebug[0m] [0m	resolve done (2784ms resolve - 66ms download)[0m
+[0m[[0mdebug[0m] [0m	resolve done (1339ms resolve - 41ms download)[0m
 [0m[[0minfo[0m] [0mDone updating.[0m

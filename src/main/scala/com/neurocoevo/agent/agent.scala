@@ -64,7 +64,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
     	case Experience.Event(e, l) =>
     		//println(e)
-    		ann ! Network.Sensation(1, e, l)
+    		ann ! Network.Sensation(1, e, l, "LEARN")
 
 
         // Received when a network has completed one signal of a pattern and needs another
@@ -109,13 +109,13 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 			//val mutationFunctions = List(mutatePerturbWeight, mutateAddConnection, mutateAddNeuron)
 			val mutationFunctions = List(
-					(mutatePerturbWeight(_, _), 0.8), 
-					(mutateAddNeuron(_, _), 0.1), 
+					(mutatePerturbWeight(_, _), 0.8),
+					(mutateAddNeuron(_, _), 0.1),
 					(mutateAddConnection(_, _), 0.1)
 					)
 
 			val mutationFunction = RouletteWheel.select(mutationFunctions)
-			
+
 
 			mutationFunction(genome, genomeNumber)
 
@@ -156,10 +156,10 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 																if(Random.nextDouble < 0.9) {
 																// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
 																	val c = connection.copy(weight = connection.weight + ((Random.nextDouble * 4) - 2) * Random.nextDouble)
-																	c 
+																	c
 																} else {
-																	val c = connection.copy(weight = (Random.nextDouble * 2) - 1) 
-																	c	
+																	val c = connection.copy(weight = (Random.nextDouble * 2) - 1)
+																	c
 																}
 
 
@@ -188,7 +188,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 												currentNeuron
 											}
 										})
-									} 
+									}
 
 									parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, genome.connections), genomeNumber)
 
@@ -308,7 +308,6 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 					//if({ genome.neurons(connectionData.fromNeuron).layer >= genome.neurons(connectionData.toNeuron).layer })
 					//	println("creating a recurrent connection")
 
-
 					val newConnections = genome.connections + (connectionData.innovationId ->
 						new ConnectionGenome(
 						connectionData.innovationId,
@@ -318,11 +317,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 						true, // enabled
 						{ genome.neurons(connectionData.fromNeuron).layer >= genome.neurons(connectionData.toNeuron).layer })) // recurrent
 
-
-
 	 			context.parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
-
-
 
 		}
 
