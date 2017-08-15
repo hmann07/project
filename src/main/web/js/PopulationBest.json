@@ -1,14 +1,8 @@
 var genome = {nodes:[{id: 5, reflexive: false, layer: 1.0, actFn: "BIPOLARSIGMOID"}, 
  {id: 1, reflexive: false, layer: 0.0, actFn: "IDENTITY"}, 
- {id: 13, reflexive: false, layer: 0.25, actFn: "SIGMOID"}, 
  {id: 2, reflexive: false, layer: 0.0, actFn: "IDENTITY"}, 
  {id: 3, reflexive: false, layer: 0.0, actFn: "IDENTITY"}, 
- {id: 8, reflexive: false, layer: 0.5, actFn: "GAUSSIAN"}, 
- {id: 4, reflexive: false, layer: 0.0, actFn: "IDENTITY"}],links:[{source: 8, target: 5 , left: false, right: true, weight: 2.537034637043287 } , 
- {source: 1, target: 5 , left: false, right: true, weight: -2.2466335816277496 } , 
- {source: 2, target: 5 , left: false, right: true, weight: -0.23573665052137832 } , 
- {source: 4, target: 13 , left: false, right: true, weight: 0.11586734474236518 } , 
- {source: 13, target: 8 , left: false, right: true, weight: 0.3589322105413618 } , 
- {source: 3, target: 13 , left: false, right: true, weight: 1.3380355204155423 } , 
- {source: 5, target: 8 , left: false, right: true, weight: -0.05216440137455253 } , 
- {source: 4, target: 5 , left: false, right: true, weight: 0.07253981568231294 } ]}
+ {id: 4, reflexive: false, layer: 0.0, actFn: "IDENTITY"}],links:[{source: 1, target: 5 , left: false, right: true, weight: -0.95349285881533 } , 
+ {source: 2, target: 5 , left: false, right: true, weight: -0.5132391991732237 } , 
+ {source: 3, target: 5 , left: false, right: true, weight: -0.10228696024158013 } , 
+ {source: 4, target: 5 , left: false, right: true, weight: -0.6918028558882121 } ]}

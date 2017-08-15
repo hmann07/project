@@ -33,8 +33,8 @@ object Main extends App {
 
 
 	// HyperNEAT
-	val networkGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (9)\\project-master\\src\\resources\\hyperneatAnnSubstrate.xml"
-	val cppnGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (9)\\project-master\\src\\resources\\cppnSubstrate.xml"
+	val networkGenomePath = ".\\src\\resources\\hyperneatAnnSubstrate.xml"
+	val cppnGenomePath = ".\\src\\resources\\cppnSubstrate.xml"
 	val networkGenome = GenomeFactory.createGenome(cppnGenomePath, 0)
 	inbox.send(p, Population.PopulationSettings(150, cppnGenomePath, "HYPER", networkGenomePath))
 

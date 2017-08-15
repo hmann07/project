@@ -67,6 +67,8 @@ import Population._
 				})
 
 			// TODO: is it better to make the outputter a member of the netowrk or of the system or of the agent... rather than population?
+			// network doesn't get a view of the ANN.. at the moment.
+
 			context.actorOf(Props[NetworkOutput], "networkOutput")
 
 			context become evolving(PopulationSettings(n,  genomePath, agentType, altGenomePath, speciationThreshold), n, List.empty, n, 1, 0)
@@ -129,32 +131,30 @@ import Population._
 
 				// tell the outputter to save down the best genome in JSON format.
 				context.actorSelection("networkOutput") ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" , "JSON")
+				
 				// Work out which species each genome is most compatible with.
+				
 				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)
 
 
-				// need to get the sum of the mean fitnesses for each species.
+				// need to get the sum of the mean fitnesses for each species. This is used to work out how many offspring each species should create
 				// i.e. the sum of the shared fitness values.
-
-
-				//TODO:::: UPDATE previous champion to new champion.
 
 				val totalMeanfitnessValue =  speciesDirectory.foldLeft(0.0)((acc, species) =>
 						acc + species._2.totalFitness / species._2.memberCount
 					)
-
+			
 
 				// all genomes allocated a species. now we tell the species to create their volunteers.
-
-
 				val finalSpeciesDirectory = speciesDirectory.foldLeft(HashMap[Int, SpeciesDirectoryEntry]())((directory, dirEntry) => {
 					dirEntry._2.actor ! SelectParents(totalMeanfitnessValue, settings.populationSize, OffspringSettings())
+
+					// set current champion as the old champion ready for the new genomes to return their results and be tested
 					directory + (dirEntry._1 ->  dirEntry._2.copy(previousChampion = dirEntry._2.champion))
 				}
 					)
 
-
-
+				// move to a state where we will wait for species to send proposal for their offspring to create.
 				context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber + 1, speciesDirectory.size, 0, List.empty, finalSpeciesDirectory)
 
 
@@ -246,22 +246,30 @@ import Population._
 
 	def speciating(settings: PopulationSettings, finalAgentsComplete: List[AgentResults], generationNumber: Int, currentGenomeNumber: Int, totalSpecies: Int, finishedSpecies: Int, agentMessages: List[Any] , speciesDirectory:HashMap[Int, SpeciesDirectoryEntry]): Receive = {
 
-		//println("started speciating")
+		// this will come from the Species. It means a particular species has finished selecting parents for crossover, nominations for mutation or elites.
 
 		case "AllParentsSelected" =>
 
-			//println(totalSpecies + ", " + (finishedSpecies + 1))
-			// when allllll sepecies heard back from then kick out a load of messages to children
+		
 			if (totalSpecies == (finishedSpecies + 1)) {
-				//println("All parents selected")
-				//println("agent messages: " + agentMessages.length )
-				//println("number of species: " + totalSpecies + ", " + speciesDirectory.size )
+
+				// Then we have heard from all species
+
+				// here we ask all the agents to do some processing for us (i.e. Mutate, Crossover, even echo an Elite. )
+
 				finalAgentsComplete.foreach(c =>
 					c.agent ! "ProcessRequest")
+				
+				// Move into a state where agents will voluteer themselves and we reply with enough data for them to do the processing
+				
 				context become spawning(settings, agentMessages.length, List.empty, generationNumber, currentGenomeNumber, speciesDirectory, agentMessages)
 
 			} else {
+
+				// There are still species to hear from 
+
 				 context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber, totalSpecies, finishedSpecies + 1, agentMessages, speciesDirectory)
+				
 				}
 
 		case Species.Extinct(speciesId) =>

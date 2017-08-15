@@ -264,6 +264,7 @@ function restart() {
         return d.id 
       	 });
 
+  circle.append("svg:title").text(function(d){return d.actFn})
   // remove old nodes
   circle.exit().remove();
 

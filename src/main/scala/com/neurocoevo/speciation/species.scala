@@ -53,8 +53,7 @@ import Species._
 
 		case Population.SelectParents(popTotalMeanFitness, population, settings) =>
 
-			//println("create")
-			
+
 			// we need to check if this species still exists.. it could be that none of the children were compatible with the champion 
 			// genome 
 			if(s.members.size == 0) {
@@ -93,19 +92,25 @@ import Species._
 				
 
 				// Analysis of NEAT code seems to suggest that only the stop two are ever selected for mating....
+				// But the NEAT paper and general EA suggest random selection weighted by fitness is better
+
+				//val parent1 = members(0)
+				//val parent2 = members(1)
+
 				val parent1 = RouletteWheel.select(members, speciesTotalFitness)
 				val parent2 = RouletteWheel.select(members, speciesTotalFitness)
 
+
 				if(members.length == 1) {
+
+					// If there's only one member, mutate it.
+
 					val parent1 = members(0)
 					context.parent ! Mutate(parent1)
 
 				} else {
 
-				//val parent1 = members(0)
-				//val parent2 = members(1)
-
-				context.parent ! Crossover(parent1, parent2)
+					context.parent ! Crossover(parent1, parent2)
 
 				}
 				
@@ -116,16 +121,12 @@ import Species._
 				// mutate
 				val parent1 = RouletteWheel.select(members, speciesTotalFitness)
 
-
 				context.parent ! Mutate(parent1)
 
 				selectParents((0, y - 1, z), members,speciesTotalFitness, settings)
 			
 
 			case (0,0,z) if z > 0 =>
-
-
-				//println(members(0).fitness + ", " + members(members.length - 1).fitness) 
 
 				// allocate elites
 				val elites = members.take(z)
@@ -134,6 +135,7 @@ import Species._
 					context.parent ! Elite(e)
 					)
 
+				// We can zero out elites because we did it in one batch
 				selectParents((0, 0, 0), members,speciesTotalFitness, settings)
 		}
 	}
