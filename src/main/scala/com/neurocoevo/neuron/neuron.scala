@@ -14,7 +14,7 @@ import scala.collection.immutable.HashMap
 
 object Neuron {
 
-	def props(biasWeight: Double): Props = Props(new Neuron(biasWeight))
+	def props(biasWeight: Double, activationFunction: ActivationFunction ): Props = Props(new Neuron(biasWeight, activationFunction))
 
 	val defaultActivationFunction = ActivationFunction("SIGMOID")
 	val defaultAccumulatedSignal = 0
@@ -48,10 +48,10 @@ object Neuron {
 }
 
 object InputNeuron {
-	def props(biasWeight: Double): Props = Props(new InputNeuron(biasWeight))
+	def props(biasWeight: Double, activationFunction: ActivationFunction ): Props = Props(new InputNeuron(biasWeight, activationFunction))
 }
 object OutputNeuron {
-	def props(biasWeight: Double): Props = Props(new OutputNeuron(biasWeight))
+	def props(biasWeight: Double, activationFunction: ActivationFunction): Props = Props(new OutputNeuron(biasWeight, activationFunction))
 }
 
 
@@ -62,13 +62,13 @@ object OutputNeuron {
 
 */
 
-class Neuron(biasWeight: Double) extends Actor with ActorLogging {
+class Neuron(biasWeight: Double, activationFunction: ActivationFunction) extends Actor with ActorLogging {
 	import context._
 	import Neuron._
 
 	//println("Neuron created")
 
-	def receive = initialisingNeuron(NeuronSettings(biasWeight = biasWeight))
+	def receive = initialisingNeuron(NeuronSettings(biasWeight = biasWeight, activationFunction = activationFunction))
 
     def initialisingNeuron(settings: NeuronSettings): Receive = {
 
@@ -93,7 +93,7 @@ class Neuron(biasWeight: Double) extends Actor with ActorLogging {
 				// we also don't need to worry about back prop for now... since recurrent weights will be learned by evolution
 
 				if(s.head._2.recurrent){
-					
+
 					sender() ! "ConnectionConfirmation"
 					// no need to do anything. // not going to count for inputs coming recurrently...
 					context become initialisingNeuron(settings)
@@ -114,13 +114,6 @@ class Neuron(biasWeight: Double) extends Actor with ActorLogging {
   		case Network.Error(e) =>
 
   			handleError(settings, e, sender)
-
-
-  		// TODO: type should come in as part of the original genome... even though it's a little agnostic to what its own type is.
-  		case "snapshot" =>
-  			val connectionGenome = settings.outputs.foldLeft(HashMap[Int, ConnectionGenome]()) {(m, o) => m + ( o._2.id  -> new ConnectionGenome( o._2.id , self.path.name.toInt, o._1.path.name.toInt, o._2.weight ))}
-  			val ownNeuronGenome = (self.path.name.toInt -> new NeuronGenome(self.path.name.toInt, "SIGMOID", "hidden", settings.biasValue, settings.biasWeight))
-  			sender() ! NeuronSnapshot(ownNeuronGenome, connectionGenome)
 
 
   		case "Relax" =>
@@ -157,14 +150,21 @@ class Neuron(biasWeight: Double) extends Actor with ActorLogging {
     		val activation = s.activationFunction.function(finalAccumalatedSignal)
 
 	    	s.outputs.keys.foreach(n => {
-	    		
+
 	    		n ! Signal(activation * s.outputs(n).weight, s.outputs(n).recurrent, signalType )
 	    	})
 
+
+			// logic here is if we are not learning then we can reset the signals now..
+			// if learning via back propagation then we need these values to stay in order to calculate error gradients.
+			if(signalType == "ANNCONFIG") {
+				context become readyNeuron(s.copy(accumulatedSignal = 0, signalsReceived = Map.empty))
+			} else {
 	    	context become readyNeuron(s.copy(
 				accumulatedSignal  = finalAccumalatedSignal,
 				activationOutput = activation,
 	    		signalsReceived = s.signalsReceived + (source -> v)))
+			}
 
     	} else {
     		////println("hidden got a new sig")
@@ -237,7 +237,7 @@ class Neuron(biasWeight: Double) extends Actor with ActorLogging {
 
 }
 
-class InputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
+class InputNeuron(biasWeight: Double, activationFunction: ActivationFunction) extends Neuron(biasWeight: Double, activationFunction: ActivationFunction) {
 	import Neuron._
 	import context._
 	override def handleSignal(s: NeuronSettings,v: Double, source: ActorRef, recurrent: Boolean, signalType: String) = {
@@ -247,15 +247,20 @@ class InputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
 	    		//println(self.path.name + ", outputs: " + v * s.outputs(n).weight)
 	    		//println(self.path.name + ", connweight: " + s.outputs(n).weight)
 	    		n ! Signal(v * s.outputs(n).weight, false, signalType)
-	    		
+
 	    		})
 
-	    	
+			// logic here is if we are not learning then we can reset the signals now..
+			// if learning via back propagation then we need these values to stay in order to calculate error gradients.
+			if(signalType == "ANNCONFIG") {
+				context become readyNeuron(s.copy(accumulatedSignal = 0, signalsReceived = Map.empty))
+			} else {
 
-	    	context become readyNeuron(s.copy(activationFunction = ActivationFunction("INPUTFUNCTION"),
+	    	context become readyNeuron(s.copy(
 	    									  accumulatedSignal = s.accumulatedSignal + v,
 	    									  signalsReceived = s.signalsReceived + (source -> v),
 	    									  biasValue = 0))
+			}
   	}
 
   	override def handleError(s: NeuronSettings, e: Double, source: ActorRef) = {
@@ -294,13 +299,13 @@ class InputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
 
 }
 
-class OutputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
+class OutputNeuron(biasWeight: Double, activationFunction: ActivationFunction) extends Neuron(biasWeight: Double, activationFunction: ActivationFunction) {
 	import Neuron._
 	import context._
 
 	override def handleSignal(s: NeuronSettings,v: Double, source: ActorRef, recurrent: Boolean, signalType: String) = {
 
-		// in reality there should only ever be one, but it might be that one output node pushes signal to a sibling.  
+		// in reality there should only ever be one, but it might be that one output node pushes signal to a sibling.
 		if(recurrent){
 			// if the neuron has recently fired then we have used the accumulated recurrent signals so we can start re-collecting post firing.
 			if(!s.accumulateRecurrent) {
@@ -308,6 +313,8 @@ class OutputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
 					recurrentAccumulatedSignal  = v,
 					accumulateRecurrent = true))
 			} else {
+
+
 				context become readyNeuron(s.copy(
 					recurrentAccumulatedSignal  = s.recurrentAccumulatedSignal + v))
 			}
@@ -319,13 +326,14 @@ class OutputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
 				//println(" recurrent va;: " + s.recurrentAccumulatedSignal)
 				//println(" biaswieght " + s.biasWeight)
 				//println(" bias " + s.biasValue)
+
 				val finalAccumalatedSignal = (s.accumulatedSignal + v + s.recurrentAccumulatedSignal) + (s.biasWeight * s.biasValue)
 				val activation = s.activationFunction.function(finalAccumalatedSignal)
 
 				//println("output got all sigs")
 			    //println("output = " + activation)
 			    //println(self.path.name + " bias is" + s.biasWeight)
-				 //println(s.outputs.keys)
+				//println(s.outputs.keys)
 
 				// these should all be recurrent..
 				s.outputs.keys.foreach(n => {
@@ -336,12 +344,22 @@ class OutputNeuron(biasWeight: Double) extends Neuron(biasWeight: Double) {
 				//println(self.path.name + ", outputs " + activation)
 		    	//println(self.path.name + ", acc signal: " + finalAccumalatedSignal)
 
+
+
 				parent ! Network.Output(activation, signalType)
-			    context become readyNeuron(s.copy(
+
+				// logic here is if we are not learning then we can reset the signals now..
+				// if learning via back propagation then we need these values to stay in order to calculate error gradients.
+				if(signalType == "ANNCONFIG") {
+					context become readyNeuron(s.copy(accumulatedSignal = 0, signalsReceived = Map.empty))
+				} else {
+
+				context become readyNeuron(s.copy(
 					accumulatedSignal = finalAccumalatedSignal,
 					activationOutput = activation,
 					signalsReceived = s.signalsReceived + (source -> v)))
-			
+				}
+
 		} else {
 
 			//println(" output accumulated signal " + (s.accumulatedSignal + v))

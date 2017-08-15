@@ -17,13 +17,15 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object HyperNeatAgent {
 
-	def props(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experience: ActorRef, species: Int = 0): Props = Props(new HyperNeatAgent(cppnGenome, annGenome, experience, species))
+	def props(cppnGenome: NetworkGenome, annSubstratePath: String, experience: ActorRef, species: Int = 0): Props = Props(new HyperNeatAgent(cppnGenome, annSubstratePath, experience, species))
 
     case class NewChild(genome: NetworkGenome, name: Int)
 
 	case class Matured(genome: NetworkGenome, error: Double, sse: Double, species: Int)
 
 	case class AgentSettings(cppn: ActorRef, ann: ActorRef = null)
+
+	case class ConfiguredNetwork(networkGenome: NetworkGenome)
 }
 
 
@@ -34,17 +36,16 @@ object HyperNeatAgent {
 
 */
 
-class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experience: ActorRef, species: Int) extends Actor with ActorLogging {
+class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experience: ActorRef, species: Int) extends Actor with ActorLogging {
 	import context._
     import HyperNeatAgent._
-	//println("actor created")
+
 
     override def postStop() {
 
         experience ! "STOP"
 
     }
-
 
 	// we will fire up a Network for the CPPN. We will have to wait for the network to confirm it is ready.
 
@@ -54,24 +55,34 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experi
 
 	def runningAgent(s: AgentSettings): Receive = {
 
-    	case "NetworkReady" =>
+    	case Network.NetworkReady(networkGenome) =>
+
 
 			if(sender().path.name == "cppn"){
 
 				// then we should now create the ANN based on the output of the CPPN.
 
-				println("cppn created.")
+				val annFactory = actorOf(ActorGenomeFactory.props(annSubstratePath), "annFac")
 
-				val ann = actorOf(Network.props(annGenome), "ann")
+//				context become configuring(s.copy(ann = ann))
 
-				context become configuring(s.copy(ann = ann))
-				
 			} else {
 
-				// we assume that this must have been the ANN. so we can send it its inputs
-    			experience ! "perceive"
+				// we assume that this must have been the ANN. so we can send it its inputs we can close the ANN factory since we no longer need it.
+
+				context.actorSelection("annFac") ! akka.actor.PoisonPill
+
+				context.actorSelection("../networkOutput") ! NetworkOutput.OutputRequest(networkGenome, "AgentANN" , "JSON")
+
+				// println("confirmation of ANN configuration and actors created")
+				experience ! "perceive"
+
 			}
 
+		case ConfiguredNetwork(network) =>
+
+			val annGenome = actorOf(Network.props(network), "ann")
+			context become runningAgent(s.copy(ann = annGenome))
 
     	case "propagated" =>
 
@@ -80,8 +91,10 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experi
 
 
     	case Experience.Event(e, l) =>
-    		//println(e)
-    		s.ann ! Network.Sensation(1, e, l)
+
+			val t = Network.Sensation(1, e, l, "EVOLVE")
+			//println(t)
+    		s.ann ! t
 
 
         // Received when a network has completed one signal of a pattern and needs another
@@ -93,15 +106,21 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experi
 
         //  Received when a network has processed all expected patterns from a test set.
         case Network.Matured(g, fitnessValue, sse) =>
-            //println("HyperNeatAgent got final network data")
-            parent ! Matured(g, fitnessValue, sse, species)
+
+			//println("network matured")
+
+			// tell population, send the CPPN which will be subject to genetic operators.
+			// used the agent version of maturerd so that population can match..
+
+
+            parent ! Agent.Matured(cppnGenome, fitnessValue, sse, species)
 
         // receieved some instructions for crossing over two genomes..
 
 		case Population.Elite(genome, genomeNumber) =>
 
 
-			parent ! NewChild(genome.copy(id = genomeNumber), genomeNumber)
+			parent ! Agent.NewChild(genome.copy(id = genomeNumber), genomeNumber)
 
 		case Population.Mutate(genome, genomeNumber) =>
 
@@ -109,7 +128,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experi
 
 		case Population.Crossover(g, f, genomeNumber) =>
 
-  			parent ! NewChild(f(g, genomeNumber), genomeNumber)
+  			parent ! Agent.NewChild(f(g, genomeNumber), genomeNumber)
 
   		case "ProcessRequest" =>
   			sender() ! "Ready"
@@ -186,7 +205,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experi
 												})
 									}
 
-									parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
+									parent ! Agent.NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
 
 							} else {
 									// change bias weight
@@ -207,7 +226,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experi
 										})
 									}
 
-									parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, genome.connections), genomeNumber)
+									parent ! Agent.NewChild(new NetworkGenome(genomeNumber, newNeurons, genome.connections), genomeNumber)
 
 							}
 		}
@@ -250,7 +269,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experi
 						// these two are already connected so just return the genome.
 						// TODO: We can probably have a few goes at this.. say try 4 times if no success then give up.
 
-						parent ! NewChild(genome.copy(id = genomeNumber), genomeNumber)
+						parent ! Agent.NewChild(genome.copy(id = genomeNumber), genomeNumber)
 
 					}
 
@@ -302,10 +321,13 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experi
                      neuronData.connection1 -> new ConnectionGenome(neuronData.connection1, neuronData.fromNeuron, neuronData.newNeuron),   //new ConnectionGenomes
                      neuronData.connection2 -> new ConnectionGenome(neuronData.connection2, neuronData.newNeuron, neuronData.toNeuron))  //new ConnectionGenomes
 
+			val activationFns = List("SIGMOID", "GAUSSIAN", "SINE")
+			val activationFn = activationFns(Random.nextInt(activationFns.length))
+
 
             val newNeurons = genome.neurons + (neuronData.newNeuron-> new NeuronGenome(
                     neuronData.newNeuron,
-                    "SIGMOID", // In case of CPPN Needs to be randomly selected
+                    activationFn, // In case of CPPN Needs to be randomly selected (WEll, it can also be random for Normal ANN)
                     "hidden",  // Assume we can't ad or remove inputs or outputs.
                     -1, // Bias val
                     Random.nextDouble, // Bias weight
@@ -313,7 +335,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experi
                     ))
 
 
-            context.parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, newCons), genomeNumber)
+            context.parent ! Agent.NewChild(new NetworkGenome(genomeNumber, newNeurons, newCons), genomeNumber)
             //println(newCons.toString)
 
     }
@@ -334,7 +356,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annGenome: NetworkGenome, experi
 						true, // enabled
 						{ genome.neurons(connectionData.fromNeuron).layer >= genome.neurons(connectionData.toNeuron).layer })) // recurrent
 
-	 			context.parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
+	 			context.parent ! Agent.NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
 
 		}
 

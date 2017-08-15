@@ -15,56 +15,34 @@ object Main extends App {
 
 	//val networkGenomePath = GenomeFactory.createGenome("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
 	//val networkGenomePath = "C:\\Users\\user\\Documents\\neurocoevo\\project\\src\\resources\\annSubstrate.xml"
-	val networkGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (8)\\project-master\\src\\resources\\annSubstrate.xml"
-	val cppnGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (8)\\project-master\\src\\resources\\cppnSubstrate.xml"
 	//val networkGenomePath = "C:\\Users\\Henry\\Downloads\\project-master\\project-master\\src\\resources\\annSubstrate.xml"
+
+	// Create Actor System.
 
 	val system = ActorSystem("mySystem")
 	val inbox = Inbox.create(system)
 
 
-	// Need to give the structure of the genome that is going to be used to seed the population..
-	val networkGenome = GenomeFactory.createGenome(networkGenomePath, 0)
+	// Create a population.
+	val p = system.actorOf(Props[Population], "population")
 
-	//val annGenome = GenomeFactory.createGenome(cppnGenomePath, networkGenome, 0)
+	// NEAT
+	// val networkGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (9)\\project-master\\src\\resources\\annSubstrate.xml"
+	//val networkGenome = GenomeFactory.createGenome(networkGenomePath, 0)
+	//inbox.send(p, Population.PopulationSettings(150,networkGenomePath, "STD"))
+
+
+	// HyperNEAT
+	val networkGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (9)\\project-master\\src\\resources\\hyperneatAnnSubstrate.xml"
+	val cppnGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (9)\\project-master\\src\\resources\\cppnSubstrate.xml"
+	val networkGenome = GenomeFactory.createGenome(cppnGenomePath, 0)
+	inbox.send(p, Population.PopulationSettings(150, cppnGenomePath, "HYPER", networkGenomePath))
+
+	// innovation needs substrate so that it can choose the right number to start from
 
 	val inn = system.actorOf(Innovation.props(networkGenome), "innovation")
 
 
 
-	val p = system.actorOf(Props[Population], "population")
-
-	// innovation needs substrate so that it can choose the right number to start from
-
-
-//	inbox.send(p, Population.PopulationSettings(150,networkGenomePath, "STD"))
-	inbox.send(p, Population.PopulationSettings(150,networkGenomePath, "HYPER"))
-
-	//val agent = system.actorOf(Agent.props(networkGenome, e), "agentX")
-	//val agent2 = system.actorOf(Agent.props(networkGenome, e), "agentY")
-	//val agent3 = system.actorOf(Agent.props(networkGenome, e), "agentZ")
-	//val agent4 = system.actorOf(Agent.props(networkGenome, e), "agentA")
-
-	/*
-
-
-	val cppnSubstrate = new Substrate("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
-	val annSubstrate = new Substrate("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
-	cppnSubstrate.inputNodes.foreach(n =>  println(n.dim))
-	cppnSubstrate.hiddenNodes.foreach(l => l.foreach(n  =>  println(n.name)))
-	cppnSubstrate.outputNodes.foreach(n =>  println(n.name))
-
-	val g = new Genome(cppnSubstrate)
-	println(g.connections)
-	g.connections.foreach(c => println(c.weight))
-
-	val system = ActorSystem("mySystem")
-	val inbox = Inbox.create(system)
-
-	val e = system.actorOf(Props[Experience], "experienceX")
-	val agent = system.actorOf(Agent.props(g, e), "agentX")
-
-	inbox.send(agent, "10")
-	*/
 
 }

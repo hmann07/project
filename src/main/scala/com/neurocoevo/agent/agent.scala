@@ -64,7 +64,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
     	case Experience.Event(e, l) =>
     		//println(e)
-    		ann ! Network.Sensation(1, e, l, "LEARN")
+    		ann ! Network.Sensation(1, e, l, "EVOLVE")
 
 
         // Received when a network has completed one signal of a pattern and needs another

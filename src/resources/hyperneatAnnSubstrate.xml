@@ -1,0 +1,20 @@
+<substrate>
+	<neurons>
+		<neuron id="1" type="input" activationFunction="IDENTITY" layer="0" bias="0">
+			<dim>-1</dim>
+			<dim>-1</dim>
+		</neuron>
+		<neuron id="2" type="input" activationFunction="IDENTITY" layer="0" bias="0">
+			<dim>-1</dim>
+			<dim>1</dim>
+		</neuron>
+		<neuron id="4" type="hidden" activationFunction="SIGMOID" layer="0.5" bias="-1">
+			<dim>0</dim>
+			<dim>0</dim>
+		</neuron>
+		<neuron id="3" type="output" activationFunction="SIGMOID" layer="1" bias="-1">
+			<dim>1</dim>
+			<dim>0</dim>
+		</neuron>
+	</neurons>
+</substrate>

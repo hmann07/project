@@ -31,15 +31,15 @@ var nodes = genome.nodes
 
 	var linkWidthScale = d3.scale.linear().range([3,7]).domain([d3.min(outputlinks, function(d){return d.weight}), d3.max(outputlinks,function(d){return d.weight})]);
 
-	var nodeSize = 20
+	var nodeSize = 40
 
 // init D3 force layout
 var force = d3.layout.force()
     .nodes(nodes)
     .links(links)
     .size([width, height])
-    .linkDistance(150)
-    .charge(-500)
+    //.linkDistance(100)
+    .charge(-4000)
     .on('tick', tick)
 
 // define arrow markers for graph links
@@ -88,11 +88,22 @@ function resetMouseVars() {
 }
 
 // update force layout (called automatically each iteration)
-function tick() {
+function tick(e) {
+
+  var k = e.alpha;
+  nodes.forEach(function(o, i) {
+    //o.y = o.y + ((width * o.layer) - o.y) * k * 0.15
+    //o.x = o.x + ((width * o.layer) - o.x) * k
+    o.x = ((width - 200) * o.layer) + 100
+  });
+
+
+
+
   // draw directed edges with proper padding from node centers
   path.attr('d', function(d) {
   	if(d.target.id == d.source.id){
-  		return 'M' + d.target.x + ',' + d.target.y + 'A15, 40 180, 1, 0,' + (d.target.x + nodeSize - 5 ) +  ',' + (d.target.y + nodeSize - 5)
+  		return 'M' + (d.target.x + nodeSize / 2) + ',' + (d.target.y + nodeSize / 1.5) +  'A30, 30 -160, 1, 1,' + (d.target.x - nodeSize + (nodeSize* 0.2)  ) +  ',' + (d.target.y + nodeSize * .5)
   	}else {
 	    var deltaX = d.target.x - d.source.x,
 	        deltaY = d.target.y - d.source.y,
@@ -161,7 +172,7 @@ function restart() {
 
   g.append('svg:circle')
     .attr('class', 'node')
-    .attr('r', 20)
+    .attr('r', 30)
     //.style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.id)).brighter().toString() : colors(d.id); })
     .style('stroke', function(d) { return d3.rgb(colors(d.id)).darker().toString(); })
     .classed('reflexive', function(d) { return d.reflexive; })
@@ -249,7 +260,8 @@ function restart() {
       .attr('y', 4)
       .attr('class', 'id')
       .text(function(d) { 
-      	return "Neuron: " + d.id + " - Layer: " + d.layer;
+      	//return "Neuron: " + d.id + " - Layer: " + d.layer;
+        return d.id 
       	 });
 
   // remove old nodes

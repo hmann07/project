@@ -9,7 +9,7 @@ case class NetworkGenome(
 					val neurons: HashMap[Int, NeuronGenome],
 					val connections1: HashMap[Int, ConnectionGenome]){
 
-	///a little bit bad design here. Naming could be imporved.
+	///a little bit bad design here. Naming could be improved.
 	// and also NEAT paper suggests that disabled genes could be re-enabled.
 	val connections = connections1.filter(x=> x._2.enabled)
 	val inputNodes: HashMap[Int, NeuronGenome] = neurons.filter(n => n._2.neuronType == "input")

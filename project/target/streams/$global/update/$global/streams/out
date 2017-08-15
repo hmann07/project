@@ -1,4 +1,4 @@
-[0m[[0minfo[0m] [0mUpdating {file:/C:/Users/Henry/Downloads/project-master/project-master/project/}project-master-build...[0m
+[0m[[0minfo[0m] [0mUpdating {file:/C:/Users/HMann/Desktop/project-master%20(9)/project-master/project/}project-master-build...[0m
 [0m[[0mdebug[0m] [0m:: resolving dependencies :: default#project-master-build;0.1-SNAPSHOT[0m
 [0m[[0mdebug[0m] [0m	confs: [compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom, scala-tool][0m
 [0m[[0mdebug[0m] [0m	validate = true[0m
@@ -6009,19 +6009,19 @@
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-sbt#template-resolver;0.1!template-resolver.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.scala-lang#jline;2.10.6!jline.jar[0m
 [0m[[0mdebug[0m] [0m	[NOT REQUIRED] org.fusesource.jansi#jansi;1.4!jansi.jar[0m
-[0m[[0mdebug[0m] [0m:: resolution report :: resolve 1339ms :: artifacts dl 41ms[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT compile produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-compile.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT runtime produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-runtime.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT test produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-test.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT provided produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-provided.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT optional produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-optional.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT compile-internal produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-compile-internal.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT runtime-internal produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-runtime-internal.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT test-internal produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-test-internal.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT plugin produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-plugin.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT sources produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-sources.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT docs produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-docs.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT pom produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-pom.xml[0m
-[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT scala-tool produced in C:\Users\Henry\Downloads\project-master\project-master\project\target\resolution-cache\reports\default-project-master-build-scala-tool.xml[0m
-[0m[[0mdebug[0m] [0m	resolve done (1339ms resolve - 41ms download)[0m
+[0m[[0mdebug[0m] [0m:: resolution report :: resolve 2313ms :: artifacts dl 47ms[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT compile produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-compile.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT runtime produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-runtime.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT test produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-test.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT provided produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-provided.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT optional produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-optional.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT compile-internal produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-compile-internal.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT runtime-internal produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-runtime-internal.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT test-internal produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-test-internal.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT plugin produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-plugin.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT sources produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-sources.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT docs produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-docs.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT pom produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-pom.xml[0m
+[0m[[0mdebug[0m] [0m	report for default#project-master-build;0.1-SNAPSHOT scala-tool produced in C:\Users\HMann\Desktop\project-master (9)\project-master\project\target\resolution-cache\reports\default-project-master-build-scala-tool.xml[0m
+[0m[[0mdebug[0m] [0m	resolve done (2313ms resolve - 47ms download)[0m
 [0m[[0minfo[0m] [0mDone updating.[0m
