@@ -6,6 +6,7 @@ import com.neurocoevo.agent.Agent
 import com.neurocoevo.experience.Experience
 import com.neurocoevo.population.Population
 import com.neurocoevo.innovation.Innovation
+import com.neurocoevo.parameters._
 
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
@@ -13,35 +14,24 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object Main extends App {
 
-	//val networkGenomePath = GenomeFactory.createGenome("C:\\Users\\Henry\\Downloads\\akka-quickstart-scala\\neurocoevo\\src\\resources\\annSubstrate.xml")
-	//val networkGenomePath = "C:\\Users\\user\\Documents\\neurocoevo\\project\\src\\resources\\annSubstrate.xml"
-	//val networkGenomePath = "C:\\Users\\Henry\\Downloads\\project-master\\project-master\\src\\resources\\annSubstrate.xml"
-
 	// Create Actor System.
 
 	val system = ActorSystem("mySystem")
 	val inbox = Inbox.create(system)
 
+	// innovation needs to analyse the genome to be evolved so that it can choose the right number to start from
 
-	// Create a population.
-	val p = system.actorOf(Props[Population], "population")
-
-	// NEAT
-	// val networkGenomePath = "C:\\Users\\HMann\\Desktop\\project-master (9)\\project-master\\src\\resources\\annSubstrate.xml"
-	//val networkGenome = GenomeFactory.createGenome(networkGenomePath, 0)
-	//inbox.send(p, Population.PopulationSettings(150,networkGenomePath, "STD"))
-
-
-	// HyperNEAT
-	val networkGenomePath = ".\\src\\resources\\hyperneatAnnSubstrate.xml"
-	val cppnGenomePath = ".\\src\\resources\\cppnSubstrate.xml"
-	val networkGenome = GenomeFactory.createGenome(cppnGenomePath, 0)
-	inbox.send(p, Population.PopulationSettings(150, cppnGenomePath, "HYPER", networkGenomePath))
-
-	// innovation needs substrate so that it can choose the right number to start from
+	val networkGenome = GenomeFactory.createGenome(Population.PopulationSettings().genomePath, 0)
 
 	val inn = system.actorOf(Innovation.props(networkGenome), "innovation")
 
+	// Create a population.
+
+	val p = system.actorOf(Props[Population], "population")
+
+	// kick everything off...
+
+	inbox.send(p, Population.PopulationSettings())
 
 
 

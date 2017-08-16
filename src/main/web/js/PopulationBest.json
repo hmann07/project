@@ -2,7 +2,7 @@ var genome = {nodes:[{id: 5, reflexive: false, layer: 1.0, actFn: "BIPOLARSIGMOI
  {id: 1, reflexive: false, layer: 0.0, actFn: "IDENTITY"}, 
  {id: 2, reflexive: false, layer: 0.0, actFn: "IDENTITY"}, 
  {id: 3, reflexive: false, layer: 0.0, actFn: "IDENTITY"}, 
- {id: 4, reflexive: false, layer: 0.0, actFn: "IDENTITY"}],links:[{source: 1, target: 5 , left: false, right: true, weight: -0.95349285881533 } , 
- {source: 2, target: 5 , left: false, right: true, weight: -0.5132391991732237 } , 
- {source: 3, target: 5 , left: false, right: true, weight: -0.10228696024158013 } , 
- {source: 4, target: 5 , left: false, right: true, weight: -0.6918028558882121 } ]}
+ {id: 4, reflexive: false, layer: 0.0, actFn: "IDENTITY"}],links:[{source: 1, target: 5 , left: false, right: true, weight: -1.3794114333363987 } , 
+ {source: 2, target: 5 , left: false, right: true, weight: -0.20846034994779372 } , 
+ {source: 3, target: 5 , left: false, right: true, weight: 0.02446440184159715 } , 
+ {source: 4, target: 5 , left: false, right: true, weight: 1.3365899271400703 } ]}

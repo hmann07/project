@@ -7,6 +7,7 @@ import com.neurocoevo.network._
 import com.neurocoevo.experience._
 import com.neurocoevo.population._
 import com.neurocoevo.innovation._
+import com.neurocoevo.parameters.MutationFunctionParameters
 import com.neurocoevo.evolution.RouletteWheel
 
 import scala.util.Random
@@ -28,14 +29,11 @@ object Agent {
 /* Agent.
 		Agent will have a genome that defines a CPPN.
 		using the Genome it must set up the actors for the network set up the connections and
-
-
 */
 
 class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) extends Actor with ActorLogging {
 	import context._
     import Agent._
-	//println("actor created")
 
     override def postStop() {
 
@@ -48,7 +46,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 	def receive = {
 
-    	case "NetworkReady" =>
+    	case Network.NetworkReady(networkGenome) =>
 
     		// Network is ready, lets percieve some "things"
     		experience ! "perceive"
@@ -63,7 +61,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 
     	case Experience.Event(e, l) =>
-    		//println(e)
+
     		ann ! Network.Sensation(1, e, l, "EVOLVE")
 
 
@@ -107,11 +105,12 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int) exten
 
 		def mutate(genome: NetworkGenome, genomeNumber: Int) = {
 
-			//val mutationFunctions = List(mutatePerturbWeight, mutateAddConnection, mutateAddNeuron)
+			val params = MutationFunctionParameters()
+
 			val mutationFunctions = List(
-					(mutatePerturbWeight(_, _), 0.8),
-					(mutateAddNeuron(_, _), 0.1),
-					(mutateAddConnection(_, _), 0.1)
+					(mutatePerturbWeight(_, _),params.perturbWeightRate ),
+					(mutateAddNeuron(_, _), params.addNeuronRate),
+					(mutateAddConnection(_, _), params.addConnectionRate)
 					)
 
 			val mutationFunction = RouletteWheel.select(mutationFunctions)

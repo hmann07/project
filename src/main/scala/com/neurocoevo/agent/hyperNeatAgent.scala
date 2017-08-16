@@ -7,6 +7,7 @@ import com.neurocoevo.network._
 import com.neurocoevo.experience._
 import com.neurocoevo.population._
 import com.neurocoevo.innovation._
+import com.neurocoevo.parameters.MutationFunctionParameters
 import com.neurocoevo.evolution.RouletteWheel
 
 import scala.util.Random
@@ -143,12 +144,12 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 		def mutate(genome: NetworkGenome, genomeNumber: Int) = {
 
-			//val mutationFunctions = List(mutatePerturbWeight, mutateAddConnection, mutateAddNeuron)
+			val params = MutationFunctionParameters()
+
 			val mutationFunctions = List(
-					(mutatePerturbWeight(_, _), 0.8),
-					(mutateAddNeuron(_, _), 0.1),
-					(mutateAddConnection(_, _), 0.1)
-					)
+				(mutatePerturbWeight(_, _),params.perturbWeightRate ),
+				(mutateAddNeuron(_, _), params.addNeuronRate),
+				(mutateAddConnection(_, _), params.addConnectionRate))
 
 			val mutationFunction = RouletteWheel.select(mutationFunctions)
 
@@ -237,13 +238,6 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
         // <param> genome -> the genome due to be mutated.
         // <return> genome -> A new copy of the genome with a new connection added.
 
-
-    // add node Or splice
-    // find connection between two nodes. deactive connection, replace with two new connections and a node
-
-
-    // add node
-    // pick two random nodes. and add a new connected node.
 
     def mutateAddConnection (genome: NetworkGenome, genomeNumber: Int) = {
 

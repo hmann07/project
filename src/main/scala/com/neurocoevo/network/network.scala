@@ -13,7 +13,8 @@ import scala.collection.immutable.HashMap
 object Network {
 
 	case class Output(value: Double, signalType: String)
-  case class Matured(genome: NetworkGenome, error: Double, sse: Double)
+
+	case class Matured(genome: NetworkGenome, error: Double, sse: Double)
 
 	case class NetworkSettings(
 		confirmedConnections: Int = 0,
@@ -22,8 +23,8 @@ object Network {
 		confirmedPropagations: Int = 0,
     	sse: Double = 0,
     	fitnessValue: Double = 0.00000000001,
-		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput,2)
-		)
+		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput,2))
+
 	case class Sensation(
 			 id: Double,
 			 values: List[Double],
@@ -43,7 +44,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	import Network._
 
 	// create actors for nodes
-	
+
 	val inputs: Map[String, ActorRef] = generateInputNeurons( genome.inputNodes, Map.empty)
 	val outputs: Map[String, ActorRef] = generateOutputNeurons( genome.outputNodes, Map.empty)
 	val hidden: Map[String, ActorRef] = generateHiddenNeurons( genome.hiddenNodes, Map.empty)

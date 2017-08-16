@@ -8,7 +8,7 @@ import com.neurocoevo.experience._
 import com.neurocoevo.network._
 import com.neurocoevo.innovation._
 import com.neurocoevo.evolution.RouletteWheel
-import com.neurocoevo.speciation.SpeciationParameters
+import com.neurocoevo.parameters._
 import com.neurocoevo.speciation.Species
 import com.neurocoevo.speciation.SpeciesMember
 
@@ -18,17 +18,14 @@ import scala.collection.immutable.HashMap
 import com.neurocoevo.genome._
 
 object Population {
-	case class PopulationSettings(
-			populationSize: Int,
-			genomePath: String,
-			agentType: String,
-			altGenomePath: String = null,
-			speciationThreshold: Double = 3.0)
 
-	case class OffspringSettings(
-			elitism: Double = 0.1,
-			crossoverRate: Double = 0.25,
-			mutationRate: Double = 0.75)
+	case class PopulationSettings(
+			populationSize: Int = PopulationParameters().populationSize ,
+			genomePath: String = PopulationParameters().genomePath,
+			agentType: String = PopulationParameters().agentType,
+			altGenomePath: String = PopulationParameters().altGenomePath,
+			speciationThreshold: Double = SpeciationParameters().speciationThreshold)
+
 
 	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the
 	// weights and topologies but also learning rates or functions.
@@ -44,7 +41,7 @@ object Population {
 
 	case class SpeciesDirectoryEntry(champion: SpeciesMember, previousChampion: SpeciesMember, actor: ActorRef, totalFitness: Double, memberCount: Double)
 
-	case class SelectParents(totalMeanfitnessValue: Double, populationSize: Int, settings: OffspringSettings)
+	case class SelectParents(totalMeanfitnessValue: Double, populationSize: Int, settings: OffspringParameters)
 
 }
 
@@ -106,7 +103,7 @@ import Population._
 		generationNumber: Int,
 		totalfitnessValue: Double,
 		bestGenome: AgentResults = null,
-		speciesDirectory: HashMap[Int, SpeciesDirectoryEntry] = HashMap.empty): Receive = {
+		speciesDirectory: HashMap[Int, SpeciesDirectoryEntry] = HashMap.empty): Actor.Receive = {
 
 
 		// Matches when an agent has processed a set of patterns form the environment.
@@ -131,9 +128,9 @@ import Population._
 
 				// tell the outputter to save down the best genome in JSON format.
 				context.actorSelection("networkOutput") ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" , "JSON")
-				
+
 				// Work out which species each genome is most compatible with.
-				
+
 				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)
 
 
@@ -143,11 +140,11 @@ import Population._
 				val totalMeanfitnessValue =  speciesDirectory.foldLeft(0.0)((acc, species) =>
 						acc + species._2.totalFitness / species._2.memberCount
 					)
-			
+
 
 				// all genomes allocated a species. now we tell the species to create their volunteers.
 				val finalSpeciesDirectory = speciesDirectory.foldLeft(HashMap[Int, SpeciesDirectoryEntry]())((directory, dirEntry) => {
-					dirEntry._2.actor ! SelectParents(totalMeanfitnessValue, settings.populationSize, OffspringSettings())
+					dirEntry._2.actor ! SelectParents(totalMeanfitnessValue, settings.populationSize, OffspringParameters())
 
 					// set current champion as the old champion ready for the new genomes to return their results and be tested
 					directory + (dirEntry._1 ->  dirEntry._2.copy(previousChampion = dirEntry._2.champion))
@@ -184,7 +181,7 @@ import Population._
 		generationNumber: Int,
 		currentGenomeNumber: Int ,
 		speciesDirectory: HashMap[Int, SpeciesDirectoryEntry],
-		agentMessages: List[Any] ): Receive = {
+		agentMessages: List[Any] ): Actor.Receive = {
 
 	// TODO: Enable agents to change themselves, rather than creating new ones and killing old ones...
 
@@ -244,13 +241,13 @@ import Population._
 			}
 	}
 
-	def speciating(settings: PopulationSettings, finalAgentsComplete: List[AgentResults], generationNumber: Int, currentGenomeNumber: Int, totalSpecies: Int, finishedSpecies: Int, agentMessages: List[Any] , speciesDirectory:HashMap[Int, SpeciesDirectoryEntry]): Receive = {
+	def speciating(settings: PopulationSettings, finalAgentsComplete: List[AgentResults], generationNumber: Int, currentGenomeNumber: Int, totalSpecies: Int, finishedSpecies: Int, agentMessages: List[Any] , speciesDirectory:HashMap[Int, SpeciesDirectoryEntry]): Actor.Receive = {
 
 		// this will come from the Species. It means a particular species has finished selecting parents for crossover, nominations for mutation or elites.
 
 		case "AllParentsSelected" =>
 
-		
+
 			if (totalSpecies == (finishedSpecies + 1)) {
 
 				// Then we have heard from all species
@@ -259,17 +256,17 @@ import Population._
 
 				finalAgentsComplete.foreach(c =>
 					c.agent ! "ProcessRequest")
-				
+
 				// Move into a state where agents will voluteer themselves and we reply with enough data for them to do the processing
-				
+
 				context become spawning(settings, agentMessages.length, List.empty, generationNumber, currentGenomeNumber, speciesDirectory, agentMessages)
 
 			} else {
 
-				// There are still species to hear from 
+				// There are still species to hear from
 
 				 context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber, totalSpecies, finishedSpecies + 1, agentMessages, speciesDirectory)
-				
+
 				}
 
 		case Species.Extinct(speciesId) =>

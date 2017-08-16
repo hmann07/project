@@ -2,7 +2,7 @@ package com.neurocoevo.genome
 
 import scala.collection.immutable.HashMap
 import scala.util.Random
-import com.neurocoevo.speciation.SpeciationParameters
+import com.neurocoevo.parameters.SpeciationParameters
 
 case class NetworkGenome(
 					val id: Int,
