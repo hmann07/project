@@ -27,8 +27,8 @@ class NetworkOutput extends Actor with ActorLogging {
 			val connectionsJson =  genome.connections.map(n => "{source: " + n._2.from +", target: " + n._2.to +" , left: false, right: true, weight: " + n._2.weight +" } ").mkString("links:[", ", \n ",  "]")
 
 
-			//val pw = new PrintWriter(new File("C:\\Users\\HMann\\Desktop\\project-master (9)\\project-master\\src\\main\\web\\js\\best-" + genome.id + ".json" ))
-			val pw = new PrintWriter(new File(".\\src\\main\\web\\js\\" + name + ".json" ))
+			val pw = new PrintWriter(new File(".\\src\\main\\web\\js\\" + name + "-" + genome.id + ".json" ))
+			//val pw = new PrintWriter(new File(".\\src\\main\\web\\js\\" + name + ".json" ))
 
 			//val pw = new PrintWriter(new File("C:\\Users\\Henry\\Downloads\\project-master\\project-master\\src\\main\\web\\js\\best.json" ))
 

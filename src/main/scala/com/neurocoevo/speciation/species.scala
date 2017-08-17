@@ -18,8 +18,7 @@ case class SpeciesSettings(
 	val members: HashMap[Int, SpeciesMember] = HashMap.empty,
 	val memberCount: Int = 0, // May as well calc here to avoid calling length on the list all the time.
 	val speciesTotalFitness: Double = 0,
-	val speciesMeanFitness: Double = 0,
-	val targetSize: Double = 0
+	val speciesMeanFitness: Double = 0
 
 )
 
@@ -40,6 +39,8 @@ import Species._
 
 
 		case SpeciesMember(genome, fitness) =>
+
+			// Received a new member of this species from the population. see if it is a champion, add it to the members, include it in the total fitness and counts.
 
 			context become trackSpecies(s.copy(
 				champion = if(s.champion == null || s.champion.fitness < fitness) SpeciesMember(genome, fitness) else s.champion ,
@@ -68,9 +69,9 @@ import Species._
 				val mutatingGenomes = math.max(1, ((speciesTargetSize - eliteGenomes) * settings.mutationRate).toInt) //
 				val offSpringTargets  = (crossingGenomes,mutatingGenomes,eliteGenomes)
 
-				//println(speciesTargetSize + ", " + eliteGenomes + ", " +crossingGenomes + ", " + mutatingGenomes)
+				//println(population + ", " + s.speciesMeanFitness + ", " + popTotalMeanFitness + ", " + speciesTargetSize + ", " + eliteGenomes + ", " +crossingGenomes + ", " + mutatingGenomes)
 
-				selectParents(offSpringTargets, s.members.values.toList.sortWith((a,b) => a.fitness > b.fitness ) , s.speciesTotalFitness, s)
+				selectParents(offSpringTargets, s.members.values.toList.sortBy(- _.fitness) , s.speciesTotalFitness, s)
 			}
 	}
 
@@ -84,7 +85,10 @@ import Species._
 				// not sure, guess tell pop that species done...
 
 				context.parent ! "AllParentsSelected"
-				context become trackSpecies(settings.copy(members= HashMap.empty, memberCount = 0, speciesTotalFitness= 0, speciesMeanFitness = 0))
+
+				// remove existing members 0 out the count.
+
+				context become trackSpecies(settings.copy(members = HashMap.empty, memberCount = 0, speciesTotalFitness= 0, speciesMeanFitness = 0))
 
 			case  (x,y,z) if x > 0 =>
 

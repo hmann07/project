@@ -4,13 +4,13 @@ package com.neurocoevo.parameters
 		val c1: Double = 1.0,
 		val c2: Double = 1.0,
 		val c3: Double = 0.3,
-		val speciationThreshold: Double = 3.0)
+		val speciationThreshold: Double = 2.5)
 
 
 	case class PopulationParameters(
 		val populationSize: Int = 150,
-		val genomePath: String = ".\\src\\resources\\cppnSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml
-		val agentType: String = "HYPER", // Options: HYPER, STD, BP
+		val genomePath: String = ".\\src\\resources\\annSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml
+		val agentType: String = "STD", // Options: HYPER, STD, BP
 		val altGenomePath: String = ".\\src\\resources\\hyperneatAnnSubstrate.xml"
 	)
 

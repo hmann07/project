@@ -61,6 +61,7 @@ import Population._
 
 				val e = context.actorOf(Props[Experience], "experience." + i)
 				context.actorOf(Agent.props(g, e), "agent."+ i)
+
 				})
 
 			// TODO: is it better to make the outputter a member of the netowrk or of the system or of the agent... rather than population?
@@ -93,6 +94,27 @@ import Population._
 			 context.actorOf(Props[NetworkOutput], "networkOutput")
 
 	   		 context become evolving(PopulationSettings(n,  cppnGenomePath, agentType, annGenomePath, speciationThreshold), n, List.empty, n, 1, 0)
+
+
+		 case PopulationSettings(n, genomePath, "BP", altGenomePath,  speciationThreshold) =>
+		 	// This will make the networks learn independently.
+ 			val agentType = "BP"
+
+ 	   		1.to(n).foreach(i => {
+
+ 				 val ann = GenomeFactory.createGenome(genomePath, i)
+
+ 	   			 val e = context.actorOf(Props[Experience], "experience." + i)
+
+ 				 context.actorOf(Agent.props(ann, e), "agent."+ i)
+
+ 			})
+
+ 	   		 // TODO: is it better to make the outputter a member of the netowrk or of the system or of the agent... rather than population?
+
+ 			 context.actorOf(Props[NetworkOutput], "networkOutput")
+
+ 	   		 context become evolving(PopulationSettings(n,  genomePath, agentType, altGenomePath, speciationThreshold), n, List.empty, n, 1, 0)
 	}
 
 	def evolving(
@@ -114,22 +136,20 @@ import Population._
 			// this is sort of a generation over point. we should create new, kill old. and get ready for new AgentResults
 			// coming from the new generation.
 			if (agentsComplete.length + 1 == totalAgents){
-				//println("all agents complete")
-				// check the population best.
-				val best = {if(bestGenome != null){if(sse > bestGenome.sse){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}}
 
-				// calc final values
-				val finalAgentsComplete = (AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete).sortWith((a,b) => a.sse < b.sse )
+				// check the population best.
+
+				val best = {if(bestGenome != null){if(fitnessValue < bestGenome.fitnessValue){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}}
+
+				// calc final fitness values
+				val finalAgentsComplete = (AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete)
 				val finalFitnessValue = totalfitnessValue + fitnessValue
 
-				println(generationNumber + ", " + speciesDirectory.size + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.fitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size)
-
-				//println(best.genome)
 
 				// tell the outputter to save down the best genome in JSON format.
-				context.actorSelection("networkOutput") ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" , "JSON")
+				context.actorSelection("networkOutput") ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" + generationNumber , "JSON")
 
-				// Work out which species each genome is most compatible with.
+				// Work out which species this genome is most compatible with.
 
 				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)
 
@@ -137,17 +157,38 @@ import Population._
 				// need to get the sum of the mean fitnesses for each species. This is used to work out how many offspring each species should create
 				// i.e. the sum of the shared fitness values.
 
-				val totalMeanfitnessValue =  speciesDirectory.foldLeft(0.0)((acc, species) =>
-						acc + species._2.totalFitness / species._2.memberCount
+				val totalMeanfitnessValue =  newSpeciesDirectory.foldLeft(0.0)((acc, species) =>
+
+						if(species._2.memberCount > 0 ){
+
+							// There are members of this species
+
+							acc + species._2.totalFitness / species._2.memberCount
+						} else {
+
+							// There are no members allocated this generation, it may be extinct.
+
+							acc
+						}
 					)
 
+				println(generationNumber + ", " + speciesDirectory.size + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.fitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size)
 
-				// all genomes allocated a species. now we tell the species to create their volunteers.
+
+				// all genomes allocated a species. now we tell the species to create their volunteers and update current champion to be previous champion.
+
 				val finalSpeciesDirectory = speciesDirectory.foldLeft(HashMap[Int, SpeciesDirectoryEntry]())((directory, dirEntry) => {
+
 					dirEntry._2.actor ! SelectParents(totalMeanfitnessValue, settings.populationSize, OffspringParameters())
 
-					// set current champion as the old champion ready for the new genomes to return their results and be tested
-					directory + (dirEntry._1 ->  dirEntry._2.copy(previousChampion = dirEntry._2.champion))
+					// set current champion as the old champion ready for the new genomes to return their results and be tested against this previous champion.
+					// also reset fitness values counts etc..
+
+					directory + (dirEntry._1 ->  dirEntry._2.copy(
+						previousChampion = dirEntry._2.champion,
+						totalFitness = 0,
+						memberCount = 0
+						))
 				}
 					)
 
@@ -157,6 +198,7 @@ import Population._
 
 			} else {
 
+				// Work out which species this genome is most compatible with.
 
 				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)
 
@@ -225,7 +267,6 @@ import Population._
 				})
 
 				// start evolving again
-				//println("start evovling new population")
 
 				context become evolving(settings, currentGenomeNumber, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDirectory)
 
@@ -243,7 +284,7 @@ import Population._
 
 	def speciating(settings: PopulationSettings, finalAgentsComplete: List[AgentResults], generationNumber: Int, currentGenomeNumber: Int, totalSpecies: Int, finishedSpecies: Int, agentMessages: List[Any] , speciesDirectory:HashMap[Int, SpeciesDirectoryEntry]): Actor.Receive = {
 
-		// this will come from the Species. It means a particular species has finished selecting parents for crossover, nominations for mutation or elites.
+		// this will come from the Species actor. It means a particular species has finished selecting parents for crossover, nominations for mutation or elites.
 
 		case "AllParentsSelected" =>
 
@@ -256,6 +297,7 @@ import Population._
 
 				finalAgentsComplete.foreach(c =>
 					c.agent ! "ProcessRequest")
+
 
 				// Move into a state where agents will voluteer themselves and we reply with enough data for them to do the processing
 
@@ -277,6 +319,7 @@ import Population._
 
 				finalAgentsComplete.foreach(c =>
 					c.agent ! "ProcessRequest")
+
 				context become spawning(settings, agentMessages.length, List.empty, generationNumber, currentGenomeNumber, speciesDirectory - speciesId, agentMessages)
 
 			} else {
@@ -390,7 +433,8 @@ import Population._
 		val speciationParameters = SpeciationParameters()
 
 		if(speciesDirectory.contains(speciesIdx) && genome.compareTo(speciesDirectory(speciesIdx).previousChampion.genome, speciationParameters) < speciationThreshold) {
-			// there is a species and the genome is compatible with it.
+
+			// there is a species and this genome is compatible with its champion.
 
 			val existingEntry = speciesDirectory(speciesIdx)
 
@@ -414,6 +458,8 @@ import Population._
 
 				case Some((i,s)) =>
 
+					// then we have found a species where this genome is compatible with the champion
+
 					val existingEntry = s
 
 					val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue)
@@ -429,7 +475,7 @@ import Population._
 
 				case None =>
 
-					//println(speciesDirectory.keys.toList.size)
+					// then this genome was not compatible with any of the existing species so we need to create a new one.
 
 					val newSpeciesId = {if(speciesDirectory.isEmpty) 1 else ((speciesDirectory.keysIterator.toList.max) + 1)}
 
