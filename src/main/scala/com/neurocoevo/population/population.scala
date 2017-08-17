@@ -147,7 +147,7 @@ import Population._
 
 
 				// tell the outputter to save down the best genome in JSON format.
-				context.actorSelection("networkOutput") ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" + generationNumber , "JSON")
+				context.actorSelection("networkOutput") ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" , "JSON")
 
 				// Work out which species this genome is most compatible with.
 

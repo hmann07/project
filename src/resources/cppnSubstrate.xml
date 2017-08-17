@@ -5,11 +5,16 @@
 		<neuron id="3" type="input" activationFunction="IDENTITY" layer="0" bias="0"/>
 		<neuron id="4" type="input" activationFunction="IDENTITY" layer="0" bias="0"/>
 		<neuron id="5" type="output" activationFunction="BIPOLARSIGMOID" layer="1" bias="-1"/>
+		<neuron id="6" type="output" activationFunction="BIPOLARSIGMOID" layer="1" bias="-1"/>
 	</neurons>
 	<connections>
 		<connection id="1" src-id="1" tgt-id="5" />
 		<connection id="2" src-id="2" tgt-id="5" />
 		<connection id="3" src-id="3" tgt-id="5" />
 		<connection id="4" src-id="4" tgt-id="5" />
+		<connection id="5" src-id="1" tgt-id="6" />
+		<connection id="6" src-id="2" tgt-id="6" />
+		<connection id="7" src-id="3" tgt-id="6" />
+		<connection id="8" src-id="4" tgt-id="6" />
 	</connections>
 </substrate>

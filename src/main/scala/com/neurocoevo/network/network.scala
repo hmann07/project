@@ -19,10 +19,11 @@ object Network {
 	case class NetworkSettings(
 		confirmedConnections: Int = 0,
 		sensations: Map[Double, Sensation] = Map.empty,
-    	totalSensationsReceived: Int = 0,
+    totalSensationsReceived: Int = 0,
 		confirmedPropagations: Int = 0,
-    	sse: Double = 0,
-    	fitnessValue: Double = 0.00000000001,
+    outputsReceived: Map[Int, Double] = Map.empty,
+    sse: Double = 0,
+    fitnessValue: Double = 0.00000000001,
 		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput,2))
 
 	case class Sensation(
@@ -122,15 +123,27 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
 	    //println("ANN CONFIG sig propagated.")
 
-
-		context.actorSelection("../annFac") ! ActorGenomeFactory.ConnectionWeight(v)
-
+      val updatedOutputs: Map[Int, Double] = settings.outputsReceived + (sender().path.name.toInt -> v)    
+		  
+      if(updatedOutputs.size == outputs.size) {
+        
+        val weight = updatedOutputs(5)
+        context.actorSelection("../annFac") ! ActorGenomeFactory.ConnectionWeight(weight)
+      
+      } else {
+        
+        // wait for more network outputs
+        context become readyNetwork(settings.copy(outputsReceived = updatedOutputs))
+      
+      }
 
 	  case Output(v, "TEST") =>
         println("TEST sig propagated.")
         //context.actorSelection("../ann") ! v
 
 	  case Output(v, "EVOLVE") =>
+
+      
 
         val error = settings.sensations(1).label(0) - v
         val squaredError = math.pow(error, 2)
@@ -196,7 +209,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
           }
         }
 			//*/
-
+      
 
   		case "propagated" =>
   			//println("error propagated")

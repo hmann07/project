@@ -27,15 +27,19 @@ object ActorGenomeFactory {
 
 class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLogging {
 	import ActorGenomeFactory._
+
 	// first create the neuron genomes from the substrate.
 
 	val neurons = createNeuronGenomes(annSubstratePath)
+
+	// Now create dummy neuron for calculating the bias, this neuron will not exist as such since we are storing weights inside the neurons.
+
 
 	// cross product idea taken from https://stackoverflow.com/questions/14740199/cross-product-in-scala
 	// we can assume the order will always be the same and hence all genome connections will get the same id's.. though in HyperNeat this is less important for the ANN.
 	// we will not send connections back to inputs.
 
-	val crossed = for { x <- neurons.values.toList; y <- neurons.values.toList.filter(n => n.neuronType != "input") } yield (x, y)
+	val crossed = for { x <- neurons.values.toList :: biasNeuron; y <- neurons.values.toList.filter(n => n.neuronType != "input") } yield (x, y)
 
 	// kick off the first connection.
 	val neuronPair = crossed.head
