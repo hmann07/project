@@ -21,7 +21,6 @@ object ActorGenomeFactory {
 
 	def props(annSubstratePath: String): Props = Props(new ActorGenomeFactory(annSubstratePath))
 
-	case class ConnectionWeight(weight: Double)
 
 }
 
@@ -39,7 +38,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 	// we can assume the order will always be the same and hence all genome connections will get the same id's.. though in HyperNeat this is less important for the ANN.
 	// we will not send connections back to inputs.
 
-	val crossed = for { x <- neurons.values.toList :: biasNeuron; y <- neurons.values.toList.filter(n => n.neuronType != "input") } yield (x, y)
+	val crossed = for { x <- neurons.values.toList; y <- neurons.values.toList.filter(n => n.neuronType != "input") } yield (x, y)
 
 	// kick off the first connection.
 	val neuronPair = crossed.head
@@ -52,15 +51,16 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 
 
 
-		case ConnectionWeight(weight) =>
+		case Network.NetworkOutput(output) =>
 
-			//println(weight)
+			val weight = output(5)
+
 			val newConnections = {
 
 				// only express connection if above a certain weight:
 				// What happens if we never create a complete network? How do we know if we have expressed connections that will take signal from input to output?
 
-				if(Math.abs(weight) > 0.0) {
+				if(Math.abs(weight) > 0.0 && currentPair._1.layer < currentPair._2.layer) {
 
 				 	connectionMap + (currentConnectionId -> new ConnectionGenome(
 									currentConnectionId,
@@ -83,13 +83,21 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 			if(neuronPairs.isEmpty) {
 				//println("completed connection definitions")
 
-				// TODO: Currently setting genome id to 0, should get this off the agent
 
-				val finalGenome = new NetworkGenome(0, neurons, newConnections)
+				// completed connections so we should now update the neuron bias.
 
-				//println(finalGenome)
+				// work out which ones have bias.
 
-				context.parent ! HyperNeatAgent.ConfiguredNetwork(finalGenome)
+				val biasedNeurons = neurons.values.toList.filter(n => n.neuronType != "input")
+
+				// send first
+				val coordinates: List[Double] = (Vector.fill(biasedNeurons.head.location.size)(0.0) ++ biasedNeurons.head.location).toList
+				//println(coordinates)
+
+				context.actorSelection("../cppn") ! Network.Sensation(1, coordinates, List(0), "ANNCONFIG")
+
+				context become updatingBias(newConnections, biasedNeurons.head, biasedNeurons.tail, neurons)
+
 
 			} else {
 
@@ -103,7 +111,30 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 
 	}
 
+	def updatingBias(newConnections: HashMap[Int, ConnectionGenome], currentNeuron: NeuronGenome, neurons: List[NeuronGenome], updatedNeurons: HashMap[Int, NeuronGenome]): Receive = {
 
+		case Network.NetworkOutput(outputs) =>
+
+			val bias = outputs(6) * 5 // profile weight into a range.
+
+			val updatedNeuronList = updatedNeurons + (currentNeuron.innovationId -> currentNeuron.copy(biasWeight = bias))
+
+			if(neurons.isEmpty) {
+				val finalGenome = new NetworkGenome(0, updatedNeuronList, newConnections)
+
+				//println(finalGenome)
+				// TODO: Currently setting genome id to 0, should get this off the agent
+				context.parent ! HyperNeatAgent.ConfiguredNetwork(finalGenome)
+
+			} else {
+
+				val coordinates: List[Double] = (Vector.fill(neurons.head.location.size)(0.0) ++ neurons.head.location).toList
+				context.actorSelection("../cppn") ! Network.Sensation(1, coordinates, List(0), "ANNCONFIG")
+				context become updatingBias(newConnections, neurons.head, neurons.tail, updatedNeuronList)
+
+			}
+
+	}
 
 	def createNeuronGenomes(annSubstratePath: String) = {
 

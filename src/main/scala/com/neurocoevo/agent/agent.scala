@@ -22,7 +22,7 @@ object Agent {
 
     case class NewChild(genome: NetworkGenome, name: Int)
 
-	case class Matured(genome: NetworkGenome, error: Double, sse: Double, species: Int)
+	case class Matured(genome: NetworkGenome, error: Double, sse: Double, species: Int, annGenome: NetworkGenome = null)
 }
 
 

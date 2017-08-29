@@ -1,0 +1,8 @@
+var genome = {nodes:[{id: 1, reflexive: false, layer: 0.0, bias: -0.8721142550443313, actFn: "IDENTITY"}, 
+ {id: 2, reflexive: false, layer: 0.0, bias: -0.530969209059432, actFn: "IDENTITY"}, 
+ {id: 3, reflexive: false, layer: 1.0, bias: -4.9813375755776095, actFn: "SIGMOID"}, 
+ {id: 4, reflexive: false, layer: 0.5, bias: -3.8510886253760814, actFn: "SIGMOID"}],links:[{source: 1, target: 3 , left: false, right: true, weight: -4.86475973590186 } , 
+ {source: 1, target: 4 , left: false, right: true, weight: -4.575639622933378 } , 
+ {source: 4, target: 3 , left: false, right: true, weight: -4.896157000779102 } , 
+ {source: 2, target: 3 , left: false, right: true, weight: -4.575639622933378 } , 
+ {source: 2, target: 4 , left: false, right: true, weight: -4.935672020034826 } ]}

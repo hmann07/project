@@ -23,7 +23,7 @@ class NetworkOutput extends Actor with ActorLogging {
 
 		case OutputRequest(genome, name, "JSON") =>
 
-			val neuronsJson =  genome.neurons.map(n => "{id: " + n._2.innovationId + ", reflexive: false, layer: " +  n._2.layer + ", actFn: \"" +  n._2.activationFunction + "\"}").mkString("nodes:[", ", \n ",  "],")
+			val neuronsJson =  genome.neurons.map(n => "{id: " + n._2.innovationId + ", reflexive: false, layer: " +  n._2.layer + ", bias: " + n._2.biasWeight  + ", actFn: \"" +  n._2.activationFunction + "\"}").mkString("nodes:[", ", \n ",  "],")
 			val connectionsJson =  genome.connections.map(n => "{source: " + n._2.from +", target: " + n._2.to +" , left: false, right: true, weight: " + n._2.weight +" } ").mkString("links:[", ", \n ",  "]")
 
 

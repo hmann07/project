@@ -22,9 +22,7 @@ object HyperNeatAgent {
 
     case class NewChild(genome: NetworkGenome, name: Int)
 
-	case class Matured(genome: NetworkGenome, error: Double, sse: Double, species: Int)
-
-	case class AgentSettings(cppn: ActorRef, ann: ActorRef = null)
+	case class AgentSettings(cppn: ActorRef, ann: ActorRef = null, annGenome: NetworkGenome = null)
 
 	case class ConfiguredNetwork(networkGenome: NetworkGenome)
 }
@@ -65,7 +63,6 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 				val annFactory = actorOf(ActorGenomeFactory.props(annSubstratePath), "annFac")
 
-//				context become configuring(s.copy(ann = ann))
 
 			} else {
 
@@ -73,17 +70,17 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 				context.actorSelection("annFac") ! akka.actor.PoisonPill
 
-				context.actorSelection("../networkOutput") ! NetworkOutput.OutputRequest(networkGenome, "AgentANN" , "JSON")
-
-				// println("confirmation of ANN configuration and actors created")
+				// all set up, start getting signals to process.
+				
 				experience ! "perceive"
 
 			}
 
-		case ConfiguredNetwork(network) =>
+		// this comes from the actor based genome factory
+		case ConfiguredNetwork(annNetwork) =>
 
-			val annGenome = actorOf(Network.props(network), "ann")
-			context become runningAgent(s.copy(ann = annGenome))
+			val annActor = actorOf(Network.props(annNetwork), "ann")
+			context become runningAgent(s.copy(ann = annActor, annGenome = annNetwork))
 
     	case "propagated" =>
 
@@ -113,8 +110,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 			// tell population, send the CPPN which will be subject to genetic operators.
 			// used the agent version of maturerd so that population can match..
 
-
-            parent ! Agent.Matured(cppnGenome, fitnessValue, sse, species)
+            parent ! Agent.Matured(cppnGenome, fitnessValue, sse, species, s.annGenome)
 
         // receieved some instructions for crossing over two genomes..
 

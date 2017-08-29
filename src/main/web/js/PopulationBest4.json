@@ -1,0 +1,13 @@
+var genome = {nodes:[{id: 5, reflexive: false, layer: 1.0, bias: 0.6905602212453532, actFn: "BIPOLARSIGMOID"}, 
+ {id: 1, reflexive: false, layer: 0.0, bias: -0.015509582819450252, actFn: "IDENTITY"}, 
+ {id: 6, reflexive: false, layer: 1.0, bias: 0.41667869320336637, actFn: "BIPOLARSIGMOID"}, 
+ {id: 2, reflexive: false, layer: 0.0, bias: -0.459665567790597, actFn: "IDENTITY"}, 
+ {id: 3, reflexive: false, layer: 0.0, bias: 0.7587288073609071, actFn: "IDENTITY"}, 
+ {id: 4, reflexive: false, layer: 0.0, bias: 0.7186368709346511, actFn: "IDENTITY"}],links:[{source: 1, target: 6 , left: false, right: true, weight: -0.6422959358928844 } , 
+ {source: 1, target: 5 , left: false, right: true, weight: -0.07655316104780141 } , 
+ {source: 2, target: 6 , left: false, right: true, weight: 0.703259503285748 } , 
+ {source: 2, target: 5 , left: false, right: true, weight: 0.021991832256359478 } , 
+ {source: 3, target: 6 , left: false, right: true, weight: 0.8642849529532739 } , 
+ {source: 3, target: 5 , left: false, right: true, weight: -0.30633735625333536 } , 
+ {source: 4, target: 6 , left: false, right: true, weight: -0.8653540155274928 } , 
+ {source: 4, target: 5 , left: false, right: true, weight: -0.23944419577188603 } ]}

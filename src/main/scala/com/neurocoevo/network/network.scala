@@ -19,11 +19,11 @@ object Network {
 	case class NetworkSettings(
 		confirmedConnections: Int = 0,
 		sensations: Map[Double, Sensation] = Map.empty,
-    totalSensationsReceived: Int = 0,
+    	totalSensationsReceived: Int = 0,
 		confirmedPropagations: Int = 0,
-    outputsReceived: Map[Int, Double] = Map.empty,
-    sse: Double = 0,
-    fitnessValue: Double = 0.00000000001,
+    	outputsReceived: HashMap[Int, Double] = HashMap.empty,
+    	sse: Double = 0,
+    	fitnessValue: Double = 0.00000000001,
 		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput,2))
 
 	case class Sensation(
@@ -35,6 +35,8 @@ object Network {
 	case class Error(error:Double)
 
 	case class NetworkReady(genome: NetworkGenome)
+
+	case class NetworkOutput(outputs: HashMap[Int, Double])
 
 	def props(genome: NetworkGenome): Props = Props(new Network(genome))
 
@@ -123,18 +125,17 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
 	    //println("ANN CONFIG sig propagated.")
 
-      val updatedOutputs: Map[Int, Double] = settings.outputsReceived + (sender().path.name.toInt -> v)    
-		  
+      val updatedOutputs: HashMap[Int, Double] = settings.outputsReceived + (sender().path.name.toInt -> v)
+
       if(updatedOutputs.size == outputs.size) {
-        
-        val weight = updatedOutputs(5)
-        context.actorSelection("../annFac") ! ActorGenomeFactory.ConnectionWeight(weight)
-      
+
+        context.actorSelection("../annFac") ! NetworkOutput(updatedOutputs)
+
       } else {
-        
+
         // wait for more network outputs
         context become readyNetwork(settings.copy(outputsReceived = updatedOutputs))
-      
+
       }
 
 	  case Output(v, "TEST") =>
@@ -143,7 +144,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
 	  case Output(v, "EVOLVE") =>
 
-      
+
 
         val error = settings.sensations(1).label(0) - v
         val squaredError = math.pow(error, 2)
@@ -209,7 +210,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
           }
         }
 			//*/
-      
+
 
   		case "propagated" =>
   			//println("error propagated")

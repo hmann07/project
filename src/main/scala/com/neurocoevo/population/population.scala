@@ -29,7 +29,7 @@ object Population {
 
 	// cross over genomes could become a list at some point in the future. i.e. if we were to evolve more than just the
 	// weights and topologies but also learning rates or functions.
-	case class AgentResults(genome: NetworkGenome, sse: Double, fitnessValue: Double, agent: ActorRef)
+	case class AgentResults(genome: NetworkGenome, sse: Double, fitnessValue: Double, agent: ActorRef, annGenome: NetworkGenome = null)
 
 	// All mutation operators are given an id to give to the children.. This id is track by the population so that no agent in the population can have the same.
 
@@ -129,7 +129,7 @@ import Population._
 
 
 		// Matches when an agent has processed a set of patterns form the environment.
-		case Agent.Matured(genome, fitnessValue, sse, speciesIdx) =>
+		case Agent.Matured(genome, fitnessValue, sse, speciesIdx, annGenome) =>
 
 			// println("matured agent..")
 
@@ -139,7 +139,7 @@ import Population._
 
 				// check the population best.
 
-				val best = {if(bestGenome != null){if(fitnessValue < bestGenome.fitnessValue){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}}
+				val best = {if(bestGenome != null){if(fitnessValue < bestGenome.fitnessValue){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender(), annGenome)}}else {AgentResults(genome, sse, fitnessValue, sender(), annGenome)}}
 
 				// calc final fitness values
 				val finalAgentsComplete = (AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete)
@@ -147,7 +147,11 @@ import Population._
 
 
 				// tell the outputter to save down the best genome in JSON format.
-				context.actorSelection("networkOutput") ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" , "JSON")
+				context.actorSelection("networkOutput") ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" + generationNumber , "JSON")
+
+				// if we are in HyperNeat mode
+
+				context.actorSelection("networkOutput") ! NetworkOutput.OutputRequest(best.annGenome, "HyperNeatANN" + generationNumber , "JSON")
 
 				// Work out which species this genome is most compatible with.
 
@@ -209,7 +213,7 @@ import Population._
 					totalAgents,
 					generationNumber,
 					totalfitnessValue + fitnessValue,
-					{if(bestGenome != null){if(sse > bestGenome.sse){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender())}}else {AgentResults(genome, sse, fitnessValue, sender())}},
+					{if(bestGenome != null){if(fitnessValue < bestGenome.fitnessValue){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender(), annGenome)}}else {AgentResults(genome, sse, fitnessValue, sender(), annGenome)}},
 					 newSpeciesDirectory
 					)
 			}
