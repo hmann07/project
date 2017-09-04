@@ -41,6 +41,7 @@ import Species._
 		case SpeciesMember(genome, fitness) =>
 
 			// Received a new member of this species from the population. see if it is a champion, add it to the members, include it in the total fitness and counts.
+			// Don't need to keep track here since the population will be keeping an eye on it...
 
 			context become trackSpecies(s.copy(
 				champion = if(s.champion == null || s.champion.fitness < fitness) SpeciesMember(genome, fitness) else s.champion ,
@@ -59,7 +60,15 @@ import Species._
 			// genome
 			if(s.members.size == 0) {
 
+				// tel the parent i'm extinct
 				context.parent ! Extinct(speciesId)
+
+				// attempt to stop...
+
+				context.stop(self)
+
+				// reset all the data...just in case
+				//context become trackSpecies(s.copy(members = HashMap.empty, memberCount = 0, speciesTotalFitness= 0, speciesMeanFitness = 0))
 
 			} else {
 
@@ -82,7 +91,7 @@ import Species._
 		targets match {
 			case (0,0,0) =>
 
-				// not sure, guess tell pop that species done...
+				//  tell pop that species done...
 
 				context.parent ! "AllParentsSelected"
 
@@ -118,7 +127,7 @@ import Species._
 
 				}
 
-				selectParents((x - 1, y, z), members,speciesTotalFitness, settings)
+				selectParents((x - 1, y, z), members, speciesTotalFitness, settings)
 
 			case (0,y,z) if y > 0 =>
 
@@ -127,7 +136,7 @@ import Species._
 
 				context.parent ! Mutate(parent1)
 
-				selectParents((0, y - 1, z), members,speciesTotalFitness, settings)
+				selectParents((0, y - 1, z), members, speciesTotalFitness, settings)
 
 
 			case (0,0,z) if z > 0 =>
@@ -140,7 +149,7 @@ import Species._
 					)
 
 				// We can zero out elites because we did it in one batch
-				selectParents((0, 0, 0), members,speciesTotalFitness, settings)
+				selectParents((0, 0, 0), members, speciesTotalFitness, settings)
 		}
 	}
 }

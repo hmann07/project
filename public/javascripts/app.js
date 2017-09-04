@@ -1,6 +1,6 @@
 
-// Core taken from : https://codepen.io/zarazum/pen/fjoqF. With substantial ammendments
-
+// Core taken from : https://bl.ocks.org/mbostock/4600693
+// arrow heads and inspiration for tick function from : https://codepen.io/zarazum/pen/fjoqF. 
 
 // set up SVG for D3
 var width  = 800,

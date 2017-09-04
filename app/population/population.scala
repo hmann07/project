@@ -58,7 +58,7 @@ import Population._
 	// clean up the innovation tracker for this population
 
 	override def postStop() {
-		println("popFinished")
+		println(self.path.name + " finished")
 
 		// since we are done with the population all the actor for logging data can be closed down (after they've finished the final bits of data)
 		networkOutput ! akka.actor.PoisonPill
@@ -229,7 +229,7 @@ import Population._
 					)
 
 				// move to a state where we will wait for species to send proposal for their offspring to create.
-				context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber + 1, speciesDirectory.size, 0, List.empty, finalSpeciesDirectory)
+				context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber + 1, finalSpeciesDirectory.size, 0, List.empty, finalSpeciesDirectory)
 
 
 			} else {
@@ -328,7 +328,9 @@ import Population._
 
 	def speciating(settings: PopulationSettings, finalAgentsComplete: List[AgentResults], generationNumber: Int, currentGenomeNumber: Int, totalSpecies: Int, finishedSpecies: Int, agentMessages: List[Any] , speciesDirectory:HashMap[Int, SpeciesDirectoryEntry]): Actor.Receive = {
 
-		// this will come from the Species actor. It means a particular species has finished selecting parents for crossover, nominations for mutation or elites.
+		// this will come from a Species actor. 
+		// It means a particular species has finished selecting parents for crossover, nominations for mutation or elites.
+		// there may still be more species to hear from.
 
 		case "AllParentsSelected" =>
 
@@ -357,16 +359,26 @@ import Population._
 
 		case Species.Extinct(speciesId) =>
 
-			context stop sender()
+			// The species seems to have no members.. 
+			// It should have stopped itself
+			//context stop sender()
+
 
 			if (totalSpecies == (finishedSpecies + 1)) {
+				// Then we have heard from all species
 
+				// here we ask all the agents to do some processing for us (i.e. Mutate, Crossover, even echo an Elite. )
 				finalAgentsComplete.foreach(c =>
 					c.agent ! "ProcessRequest")
 
+				// Move into a state where agents will voluteer themselves and we reply with enough data for them to do the processing
+				// We also remove the species from the directory.
 				context become spawning(settings, agentMessages.length, List.empty, generationNumber, currentGenomeNumber, speciesDirectory - speciesId, agentMessages)
 
 			} else {
+
+				 // There are still species to hear back from. reduce the total we are due to hear from by 1, and remove it from the directory, leaving finsihed species static.
+
 				 context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber, totalSpecies - 1, finishedSpecies, agentMessages, speciesDirectory - speciesId)
 				}
 
@@ -485,8 +497,10 @@ import Population._
 			// check who the best in species is...
 			val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue)
 
+			// inform the species they have a new member
 			existingEntry.actor ! SpeciesMember(genome, fitnessValue)
 
+			// update and return an updated directory
 			speciesDirectory + (speciesIdx -> SpeciesDirectoryEntry(
 					newChampion,
 					existingEntry.previousChampion, // keep previous champion the same... for subsequent comparisons.
@@ -496,18 +510,24 @@ import Population._
 
 		} else {
 
+			// the species of the genome was not in the index or the genome is not close enough the the previous generation champion...
+
+			// check  if the genome is close enough to another species
 			val possibleSpecies = speciesDirectory.find( (x: (Int, SpeciesDirectoryEntry)) => genome.compareTo(x._2.previousChampion.genome, speciationParameters) < speciationThreshold )
 
 			possibleSpecies match {
 
 				case Some((i,s)) =>
 
-					// then we have found a species where this genome is compatible with the champion
+					// then we have found an existing species where this genome is compatible with the champion
 
 					val existingEntry = s
 
+					// does this genome have better fitness?
+
 					val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue)
 
+					// inform the speices of its new member
 					existingEntry.actor ! SpeciesMember(genome, fitnessValue)
 
 					speciesDirectory + (i -> SpeciesDirectoryEntry(
@@ -521,13 +541,20 @@ import Population._
 
 					// then this genome was not compatible with any of the existing species so we need to create a new one.
 
-					val newSpeciesId = {if(speciesDirectory.isEmpty) 1 else ((speciesDirectory.keysIterator.toList.max) + 1)}
+					val newSpeciesId = {if(speciesDirectory.isEmpty) 1 else ((speciesDirectory.keysIterator.toList.map(k => k.toInt).max) + 1)}
 
 					val newSpeciesActor = context.actorOf(Species.props(newSpeciesId), "species"+ newSpeciesId)
 
 					newSpeciesActor ! SpeciesMember(genome, fitnessValue)
 
-					speciesDirectory + (newSpeciesId -> SpeciesDirectoryEntry(SpeciesMember(genome, fitnessValue),SpeciesMember(genome, fitnessValue), newSpeciesActor, fitnessValue, 1))
+					speciesDirectory + (newSpeciesId -> 
+						SpeciesDirectoryEntry(
+							SpeciesMember(genome, fitnessValue),
+							SpeciesMember(genome, fitnessValue), 
+							newSpeciesActor, 
+							fitnessValue, 
+							1
+							))
 
 			}
 

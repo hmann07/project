@@ -6,11 +6,11 @@ var lineChart = function(loc,data,config){
   this.yVal = config.y
   this.xVal = config.x
   this.quartile = config.quartile
-
+  this.groupField = config.groupField
   // grouped data will break up the data by runnumber, this should also be made to use population id.
   this.groupedData = {}
     data.forEach(function(d){ 
-       c.groupedData[d.runNumber] != undefined? c.groupedData[d.runNumber].push(d): c.groupedData[d.runNumber] = [d]
+       c.groupedData[d[c.groupField]] != undefined? c.groupedData[d[c.groupField]].push(d): c.groupedData[d[c.groupField]] = [d]
        })
   this.data = data
   this.loc = loc
@@ -123,7 +123,7 @@ lineChart.prototype.draw = function(){
           series.append("path")
               .datum(c.groupedData[dk])
               .attr("class", function(d,i){
-                return "series" + d[0].runNumber + " line series c" + mi
+                return "series" + d[0][c.groupField] + " line series c" + mi
                 })
               .attr("d", line);
 
@@ -139,7 +139,7 @@ lineChart.prototype.draw = function(){
 
       // unnecessary whilst using only one series. but for the purpose of adding on text tooltips that centre on the nearest
       // general idea for Voronoi based tooltips taken from: https://bl.ocks.org/mbostock/8033015
-      
+
       var t = d3.merge(c.yVal.map(function(yv){
         return c.data.map(function(d){
           return {"x": d[c.xVal], "y": d[yv], "all":d}
@@ -179,7 +179,7 @@ lineChart.prototype.draw = function(){
                 })
                 .transition().duration(250).style("fill-opacity", 1);
 
-          d3.select(".series" + d.data.all.runNumber).classed("focusseries", true)
+          d3.select(".series" + d.data.all[c.groupField]).classed("focusseries", true)
 
         })
         .on("mouseout",function(d){
@@ -187,7 +187,7 @@ lineChart.prototype.draw = function(){
             var pointData = d.data.all
             var pointX = d.data.x
 
-          d3.select(".series" + d.data.all.runNumber).classed("focusseries", false)
+          d3.select(".series" + d.data.all[c.groupField]).classed("focusseries", false)
           legend.selectAll("text").data(c.yVal).text(function(e){
             return e
             })
@@ -196,6 +196,13 @@ lineChart.prototype.draw = function(){
     }
   }
 
-var lc = new lineChart(d3.select("#statsViewer"), d, {"quartile": false, "y":["bestsse"], "x": "generationNumber","xTitle":"Generation", "yTitle":"Best Fitness Value" }).draw()
+var lc = new lineChart(
+    d3.select("#statsViewer"), // preset document location
+    d,  // coming in from a static file
+    {"groupField": "populationName", "quartile": false, "y":["bestsse"], "x": "generationNumber","xTitle":"Generation", "yTitle":"Best Fitness Value" } // config 
+    ).draw()
 //d
 // {{"quartile": false, "y":["lowerQuartile"], "x": "month","xtitle":"Months", ytitle:"price" }
+
+"populationName"
+"runNumber"

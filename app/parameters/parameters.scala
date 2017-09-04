@@ -35,3 +35,6 @@ package com.neurocoevo.parameters
 		val outputPath: String = ".\\public\\logs\\",
 		val popOutputPath: String = ".\\public\\logs\\"
 		)
+
+	case class UniverseParameters (
+		val populationCount: Int = 20)
