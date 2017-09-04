@@ -1,0 +1,36 @@
+@(outfiles: List[java.io.File], genomefile: String)
+
+@main("Welcome to Play") {
+
+<div class="container">
+<h1>Welcome to actor-based neuroevolution</h1>
+  <a href="/start">Start evolving</a>
+  <a href="/stop">Stop evolving</a>
+  <a href="/viewgenome">View Genomes</a>
+  <div class="row"> 
+  	<div class ="col-9">
+		<div id="statsViewer"></div>
+		<div id="networkViewer"></div>
+	</div>
+	<div class="col-3">
+		<ul class="list-group">
+
+		@if(outfiles != null){
+			@for(file <- outfiles) {
+				<li class="list-group-item"><a href="/viewgenome/@file.getName">@file.getName</a></li>
+			}
+		}
+		</ul>
+	</div>
+  </div>
+</div>
+
+<script src="@routes.Assets.versioned("javascripts/d3-v4.js")"></script>
+  @if(genomefile != null) {
+<script src="/assets/logs/@genomefile"></script>
+  }
+<script src="@routes.Assets.versioned("javascripts/app.js")"></script>
+<script src="@routes.Assets.versioned("logs/statsData.js")"></script>
+<script src="@routes.Assets.versioned("javascripts/statsDataGraph.js")"></script>
+
+}

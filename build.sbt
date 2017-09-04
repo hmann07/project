@@ -1,15 +1,17 @@
-name := "nuerocoevo"
+name := """neurocoevo"""
+organization := "com.example"
 
-version := "1.0"
+version := "1.0-SNAPSHOT"
+
+lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.12.2"
 
-lazy val akkaVersion = "2.5.2"
+libraryDependencies += guice
+libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.0" % Test
 
-libraryDependencies ++= Seq(
-  "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-  "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
-)
+// Adds additional packages into Twirl
+//TwirlKeys.templateImports += "com.example.controllers._"
 
+// Adds additional packages into conf/routes
+// play.sbt.routes.RoutesKeys.routesImport += "com.example.binders._"
