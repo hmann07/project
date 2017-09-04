@@ -21,7 +21,7 @@ class StartController @Inject()(system: ActorSystem, cc: ControllerComponents) e
 
 	system.actorOf(Props[Universe])
 
-    Ok(views.html.index())
+    Ok(views.html.evolutionOutput(null, null))
   }
 
 }

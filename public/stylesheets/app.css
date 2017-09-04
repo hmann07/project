@@ -43,9 +43,18 @@ text.id {
 
 .series {
   fill:none;
+  opacity: 0.3;
 }
+
+.series.focusseries {
+  fill:none;
+  opacity: 1;
+  stroke-width:4px;
+}
+
 .series.c0 {
     stroke: #1f78b4;
+
 }
 
 rect.c0 {
