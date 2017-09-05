@@ -64,7 +64,7 @@ import Population._
 		networkOutput ! akka.actor.PoisonPill
 		populationOutput ! akka.actor.PoisonPill
         innovationAgent ! akka.actor.PoisonPill
-
+        context.children.foreach {_ ! akka.actor.PoisonPill}
     }
 
 
@@ -362,7 +362,7 @@ import Population._
 			// The species seems to have no members.. 
 			// It should have stopped itself
 			//context stop sender()
-
+			val updatedSpeciesDirectory = speciesDirectory + (speciesId -> speciesDirectory(speciesId).copy(totalFitness = 0, memberCount = 0))
 
 			if (totalSpecies == (finishedSpecies + 1)) {
 				// Then we have heard from all species
@@ -372,14 +372,17 @@ import Population._
 					c.agent ! "ProcessRequest")
 
 				// Move into a state where agents will voluteer themselves and we reply with enough data for them to do the processing
-				// We also remove the species from the directory.
-				context become spawning(settings, agentMessages.length, List.empty, generationNumber, currentGenomeNumber, speciesDirectory - speciesId, agentMessages)
+				// We also change the species from the directory.
+				
+						
+
+				context become spawning(settings, agentMessages.length, List.empty, generationNumber, currentGenomeNumber, updatedSpeciesDirectory, agentMessages)
 
 			} else {
 
 				 // There are still species to hear back from. reduce the total we are due to hear from by 1, and remove it from the directory, leaving finsihed species static.
 
-				 context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber, totalSpecies - 1, finishedSpecies, agentMessages, speciesDirectory - speciesId)
+				 context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber, totalSpecies, finishedSpecies + 1, agentMessages, updatedSpeciesDirectory)
 				}
 
 		case Species.Crossover(p1,p2) =>
@@ -541,9 +544,9 @@ import Population._
 
 					// then this genome was not compatible with any of the existing species so we need to create a new one.
 
-					val newSpeciesId = {if(speciesDirectory.isEmpty) 1 else ((speciesDirectory.keysIterator.toList.map(k => k.toInt).max) + 1)}
+					val newSpeciesId = {if(speciesDirectory.isEmpty) 1 else (speciesDirectory.size + 1)}
 
-					val newSpeciesActor = context.actorOf(Species.props(newSpeciesId), "species"+ newSpeciesId)
+					val newSpeciesActor = context.actorOf(Species.props(newSpeciesId), "species"+ newSpeciesId + context.self.path.name)
 
 					newSpeciesActor ! SpeciesMember(genome, fitnessValue)
 

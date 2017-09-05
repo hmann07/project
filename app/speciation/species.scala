@@ -65,10 +65,10 @@ import Species._
 
 				// attempt to stop...
 
-				context.stop(self)
+				//context.stop(self)
 
 				// reset all the data...just in case
-				//context become trackSpecies(s.copy(members = HashMap.empty, memberCount = 0, speciesTotalFitness= 0, speciesMeanFitness = 0))
+				context become trackSpecies(s.copy(members = HashMap.empty, memberCount = 0, speciesTotalFitness= 0, speciesMeanFitness = 0))
 
 			} else {
 
