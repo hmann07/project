@@ -9,6 +9,7 @@ import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 import scala.collection.immutable.HashMap
+import scala.collection.immutable.SortedMap
 
 object Network {
 
@@ -48,10 +49,10 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
 	// create actors for nodes
 
-	val inputs: Map[String, ActorRef] = generateInputNeurons( genome.inputNodes, Map.empty)
-	val outputs: Map[String, ActorRef] = generateOutputNeurons( genome.outputNodes, Map.empty)
-	val hidden: Map[String, ActorRef] = generateHiddenNeurons( genome.hiddenNodes, Map.empty)
-	val allnodes: Map[String, ActorRef] = inputs ++ hidden ++ outputs
+	val inputs: SortedMap[String, ActorRef] = generateInputNeurons( genome.inputNodes, SortedMap.empty)
+	val outputs: SortedMap[String, ActorRef] = generateOutputNeurons( genome.outputNodes, SortedMap.empty)
+	val hidden: SortedMap[String, ActorRef] = generateHiddenNeurons( genome.hiddenNodes, SortedMap.empty)
+	val allnodes: SortedMap[String, ActorRef] = inputs ++ hidden ++ outputs
 
 	val totalConnections: Int = genome.connections.size
 
@@ -281,21 +282,21 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
       signature: List of nodes -> Map (actor name -> actor)
     */
 
-    def generateInputNeurons(neurons: HashMap[Int, NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+    def generateInputNeurons(neurons: HashMap[Int, NeuronGenome], agg: SortedMap[String, ActorRef]  ): SortedMap[String, ActorRef] = {
       neurons.size match {
         case 0 => agg
         case _ => generateInputNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(InputNeuron.props(neurons.head._2.biasWeight, ActivationFunction(neurons.head._2.activationFunction)), neurons.head._2.innovationId.toString)))
       }
     }
 
-    def generateOutputNeurons(neurons: HashMap[Int, NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+    def generateOutputNeurons(neurons: HashMap[Int, NeuronGenome], agg: SortedMap[String, ActorRef]  ): SortedMap[String, ActorRef] = {
       neurons.size match {
         case 0 => agg
         case _ => generateOutputNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(OutputNeuron.props(neurons.head._2.biasWeight, ActivationFunction(neurons.head._2.activationFunction)), neurons.head._2.innovationId.toString)))
       }
     }
 
-    def generateHiddenNeurons(neurons: HashMap[Int, NeuronGenome], agg: Map[String, ActorRef]  ): Map[String, ActorRef] = {
+    def generateHiddenNeurons(neurons: HashMap[Int, NeuronGenome], agg: SortedMap[String, ActorRef]  ): SortedMap[String, ActorRef] = {
       neurons.size match {
         case 0 => agg
         case _ => generateHiddenNeurons(neurons.tail, agg + (neurons.head._2.innovationId.toString -> actorOf(Neuron.props(neurons.head._2.biasWeight, ActivationFunction(neurons.head._2.activationFunction)), neurons.head._2.innovationId.toString)))

@@ -148,11 +148,11 @@ import Population._
 		// Matches when an agent has processed a set of patterns form the environment.
 		case Agent.Matured(genome, fitnessValue, sse, speciesIdx, annGenome) =>
 
-			// println("matured agent..")
-
-			// this is sort of a generation over point. we should create new, kill old. and get ready for new AgentResults
-			// coming from the new generation.
+			
 			if (agentsComplete.length + 1 == totalAgents){
+
+				// this is sort of a generation over point. we should create new, kill old. and get ready for new AgentResults
+				// coming from the new generation.
 
 				// check the population best.
 
@@ -213,7 +213,7 @@ import Population._
 
 				// all genomes allocated a species. now we tell the species to create their volunteers and update current champion to be previous champion.
 
-				val finalSpeciesDirectory = speciesDirectory.foldLeft(HashMap[Int, SpeciesDirectoryEntry]())((directory, dirEntry) => {
+				val finalSpeciesDirectory = newSpeciesDirectory.foldLeft(HashMap[Int, SpeciesDirectoryEntry]())((directory, dirEntry) => {
 
 					dirEntry._2.actor ! SelectParents(totalMeanfitnessValue, settings.populationSize, OffspringParameters())
 
@@ -445,7 +445,7 @@ import Population._
 
 		g.length match {
 			case 2 => {
-				val performanceSortedGenomes = g.sortWith((a,b) => a.fitness > b.fitness )
+				val performanceSortedGenomes = g.sortBy(- _.fitness)
 				val networkGenome1 = performanceSortedGenomes(0).genome // Due to the previous sort this will always be the strongest.
 				val networkGenome2 = performanceSortedGenomes(1).genome
 
@@ -497,7 +497,7 @@ import Population._
 
 			val existingEntry = speciesDirectory(speciesIdx)
 
-			// check who the best in species is...
+			// double check who the best in species is...
 			val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue)
 
 			// inform the species they have a new member
@@ -544,7 +544,7 @@ import Population._
 
 					// then this genome was not compatible with any of the existing species so we need to create a new one.
 
-					val newSpeciesId = {if(speciesDirectory.isEmpty) 1 else (speciesDirectory.size + 1)}
+					val newSpeciesId = speciesDirectory.size + 1
 
 					val newSpeciesActor = context.actorOf(Species.props(newSpeciesId), "species"+ newSpeciesId + context.self.path.name)
 

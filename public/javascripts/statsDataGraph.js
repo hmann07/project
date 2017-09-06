@@ -199,7 +199,7 @@ lineChart.prototype.draw = function(){
 var lc = new lineChart(
     d3.select("#statsViewer"), // preset document location
     d,  // coming in from a static file
-    {"groupField": "populationName", "quartile": false, "y":["speciesCount"], "x": "generationNumber","xTitle":"Generation", "yTitle":"Best Fitness Value" } // config 
+    {"groupField": "populationName", "quartile": false, "y":["bestsse"], "x": "generationNumber","xTitle":"Generation", "yTitle":"Best Fitness Value" } // config 
     ).draw()
 //d
 // {{"quartile": false, "y":["lowerQuartile"], "x": "month","xtitle":"Months", ytitle:"price" }
