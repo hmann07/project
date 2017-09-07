@@ -30,7 +30,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 	// first create the neuron genomes from the substrate.
 
 	val neurons = createNeuronGenomes(annSubstratePath)
-
+	val neuronVals = neurons.values.toList.sortBy( _.innovationId)
 	// Now create dummy neuron for calculating the bias, this neuron will not exist as such since we are storing weights inside the neurons.
 
 
@@ -38,7 +38,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 	// we can assume the order will always be the same and hence all genome connections will get the same id's.. though in HyperNeat this is less important for the ANN.
 	// we will not send connections back to inputs.
 
-	val crossed = for { x <- neurons.values.toList; y <- neurons.values.toList.filter(n => n.neuronType != "input") } yield (x, y)
+	val crossed = for { x <- neuronVals; y <- neuronVals.filter(n => n.neuronType != "input") } yield (x, y)
 
 	// kick off the first connection.
 	val neuronPair = crossed.head
@@ -83,14 +83,13 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 
 
 			if(neuronPairs.isEmpty) {
-				//println("completed connection definitions")
-
-
+				
 				// completed connections so we should now update the neuron bias.
 
 				// work out which ones have bias.
 
-				val biasedNeurons = neurons.values.toList.filter(n => n.neuronType != "input")
+				// due to the way in which hashmaps can produce random order.. anf the possible recurrent connections, sort, to ensure consistent genomes...
+				val biasedNeurons = neuronVals.filter(n => n.neuronType != "input")
 
 				// send first
 				val coordinates: List[Double] = (Vector.fill(biasedNeurons.head.location.size)(0.0) ++ biasedNeurons.head.location).toList

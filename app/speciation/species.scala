@@ -73,7 +73,7 @@ import Species._
 			} else {
 
 				val speciesTargetSize = math.round(((s.speciesMeanFitness / popTotalMeanFitness) * population )).toInt
-				val eliteGenomes = math.min(s.memberCount, math.floor(speciesTargetSize * settings.elitismRate).toInt);
+				val eliteGenomes = math.max(1, math.min(s.memberCount, math.floor(speciesTargetSize * settings.elitismRate).toInt)); // max 1. we might be losing novelty genomes... 
 				val crossingGenomes = ((speciesTargetSize - eliteGenomes) * settings.crossoverRate).toInt
 				val mutatingGenomes = math.max(1, ((speciesTargetSize - eliteGenomes) * settings.mutationRate).toInt) //
 				val offSpringTargets  = (crossingGenomes,mutatingGenomes,eliteGenomes)
@@ -117,8 +117,12 @@ import Species._
 				if(members.length == 1) {
 
 					// If there's only one member, mutate it.
+					// THIS IS ACTAULLY CAUSING PROBLEMS, A NEURON WITH A BIG ADVANCE MIGHT HAVE FITNESS DESTROYED AFTER MUTATION
+					// HAVE ADDED AN ELITE VERSION TO GIVE THE GENOME A CHANGE TO STAY IN THE POP, AND ENSURE BENEFICIAL SEARCH DOES NOT GET LOST.
+
 
 					val parent1 = members(0)
+					context.parent ! Elite(parent1)
 					context.parent ! Mutate(parent1)
 
 				} else {

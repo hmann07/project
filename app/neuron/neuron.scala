@@ -62,13 +62,13 @@ object OutputNeuron {
 
 */
 
-class Neuron(biasWeight: Double, activationFunction: ActivationFunction) extends Actor with ActorLogging {
+class Neuron(pBiasWeight: Double, activationFunction: ActivationFunction) extends Actor with ActorLogging {
 	import context._
 	import Neuron._
 
 	//println("Neuron created")
 
-	def receive = initialisingNeuron(NeuronSettings(biasWeight = biasWeight, activationFunction = activationFunction))
+	def receive = initialisingNeuron(NeuronSettings(biasWeight = pBiasWeight, activationFunction = activationFunction))
 
     def initialisingNeuron(settings: NeuronSettings): Receive = {
 

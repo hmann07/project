@@ -37,4 +37,4 @@ package com.neurocoevo.parameters
 		)
 
 	case class UniverseParameters (
-		val populationCount: Int = 20)
+		val populationCount: Int = 10)
