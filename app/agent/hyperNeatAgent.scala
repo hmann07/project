@@ -76,7 +76,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 			}
 
-		// this comes from the actor based genome factory
+		// this comes from the actor based genome factory that will have just finished creating CPPN.
 		case ConfiguredNetwork(annNetwork) =>
 
 			val annActor = actorOf(Network.props(annNetwork), "ann")

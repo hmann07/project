@@ -290,7 +290,7 @@ import Population._
 				// create new actors
 				(Agent.NewChild(g, name) :: childrenRegistered).foreach(c => {
 
-
+					
 					val e = context.actorOf(Props[Experience], "experience." + c.genome.id)
 
 					settings.agentType match {
