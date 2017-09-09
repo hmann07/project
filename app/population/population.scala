@@ -149,17 +149,27 @@ import Population._
 		case Agent.Matured(genome, fitnessValue, sse, speciesIdx, annGenome) =>
 
 			
+			val agentResult = AgentResults(genome, sse, fitnessValue, sender(), annGenome)
+
+			// check the population best.
+	
+			val best = {if(bestGenome != null){
+								if(fitnessValue < bestGenome.fitnessValue){
+									bestGenome
+								}else{
+									agentResult
+								}
+							} else {
+								agentResult
+							}}
+
 			if (agentsComplete.length + 1 == totalAgents){
 
 				// this is sort of a generation over point. we should create new, kill old. and get ready for new AgentResults
 				// coming from the new generation.
 
-				// check the population best.
-
-				val best = {if(bestGenome != null){if(fitnessValue < bestGenome.fitnessValue){bestGenome}else{AgentResults(genome, sse, fitnessValue, sender(), annGenome)}}else {AgentResults(genome, sse, fitnessValue, sender(), annGenome)}}
-
 				// calc final fitness values
-				val finalAgentsComplete = (AgentResults(genome, sse, fitnessValue, sender()) :: agentsComplete)
+				val finalAgentsComplete = (agentResult :: agentsComplete)
 				val finalFitnessValue = totalfitnessValue + fitnessValue
 
 
@@ -170,6 +180,7 @@ import Population._
 				if(settings.agentType == "HYPER"){
 					networkOutput ! NetworkOutput.OutputRequest(best.annGenome, "HyperNeatANN" + generationNumber , "JSON")
 				}
+				
 				// Work out which species this genome is most compatible with.
 
 				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)
@@ -221,6 +232,7 @@ import Population._
 					// also reset fitness values counts etc..
 
 					directory + (dirEntry._1 ->  dirEntry._2.copy(
+						//champion = null,
 						previousChampion = dirEntry._2.champion,
 						totalFitness = 0,
 						memberCount = 0
@@ -318,7 +330,7 @@ import Population._
 
 
 
-				// Stop the agent
+				// There are still children to be created by the agent
 				sender() ! "ProcessRequest"
 
 				// Wait for rest..
@@ -516,6 +528,7 @@ import Population._
 			// the species of the genome was not in the index or the genome is not close enough the the previous generation champion...
 
 			// check  if the genome is close enough to another species
+
 			val possibleSpecies = speciesDirectory.find( (x: (Int, SpeciesDirectoryEntry)) => genome.compareTo(x._2.previousChampion.genome, speciationParameters) < speciationThreshold )
 
 			possibleSpecies match {
@@ -528,7 +541,15 @@ import Population._
 
 					// does this genome have better fitness?
 
-					val newChampion = if(existingEntry.champion.fitness > fitnessValue) existingEntry.champion else SpeciesMember(genome, fitnessValue)
+					val newChampion = if(existingEntry.champion != null) {
+											if(existingEntry.champion.fitness > fitnessValue) {
+												existingEntry.champion
+												} else{
+												 SpeciesMember(genome, fitnessValue)
+												}
+										} else {
+											 SpeciesMember(genome, fitnessValue)
+										}
 
 					// inform the speices of its new member
 					existingEntry.actor ! SpeciesMember(genome, fitnessValue)

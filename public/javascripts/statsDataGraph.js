@@ -10,7 +10,8 @@ var lineChart = function(loc,data,config){
   // grouped data will break up the data by runnumber, this should also be made to use population id.
   this.groupedData = {}
     data.forEach(function(d){ 
-       c.groupedData[d[c.groupField]] != undefined? c.groupedData[d[c.groupField]].push(d): c.groupedData[d[c.groupField]] = [d]
+      var datagrouping = c.groupField.map(function(f){return d[f]}).join("-")
+       c.groupedData[datagrouping] != undefined? c.groupedData[datagrouping].push(d): c.groupedData[datagrouping] = [d]
        })
   this.data = data
   this.loc = loc
@@ -199,7 +200,7 @@ lineChart.prototype.draw = function(){
 var lc = new lineChart(
     d3.select("#statsViewer"), // preset document location
     d,  // coming in from a static file
-    {"groupField": "populationName", "quartile": false, "y":["bestsse"], "x": "generationNumber","xTitle":"Generation", "yTitle":"Best Fitness Value" } // config 
+    {"groupField": ["populationName", "runNumber"], "quartile": false, "y":["bestsse"], "x": "generationNumber","xTitle":"Generation", "yTitle":"Best Fitness Value" } // config 
     ).draw()
 //d
 // {{"quartile": false, "y":["lowerQuartile"], "x": "month","xtitle":"Months", ytitle:"price" }

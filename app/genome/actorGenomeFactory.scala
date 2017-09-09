@@ -21,7 +21,6 @@ object ActorGenomeFactory {
 
 	def props(annSubstratePath: String): Props = Props(new ActorGenomeFactory(annSubstratePath))
 
-
 }
 
 class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLogging {
@@ -88,11 +87,12 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 
 				// work out which ones have bias.
 
-				// due to the way in which hashmaps can produce random order.. anf the possible recurrent connections, sort, to ensure consistent genomes...
+				// due to the way in which hashmaps can produce random order.. anf the possible recurrent connections,
+				// assume sorted, to ensure consistent genomes...
 				val biasedNeurons = neuronVals.filter(n => n.neuronType != "input")
 
 				// send first
-				val coordinates: List[Double] = (Vector.fill(biasedNeurons.head.location.size)(0.0) ++ biasedNeurons.head.location).toList
+				val coordinates: List[Double] = (List.fill(biasedNeurons.head.location.size)(0.0) ++ biasedNeurons.head.location)
 				//println(coordinates)
 
 				context.actorSelection("../cppn") ! Network.Sensation(1, coordinates, List(0), "ANNCONFIG")
@@ -116,7 +116,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 
 		case Network.NetworkOutput(outputs) =>
 
-			// Here the output node innovation id is 5. because the CPPN will always use this for connection weights
+			// Here the output node innovation id is 6. because the CPPN will always use this for bias weights
 			val bias = outputs(6) * 5 // profile weight into a range.
 
 			val updatedNeuronList = updatedNeurons + (currentNeuron.innovationId -> currentNeuron.copy(biasWeight = bias))
@@ -130,7 +130,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 
 			} else {
 
-				val coordinates: List[Double] = (Vector.fill(neurons.head.location.size)(0.0) ++ neurons.head.location).toList
+				val coordinates: List[Double] = (List.fill(neurons.head.location.size)(0.0) ++ neurons.head.location)
 				context.actorSelection("../cppn") ! Network.Sensation(1, coordinates, List(0), "ANNCONFIG")
 				context become updatingBias(newConnections, neurons.head, neurons.tail, updatedNeuronList)
 
@@ -159,7 +159,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 									}
 								  },
 								  (currentNeuron \ "@layer").text.toDouble,
-								  (currentNeuron \ "dim").foldLeft(Vector[Double]())((location, current) => {
+								  (currentNeuron \ "dim").foldLeft(List[Double]())((location, current) => {
 									location :+ (current.text).toDouble
 								  })
 								  ))}

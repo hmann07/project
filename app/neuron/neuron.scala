@@ -158,7 +158,7 @@ class Neuron(pBiasWeight: Double, activationFunction: ActivationFunction) extend
 			// logic here is if we are not learning then we can reset the signals now..
 			// if learning via back propagation then we need these values to stay in order to calculate error gradients.
 			if(signalType == "ANNCONFIG") {
-				context become readyNeuron(s.copy(accumulatedSignal = 0, signalsReceived = Map.empty))
+				context become readyNeuron(s.copy(activationOutput = 0, accumulatedSignal = 0, signalsReceived = Map.empty))
 			} else {
 	    	context become readyNeuron(s.copy(
 				accumulatedSignal  = finalAccumalatedSignal,
@@ -232,7 +232,7 @@ class Neuron(pBiasWeight: Double, activationFunction: ActivationFunction) extend
   	def relax(s: NeuronSettings) = {
 
   		sender() ! "NeuronRelaxed"
-  		context become readyNeuron(s.copy(accumulatedSignal = 0, signalsReceived = Map.empty))
+  		context become readyNeuron(s.copy(accumulatedSignal = 0, signalsReceived = Map.empty, activationOutput = 0))
   	}
 
 }
@@ -252,8 +252,9 @@ class InputNeuron(biasWeight: Double, activationFunction: ActivationFunction) ex
 
 			// logic here is if we are not learning then we can reset the signals now..
 			// if learning via back propagation then we need these values to stay in order to calculate error gradients.
+			// for inputs this is not really required
 			if(signalType == "ANNCONFIG") {
-				context become readyNeuron(s.copy(accumulatedSignal = 0, signalsReceived = Map.empty))
+				context become readyNeuron(s.copy(activationOutput = 0, accumulatedSignal = 0, signalsReceived = Map.empty))
 			} else {
 
 	    	context become readyNeuron(s.copy(
@@ -351,7 +352,7 @@ class OutputNeuron(biasWeight: Double, activationFunction: ActivationFunction) e
 				// logic here is if we are not learning then we can reset the signals now..
 				// if learning via back propagation then we need these values to stay in order to calculate error gradients.
 				if(signalType == "ANNCONFIG") {
-					context become readyNeuron(s.copy(accumulatedSignal = 0, signalsReceived = Map.empty))
+					context become readyNeuron(s.copy(activationOutput = 0, accumulatedSignal = 0, signalsReceived = Map.empty))
 				} else {
 
 				context become readyNeuron(s.copy(
@@ -366,6 +367,7 @@ class OutputNeuron(biasWeight: Double, activationFunction: ActivationFunction) e
 
 			//println("output got new sig")
 			context become readyNeuron(s.copy(
+
 			accumulatedSignal = s.accumulatedSignal + v,
 			signalsReceived = s.signalsReceived + (source -> v)))
 		}

@@ -22,7 +22,7 @@ object Network {
 		sensations: Map[Double, Sensation] = Map.empty,
     	totalSensationsReceived: Int = 0,
 		confirmedPropagations: Int = 0,
-    	outputsReceived: HashMap[Int, Double] = HashMap.empty,
+    	outputsReceived: SortedMap[Int, Double] = SortedMap.empty,
     	sse: Double = 0,
     	fitnessValue: Double = 0.00000000001,
 		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput,2))
@@ -37,7 +37,7 @@ object Network {
 
 	case class NetworkReady(genome: NetworkGenome)
 
-	case class NetworkOutput(outputs: HashMap[Int, Double])
+	case class NetworkOutput(outputs: SortedMap[Int, Double])
 
 	def props(genome: NetworkGenome): Props = Props(new Network(genome))
 
@@ -112,8 +112,10 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
         	// println("SIGNAL SENT: " +  genome)
 			// println(Sensation(id, v, l, signalType))
-  			v.zip(inputs.values).foreach({case (v,i) => i ! Neuron.Signal(v, false, signalType)})
-  			context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l, signalType)),
+  			
+        v.zip(inputs).foreach({case (v,i) => i._2 ! Neuron.Signal(v, false, signalType)})
+  			
+        context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l, signalType)),
                                                     totalSensationsReceived = settings.totalSensationsReceived + 1))
 
 
@@ -126,11 +128,13 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
 	    //println("ANN CONFIG sig propagated.")
 
-      val updatedOutputs: HashMap[Int, Double] = settings.outputsReceived + (sender().path.name.toInt -> v)
+      val updatedOutputs: SortedMap[Int, Double] = settings.outputsReceived + (sender().path.name.toInt -> v)
 
       if(updatedOutputs.size == outputs.size) {
 
         context.actorSelection("../annFac") ! NetworkOutput(updatedOutputs)
+
+        context become readyNetwork(settings.copy(outputsReceived = SortedMap.empty))
 
       } else {
 
@@ -182,20 +186,17 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
         settings.totalSensationsReceived match {
           case 4 => {
-						val ts = System.currentTimeMillis()
+						
+            //val ts = System.currentTimeMillis()
 
-
-          //println(squaredError + ", " + settings.sensations + ", " + v)
-          //println(genome)
-
-
-
-			parent ! Matured(genome,   1 / (settings.fitnessValue + fitnessValue), settings.sse + squaredError )
-			//println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived }+ ", " + v + ", " + settings.sensations(1).label(0))
+      			parent ! Matured(genome,   1 / (settings.fitnessValue + fitnessValue), settings.sse + squaredError )
+      			
+            //println(genome.id + ", " + (settings.sse + fitnessValue) + ", " + settings.totalSensationsReceived + ", " + v )
+            
             // Don't need to relax since all sensations have finished. This also causes deadletters.
-			//children.foreach(c => c ! "Relax")
+      			//children.foreach(c => c ! "Relax")
 
-			context become readyNetwork(settings.copy(sse = 0, fitnessValue = 0))
+      			context become readyNetwork(settings.copy(sse = 0, fitnessValue = 0))
           }
           case _ => {
 

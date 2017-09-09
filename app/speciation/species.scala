@@ -80,7 +80,11 @@ import Species._
 
 				//println(population + ", " + s.speciesMeanFitness + ", " + popTotalMeanFitness + ", " + speciesTargetSize + ", " + eliteGenomes + ", " +crossingGenomes + ", " + mutatingGenomes)
 
-				selectParents(offSpringTargets, s.members.values.toList.sortBy(- _.fitness) , s.speciesTotalFitness, s)
+				//println(s.champion)
+				val sortedmems = s.members.values.toList.sortBy(- _.fitness)
+				//println(sortedmems.head.fitness + " - " + sortedmems(sortedmems.length -1).fitness )
+
+				selectParents(offSpringTargets, sortedmems , s.speciesTotalFitness, s)
 			}
 	}
 

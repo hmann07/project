@@ -18,6 +18,6 @@ import scala.xml.XML
 
 class SubstrateNode(val nodeXML: scala.xml.NodeSeq, val name: String){
 	
-	val dim = (nodeXML \ "dim").map {d => d.text }.toVector
+	val dim = (nodeXML \ "dim").map {d => d.text }.toList
 
 }
