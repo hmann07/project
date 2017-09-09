@@ -50,6 +50,8 @@ object Population {
 
 
 
+
+
 }
 
 class Population(innovationAgent: ActorRef, networkOutput: ActorRef, populationOutput: ActorRef) extends Actor with ActorLogging {
@@ -82,7 +84,7 @@ import Population._
 				val g = GenomeFactory.createGenome(genomePath, i)
 
 				val e = context.actorOf(Props[Experience], "experience." + i)
-				context.actorOf(Agent.props(g, e, innovationAgent), "agent."+ i)
+				context.actorOf(Agent.props(g, e, innovationAgent, agentType), "agent."+ i)
 
 				})
 
@@ -114,21 +116,23 @@ import Population._
 
 
 		 case PopulationSettings(n, genomePath, "BP", altGenomePath,  speciationThreshold, rn) =>
-		 	// This will make the networks learn independently.
- 			val agentType = "BP"
 
- 	   		1.to(n).foreach(i => {
+			val agentType = "BP"
 
- 				 val ann = GenomeFactory.createGenome(genomePath, i)
+			1.to(n).foreach(i => {
 
- 	   			 val e = context.actorOf(Props[Experience], "experience." + i)
+				val g = GenomeFactory.createGenome(genomePath, i)
 
- 				 context.actorOf(Agent.props(ann, e, innovationAgent), "agent."+ i)
+				val e = context.actorOf(Props[Experience], "experience." + i)
+				context.actorOf(Agent.props(g, e, innovationAgent, agentType), "agent."+ i)
 
- 			})
+				})
 
- 	   		 
- 	   		 context become evolving(PopulationSettings(n,  genomePath, agentType, altGenomePath, speciationThreshold, rn), n, List.empty, n, 1, 0)
+			// TODO: is it better to make the outputter a member of the netowrk or of the system or of the agent... rather than population?
+			// network doesn't get a view of the ANN.. at the moment.
+
+			context become evolving(PopulationSettings(n,  genomePath, agentType, altGenomePath, speciationThreshold, rn), n, List.empty, n, 1, 0)
+
 	}
 
 	def evolving(
@@ -140,6 +144,19 @@ import Population._
 		totalfitnessValue: Double,
 		bestGenome: AgentResults = null,
 		speciesDirectory: HashMap[Int, SpeciesDirectoryEntry] = HashMap.empty): Actor.Receive = {
+
+		case Agent.BackPropagationStats(genome, iteration, timestamp, sse) =>
+
+			val gStats: Map[String, Double] = Map(
+					"agent" -> sender().path.name.replace("agent.","").toInt,
+					"populationName" -> self.path.name.replace("population","").toInt,
+					"epoch" -> iteration,
+					"timestamp" -> timestamp,
+					"sse" -> sse)
+
+			//populationOutput ! PopulationOutput.PopOutputRequest(gStats, "BackPropagationStats", "CSV")
+			println(sender().path.name.replace("agent.","").toInt + ", " + iteration + ", " + timestamp + ", "  + sse)
+
 
 		case "Ready" =>
 			// this must have been a leftover from spawning stage... which should be able to stop it..
@@ -308,7 +325,7 @@ import Population._
 
 					settings.agentType match {
 						case "STD" =>
-							context.actorOf(Agent.props(c.genome, e, innovationAgent), "agent."+ c.genome.id)
+							context.actorOf(Agent.props(c.genome, e, innovationAgent, "STD"), "agent."+ c.genome.id)
 
 						case "HYPER" =>
 							context.actorOf(HyperNeatAgent.props(c.genome, settings.altGenomePath, e, innovationAgent), "hyperneatagent."+ c.genome.id)

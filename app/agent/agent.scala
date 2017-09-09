@@ -18,11 +18,13 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object Agent {
 
-	def props(cppnGenome: NetworkGenome, experience: ActorRef, innovationAgent: ActorRef, species: Int = 0): Props = Props(new Agent(cppnGenome, experience, species, innovationAgent))
+	def props(cppnGenome: NetworkGenome, experience: ActorRef, innovationAgent: ActorRef, agentType: String, species: Int = 0): Props = Props(new Agent(cppnGenome, experience, species, innovationAgent, agentType))
 
     case class NewChild(genome: NetworkGenome, name: Int)
 
 	case class Matured(genome: NetworkGenome, error: Double, sse: Double, species: Int, annGenome: NetworkGenome = null)
+
+	case class BackPropagationStats(genome: NetworkGenome, iteration: Double, time: Long, sse: Double)
 }
 
 
@@ -31,7 +33,7 @@ object Agent {
 		using the Genome it must set up the actors for the network set up the connections and
 */
 
-class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innovationAgent: ActorRef) extends Actor with ActorLogging {
+class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innovationAgent: ActorRef, agentType: String) extends Actor with ActorLogging {
 	import context._
     import Agent._
 
@@ -62,7 +64,11 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 
     	case Experience.Event(e, l) =>
 
-    		ann ! Network.Sensation(1, e, l, "EVOLVE")
+    		agentType match {
+    			case "BP" => ann ! Network.Sensation(1, e, l, "BP")
+    			case "STD" => ann ! Network.Sensation(1, e, l, "EVOLVE")
+    		}
+    		
 
 
         // Received when a network has completed one signal of a pattern and needs another
@@ -75,8 +81,16 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
         //  Received when a network has processed all expected patterns from a test set.
         case Network.Matured(g, fitnessValue, sse) =>
             //println("agent got final network data")
-            parent ! Matured(g, fitnessValue, sse, species)
+            agentType match {
+            	case "BP" => {
+            			val ts = System.currentTimeMillis()
+              			parent ! BackPropagationStats(g, fitnessValue, ts, sse)
+              			
+            		}
 
+            		
+            	case "STD" => parent ! Matured(g, fitnessValue, sse, species)
+            }
         // receieved some instructions for crossing over two genomes..
 
 		case Population.Elite(genome, genomeNumber) =>

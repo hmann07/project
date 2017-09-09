@@ -197,10 +197,10 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
           case 0 => {
 
             // This is the end of the epoch
-            
+            // no need to send every single epoch, wait for a multiple of 10.
             if(settings.totalSensationsReceived % 10 == 0){
-              val ts = System.currentTimeMillis()
-              //println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.sse + squaredError) + ", " + ts)
+              // Not elegant, cheating by throwing the epoch in the fitness value field...
+              parent ! Matured(genome, settings.totalSensationsReceived / 4, settings.sse + squaredError)
             }
 
             // backwards propagate error
@@ -212,9 +212,10 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
           
           case _ => {
 
-            sender() ! Error(error)
+            println(error)
+            //sender() ! Error(error)
 
-            context become  readyNetwork(settings.copy(sse = settings.sse + squaredError))
+            //context become  readyNetwork(settings.copy(sse = settings.sse + squaredError))
           }
         }
    

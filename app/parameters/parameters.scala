@@ -9,8 +9,8 @@ package com.neurocoevo.parameters
 
 	case class PopulationParameters(
 		val populationSize: Int = 150,
-		val genomePath: String = ".\\resources\\annSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml
-		val agentType: String = "STD", // Options: HYPER, STD, BP
+		val genomePath: String = ".\\resources\\annBPSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml
+		val agentType: String = "BP", // Options: HYPER, STD, BP
 		val altGenomePath: String = ".\\resources\\hyperneatAnnSubstrate.xml"
 	)
 
@@ -37,4 +37,4 @@ package com.neurocoevo.parameters
 		)
 
 	case class UniverseParameters (
-		val populationCount: Int = 50)
+		val populationCount: Int = 1)
