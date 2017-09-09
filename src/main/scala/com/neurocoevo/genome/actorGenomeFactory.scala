@@ -91,7 +91,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 				val biasedNeurons = neurons.values.toList.filter(n => n.neuronType != "input")
 
 				// send first
-				val coordinates: List[Double] = (Vector.fill(biasedNeurons.head.location.size)(0.0) ++ biasedNeurons.head.location).toList
+				val coordinates: List[Double] = (List.fill(biasedNeurons.head.location.size)(0.0) ++ biasedNeurons.head.location)
 				//println(coordinates)
 
 				context.actorSelection("../cppn") ! Network.Sensation(1, coordinates, List(0), "ANNCONFIG")
@@ -128,7 +128,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 
 			} else {
 
-				val coordinates: List[Double] = (Vector.fill(neurons.head.location.size)(0.0) ++ neurons.head.location).toList
+				val coordinates: List[Double] = (List.fill(neurons.head.location.size)(0.0) ++ neurons.head.location).toList
 				context.actorSelection("../cppn") ! Network.Sensation(1, coordinates, List(0), "ANNCONFIG")
 				context become updatingBias(newConnections, neurons.head, neurons.tail, updatedNeuronList)
 
@@ -157,7 +157,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 									}
 								  },
 								  (currentNeuron \ "@layer").text.toDouble,
-								  (currentNeuron \ "dim").foldLeft(Vector[Double]())((location, current) => {
+								  (currentNeuron \ "dim").foldLeft(List[Double]())((location, current) => {
 									location :+ (current.text).toDouble
 								  })
 								  ))}

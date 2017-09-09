@@ -12,12 +12,12 @@ import scala.xml.XML
  	given
  		<dim>1</dim><dim>2</dim> , node1
  	
- 	should return SubstrateNode with name= "node1", dim = Vector(1, 2) 
+ 	should return SubstrateNode with name= "node1", dim = List(1, 2) 
 
 */
 
 class SubstrateNode(val nodeXML: scala.xml.NodeSeq, val name: String){
 	
-	val dim = (nodeXML \ "dim").map {d => d.text }.toVector
+	val dim = (nodeXML \ "dim").map {d => d.text }.toList
 
 }

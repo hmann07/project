@@ -318,7 +318,7 @@ import Population._
 
 
 
-				// Stop the agent
+				// There are still children to be created the agent
 				sender() ! "ProcessRequest"
 
 				// Wait for rest..
