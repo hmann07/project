@@ -198,7 +198,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
             // This is the end of the epoch
             // no need to send every single epoch, wait for a multiple of 10.
-            if(settings.totalSensationsReceived % 10 == 0){
+            if(settings.totalSensationsReceived % 40 == 0){
               // Not elegant, cheating by throwing the epoch in the fitness value field...
               parent ! Matured(genome, settings.totalSensationsReceived / 4, settings.sse + squaredError)
             }
@@ -210,10 +210,14 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
             context become  readyNetwork(settings.copy(sse = 0))
           }
           
+         // case 2 =>
+         //   println(error)
+         //   println(settings.totalSensationsReceived)
+
           case _ => {
 
             //println(error)
-            //println(genome)
+            //println(settings.totalSensationsReceived)
             sender() ! Error(error)
 
             context become  readyNetwork(settings.copy(sse = settings.sse + squaredError))
@@ -225,7 +229,8 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   		case "propagated" =>
   			//println("error propagated")
   			if ( settings.confirmedPropagations + 1 == inputs.size){
-  				parent ! "propagated"
+  				//println(genome)
+          parent ! "propagated"
   				context become readyNetwork(settings.copy(confirmedPropagations = 0))
   			} else {
   				context become readyNetwork(settings.copy(confirmedPropagations = settings.confirmedPropagations + 1))

@@ -4,6 +4,7 @@ import com.neurocoevo.network._
 import com.neurocoevo.activationfunction._
 import com.neurocoevo.genome.NeuronGenome
 import com.neurocoevo.genome.ConnectionGenome
+import com.neurocoevo.parameters.BackPropParameters
 
 import scala.util.Random
 
@@ -36,7 +37,7 @@ object Neuron {
     	outputs: Map[ActorRef, ConnectionDetail] = defaultOutputs,
     	inputs: Map[ActorRef, ConnectionDetail] = defaultInput,
     	signalsReceived: Map[ActorRef, Double] = defaultSignalsRecieved,
-    	learningRate: Double = 0.1,
+    	learningRate: Double = BackPropParameters().learningRate,
     	errorGradientsReceived: Double = 0,
     	totalErrorGradient: Double = 0,
     	biasValue: Int = -1,
@@ -67,7 +68,7 @@ class Neuron(pBiasWeight: Double, activationFunction: ActivationFunction) extend
 	import Neuron._
 
 	//println("Neuron created")
-
+	
 	def receive = initialisingNeuron(NeuronSettings(biasWeight = pBiasWeight, activationFunction = activationFunction))
 
     def initialisingNeuron(settings: NeuronSettings): Receive = {
@@ -200,6 +201,8 @@ class Neuron(pBiasWeight: Double, activationFunction: ActivationFunction) extend
   			//println(self.path.name + " new connection weights : " + updatedOutputs )
 			// we can also reset the node. ready for incoming forward signals
 			//println(self.path.name + " new bias: " + (s.biasWeight + dBiasWeight))
+			//println(self.path.name + "  " + updatedOutputs )
+			//println(self.path.name + "  " + (s.biasWeight + dBiasWeight) )
 
 			context become readyNeuron(s.copy(
 				accumulatedSignal = 0,
@@ -281,6 +284,8 @@ class InputNeuron(biasWeight: Double, activationFunction: ActivationFunction) ex
   			// the parent will be waitng to hear from all inputs.
   			parent ! "propagated"
 
+  			//println(self.path.name + "  " + updatedOutputs )
+
   			context become readyNeuron(s.copy(accumulatedSignal = 0,
 											  signalsReceived = Map.empty,
 											  totalErrorGradient = 0,
@@ -293,6 +298,8 @@ class InputNeuron(biasWeight: Double, activationFunction: ActivationFunction) ex
 			val updatedWeight = (source -> s.outputs(source).copy(weight = currentWeight + dWeight))
 			val updatedOutputs: Map[ActorRef, ConnectionDetail] = s.outputs + updatedWeight
 
+			
+			
   			context become readyNeuron(s.copy(errorGradientsReceived = s.errorGradientsReceived + 1,
 											  outputs = updatedOutputs))
 
@@ -387,6 +394,9 @@ class OutputNeuron(biasWeight: Double, activationFunction: ActivationFunction) e
   		val dBiasWeight = s.learningRate * errorGradient * s.biasValue
   		// can reset node:
   		//println(self.path.name + " new bias: " + (s.biasWeight + dBiasWeight))
+
+  		//println(self.path.name + "  " + updatedOutputs )
+			//println(self.path.name + "  " + (s.biasWeight + dBiasWeight) )
 
   		context become readyNeuron(s.copy(
 			accumulatedSignal = 0,

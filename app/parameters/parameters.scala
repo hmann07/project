@@ -15,7 +15,7 @@ package com.neurocoevo.parameters
 	)
 
 	case class BackPropParameters(
-		val learningRate: Double = 0.1
+		val learningRate: Double = 0.6
 	)
 
 	case class OffspringParameters(
