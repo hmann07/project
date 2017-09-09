@@ -212,10 +212,11 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
           
           case _ => {
 
-            println(error)
-            //sender() ! Error(error)
+            //println(error)
+            //println(genome)
+            sender() ! Error(error)
 
-            //context become  readyNetwork(settings.copy(sse = settings.sse + squaredError))
+            context become  readyNetwork(settings.copy(sse = settings.sse + squaredError))
           }
         }
    

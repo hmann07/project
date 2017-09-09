@@ -7,11 +7,11 @@
 		<neuron id="3" type="output" activationFunction="SIGMOID" layer="1" bias="-1" biasWeight="0.3"/>
 	</neurons>
 	<connections>
-		<connection id="2" src-id="1" tgt-id="4" weight="0.5" />
+		<connection id="1" src-id="1" tgt-id="4" weight="0.5" />
 		<connection id="2" src-id="1" tgt-id="5" weight="0.9" />
-		<connection id="4" src-id="2" tgt-id="4" weight="0.4" />
-		<connection id="5" src-id="2" tgt-id="5" weight="1.0" />
-		<connection id="6" src-id="4" tgt-id="3" weight="-1.2" />
-		<connection id="7" src-id="5" tgt-id="3" weight="1.1" />	
+		<connection id="3" src-id="2" tgt-id="4" weight="0.4" />
+		<connection id="4" src-id="2" tgt-id="5" weight="1.0" />
+		<connection id="5" src-id="4" tgt-id="3" weight="-1.2" />
+		<connection id="6" src-id="5" tgt-id="3" weight="1.1" />	
 	</connections>
 </substrate>

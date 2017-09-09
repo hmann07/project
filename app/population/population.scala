@@ -154,8 +154,8 @@ import Population._
 					"timestamp" -> timestamp,
 					"sse" -> sse)
 
-			//populationOutput ! PopulationOutput.PopOutputRequest(gStats, "BackPropagationStats", "CSV")
-			println(sender().path.name.replace("agent.","").toInt + ", " + iteration + ", " + timestamp + ", "  + sse)
+			populationOutput ! PopulationOutput.PopOutputRequest(gStats, "BackPropagationStats", "CSV")
+			//println(sender().path.name.replace("agent.","").toInt + ", " + iteration + ", " + timestamp + ", "  + sse)
 
 
 		case "Ready" =>
