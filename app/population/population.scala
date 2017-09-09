@@ -221,6 +221,7 @@ import Population._
 					)
 
 				populationOutput ! PopulationOutput.PopOutputRequest(gStats, "populationStats", "JSON")
+				populationOutput ! PopulationOutput.PopOutputRequest(gStats, "populationStats", "CSV")
 
 				// all genomes allocated a species. now we tell the species to create their volunteers and update current champion to be previous champion.
 

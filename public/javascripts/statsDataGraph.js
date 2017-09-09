@@ -124,7 +124,7 @@ lineChart.prototype.draw = function(){
           series.append("path")
               .datum(c.groupedData[dk])
               .attr("class", function(d,i){
-                return "series" + d[0][c.groupField] + " line series c" + mi
+                return "series" + c.groupField.map(function(f){return d[0][f]}).join("-") + " line series c" + mi
                 })
               .attr("d", line);
 
@@ -180,7 +180,7 @@ lineChart.prototype.draw = function(){
                 })
                 .transition().duration(250).style("fill-opacity", 1);
 
-          d3.select(".series" + d.data.all[c.groupField]).classed("focusseries", true)
+          d3.select(".series" + c.groupField.map(function(f){return d.data.all[f]}).join("-")).classed("focusseries", true)
 
         })
         .on("mouseout",function(d){
@@ -188,7 +188,7 @@ lineChart.prototype.draw = function(){
             var pointData = d.data.all
             var pointX = d.data.x
 
-          d3.select(".series" + d.data.all[c.groupField]).classed("focusseries", false)
+          d3.select(".series" + c.groupField.map(function(f){return d.data.all[f]}).join("-")).classed("focusseries", false)
           legend.selectAll("text").data(c.yVal).text(function(e){
             return e
             })

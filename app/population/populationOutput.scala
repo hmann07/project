@@ -24,7 +24,7 @@ class PopulationOutput extends Actor with ActorLogging {
 		case PopOutputRequest(content, name, "JSON") =>
 		
 			
-			val jsonString = content.map(c => "" + c._1 + ": " + c._2 + "").mkString("{", ", ",  "}")
+			val jsonString = content.map(c => "\"" + c._1 + "\": " + c._2 + "").mkString("{", ", ",  "}")
 
 			val params = OutputParameters()
 			val pw = new PrintWriter(new FileOutputStream(new File(params.popOutputPath + name + ".js"), true))
@@ -32,6 +32,22 @@ class PopulationOutput extends Actor with ActorLogging {
 			try {
 				
 				pw.append(jsonString +"\r\n") 
+				
+			}
+			finally pw.close()
+
+
+		case PopOutputRequest(content, name, "CSV") =>
+		
+			
+			val csvString = content.map(c => "" + c._2 + "").mkString("", ", ",  "")
+
+			val params = OutputParameters()
+			val pw = new PrintWriter(new FileOutputStream(new File(params.popOutputPath + name + ".csv"), true))
+
+			try {
+				
+				pw.append(csvString +"\r\n") 
 				
 			}
 			finally pw.close()

@@ -158,9 +158,10 @@ class Neuron(pBiasWeight: Double, activationFunction: ActivationFunction) extend
 			// logic here is if we are not learning then we can reset the signals now..
 			// if learning via back propagation then we need these values to stay in order to calculate error gradients.
 			if(signalType == "ANNCONFIG") {
-				context become readyNeuron(s.copy(activationOutput = 0, accumulatedSignal = 0, signalsReceived = Map.empty))
+				context become readyNeuron(s.copy(accumulateRecurrent = false, activationOutput = 0, accumulatedSignal = 0, signalsReceived = Map.empty))
 			} else {
 	    	context become readyNeuron(s.copy(
+	    		accumulateRecurrent = false,
 				accumulatedSignal  = finalAccumalatedSignal,
 				activationOutput = activation,
 	    		signalsReceived = s.signalsReceived + (source -> v)))
@@ -352,10 +353,11 @@ class OutputNeuron(biasWeight: Double, activationFunction: ActivationFunction) e
 				// logic here is if we are not learning then we can reset the signals now..
 				// if learning via back propagation then we need these values to stay in order to calculate error gradients.
 				if(signalType == "ANNCONFIG") {
-					context become readyNeuron(s.copy(activationOutput = 0, accumulatedSignal = 0, signalsReceived = Map.empty))
+					context become readyNeuron(s.copy(accumulateRecurrent = false, activationOutput = 0, accumulatedSignal = 0, signalsReceived = Map.empty))
 				} else {
 
 				context become readyNeuron(s.copy(
+					accumulateRecurrent = false,
 					accumulatedSignal = finalAccumalatedSignal,
 					activationOutput = activation,
 					signalsReceived = s.signalsReceived + (source -> v)))

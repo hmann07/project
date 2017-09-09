@@ -150,39 +150,10 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	  case Output(v, "EVOLVE") =>
 
 
-
         val error = settings.sensations(1).label(0) - v
         val squaredError = math.pow(error, 2)
 
-		// If we are in Back propagation mode.
-        /*
-				settings.totalSensationsReceived % 4 match {
-          case 0 => {
-            if(settings.totalSensationsReceived % 10 == 0){
-							val ts = System.currentTimeMillis()
-              println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.sse + squaredError) + ", " + ts)
-            }
-
-						// backwards propagate error
-            sender() ! Error(error)
-
-						// reset the squared error for pattern. ready for next iteration
-            context become  readyNetwork(settings.copy(sse = 0))
-          }
-          case _ => {
-
-						sender() ! Error(error)
-
-            context become  readyNetwork(settings.copy(sse = settings.sse + squaredError))
-          }
-        }
-		*/
-
-
-        // If we are in Evolution Only mode.
-			//	/*
-
-		val fitnessValue = settings.performanceFunction(v, settings.sensations(1).label(0))
+	  		val fitnessValue = settings.performanceFunction(v, settings.sensations(1).label(0))
 
         settings.totalSensationsReceived match {
           case 4 => {
@@ -211,7 +182,42 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
               fitnessValue = settings.fitnessValue + fitnessValue), 0)
           }
         }
-			//*/
+
+
+
+        case Output(v, "BP") =>
+			
+        // If we are in Back propagation mode.
+       
+        val error = settings.sensations(1).label(0) - v
+        val squaredError = math.pow(error, 2)
+
+
+        settings.totalSensationsReceived % 4 match {
+          case 0 => {
+
+            // This is the end of the epoch
+            
+            if(settings.totalSensationsReceived % 10 == 0){
+              val ts = System.currentTimeMillis()
+              //println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + (settings.sse + squaredError) + ", " + ts)
+            }
+
+            // backwards propagate error
+            sender() ! Error(error)
+
+            // reset the squared error for pattern. ready for next iteration
+            context become  readyNetwork(settings.copy(sse = 0))
+          }
+          
+          case _ => {
+
+            sender() ! Error(error)
+
+            context become  readyNetwork(settings.copy(sse = settings.sse + squaredError))
+          }
+        }
+   
 
 
   		case "propagated" =>
