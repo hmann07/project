@@ -4,6 +4,7 @@ import com.neurocoevo.genome._
 import com.neurocoevo.neuron._
 import com.neurocoevo.activationfunction.ActivationFunction
 import com.neurocoevo.substrate.SubstrateNode
+import com.neurocoevo.parameters.BackPropParameters
 
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
@@ -24,7 +25,9 @@ object Network {
 		confirmedPropagations: Int = 0,
     	outputsReceived: SortedMap[Int, Double] = SortedMap.empty,
     	sse: Double = 0,
-    	fitnessValue: Double = 0.00000000001,
+    	fitnessValue: Double = 0.00000000001, // tiny, so that we avoid any nasty divide by zero errors.. 
+      maxIterations: Int = BackPropParameters().maxIterations,
+
 		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput,2))
 
 	case class Sensation(
@@ -203,11 +206,18 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
               parent ! Matured(genome, settings.totalSensationsReceived / 4, settings.sse + squaredError)
             }
 
+            if(settings.totalSensationsReceived == settings.maxIterations){
+              // Not elegant, cheating by throwing the epoch in the fitness value field...
+              //STOP 
+
+            } else {
+
             // backwards propagate error
             sender() ! Error(error)
 
             // reset the squared error for pattern. ready for next iteration
             context become  readyNetwork(settings.copy(sse = 0))
+          }
           }
           
          // case 2 =>

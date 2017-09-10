@@ -22,7 +22,7 @@ object Agent {
 
     case class NewChild(genome: NetworkGenome, name: Int)
 
-	case class Matured(genome: NetworkGenome, error: Double, sse: Double, species: Int, annGenome: NetworkGenome = null)
+	case class Matured(genome: NetworkGenome, error: Double, sse: Double, species: Int, timestamp: Long, annGenome: NetworkGenome = null)
 
 	case class BackPropagationStats(genome: NetworkGenome, iteration: Double, time: Long, sse: Double)
 }
@@ -81,15 +81,16 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
         //  Received when a network has processed all expected patterns from a test set.
         case Network.Matured(g, fitnessValue, sse) =>
             //println("agent got final network data")
+            val ts = System.currentTimeMillis()
             agentType match {
             	case "BP" => {
-            			val ts = System.currentTimeMillis()
+            			
               			parent ! BackPropagationStats(g, fitnessValue, ts, sse)
               			
             		}
 
             		
-            	case "STD" => parent ! Matured(g, fitnessValue, sse, species)
+            	case "STD" => parent ! Matured(g, fitnessValue, sse, species, ts)
             }
         // receieved some instructions for crossing over two genomes..
 

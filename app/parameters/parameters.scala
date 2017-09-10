@@ -8,14 +8,15 @@ package com.neurocoevo.parameters
 
 
 	case class PopulationParameters(
-		val populationSize: Int = 1,
-		val genomePath: String = ".\\resources\\annBPSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml
-		val agentType: String = "BP", // Options: HYPER, STD, BP
+		val populationSize: Int = 150,
+		val genomePath: String = ".\\resources\\annSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml
+		val agentType: String = "STD", // Options: HYPER, STD, BP
 		val altGenomePath: String = ".\\resources\\hyperneatAnnSubstrate.xml"
 	)
 
 	case class BackPropParameters(
-		val learningRate: Double = 0.6
+		val learningRate: Double = 0.3,
+		val maxIterations: Int = 32000
 	)
 
 	case class OffspringParameters(
@@ -37,4 +38,4 @@ package com.neurocoevo.parameters
 		)
 
 	case class UniverseParameters (
-		val populationCount: Int = 100)
+		val populationCount: Int = 1)

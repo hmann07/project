@@ -106,11 +106,11 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
         case Network.Matured(g, fitnessValue, sse) =>
 
 			//println("network matured")
-
+			val ts = System.currentTimeMillis()
 			// tell population, send the CPPN which will be subject to genetic operators.
 			// used the agent version of maturerd so that population can match..
 
-            parent ! Agent.Matured(cppnGenome, fitnessValue, sse, species, s.annGenome)
+            parent ! Agent.Matured(cppnGenome, fitnessValue, sse, species, ts, s.annGenome)
 
         // receieved some instructions for crossing over two genomes..
 

@@ -163,7 +163,7 @@ import Population._
 			context stop sender()
 
 		// Matches when an agent has processed a set of patterns form the environment.
-		case Agent.Matured(genome, fitnessValue, sse, speciesIdx, annGenome) =>
+		case Agent.Matured(genome, fitnessValue, sse, speciesIdx, timestamp, annGenome) =>
 
 			
 			val agentResult = AgentResults(genome, sse, fitnessValue, sender(), annGenome)
@@ -226,6 +226,7 @@ import Population._
 				// create a map of items for generation stats
 				val gStats: Map[String, Double] = Map(
 					"runNumber" -> settings.runNumber,
+					"timestamp" -> timestamp,
 					"populationName" -> self.path.name.replace("population","").toInt,
 					"generationNumber" -> generationNumber,
 					"populationSize" -> totalAgents,
