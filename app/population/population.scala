@@ -191,6 +191,7 @@ import Population._
 
 
 				// tell the outputter to save down the best genome in JSON format.
+				
 				networkOutput ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" + generationNumber , "JSON")
 
 				// if we are in HyperNeat mode
@@ -334,7 +335,7 @@ import Population._
 				})
 
 				// start evolving again
-				if(generationNumber == 100){
+				if(generationNumber == 200){
 					// then we've performed the prescribed number of gnerations
 					
 					// tell innovation to stop

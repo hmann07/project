@@ -28,7 +28,7 @@ class ViewGenomeController @Inject()(system: ActorSystem, cc: ControllerComponen
   		val files = new File(".\\public\\logs\\")
 
   		val statsFile = new PrintWriter(new File(".\\public\\logs\\statsData.js"))
-  		 statsFile.write("var d = " + scala.io.Source.fromFile(".\\public\\logs\\populationStats.js").getLines.toList.mkString("[", ", ", "]"))
+  		 statsFile.write("var d = " + scala.io.Source.fromFile(".\\public\\logs\\populationStats.js").getLines.toList.mkString("[", ",\n ", "]"))
   		 statsFile.close
 
        Ok(views.html.evolutionOutput(files.listFiles.toList, filename))

@@ -199,7 +199,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 									val newNeurons: HashMap[Int, NeuronGenome] = genome.neurons ++ neurons.foldLeft(HashMap[Int, NeuronGenome]()){(acc, currentNeuron) =>
 										acc + (currentNeuron.innovationId -> {
 											if(Random.nextDouble < 0.9) {
-												currentNeuron.copy(biasWeight = neuronToChange.biasWeight + ((Random.nextDouble * 8) - 4) * Random.nextDouble)
+												currentNeuron.copy(biasWeight = neuronToChange.biasWeight + ((Random.nextDouble * 4) - 2) * Random.nextDouble)
 											} else {
 												currentNeuron
 											}
@@ -298,8 +298,9 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 
             val newCons = genome.connections +
                     (oldConnection -> oldConnectionGenome.copy(enabled = false),
-                     neuronData.connection1 -> new ConnectionGenome(neuronData.connection1, neuronData.fromNeuron, neuronData.newNeuron),   //new ConnectionGenomes
-                     neuronData.connection2 -> new ConnectionGenome(neuronData.connection2, neuronData.newNeuron, neuronData.toNeuron))  //new ConnectionGenomes
+                    	// NEAT paper indicates that connection into new get weight = 1, conn out gets old weight
+                     neuronData.connection1 -> new ConnectionGenome(neuronData.connection1, neuronData.fromNeuron, neuronData.newNeuron, 1 ),   //new ConnectionGenomes
+                     neuronData.connection2 -> new ConnectionGenome(neuronData.connection2, neuronData.newNeuron, neuronData.toNeuron, oldConnectionGenome.weight))  //new ConnectionGenomes
 
 
             val newNeurons = genome.neurons + (neuronData.newNeuron-> new NeuronGenome(
@@ -307,7 +308,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
                     "SIGMOID", // In case of CPPN Needs to be randomly selected
                     "hidden",  // Assume we can't ad or remove inputs or outputs.
                     -1, // Bias val
-                    Random.nextDouble, // Bias weight
+                    (Random.nextDouble * 4) -2, // Bias weight
                     (genome.neurons(oldConnectionGenome.from).layer + genome.neurons(oldConnectionGenome.to).layer) / 2 // Layer. SHould be the sum of the layers of the 2 neurons previously conected / 2
                     ))
 
