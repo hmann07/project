@@ -10,6 +10,7 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 import com.neurocoevo.agent._
 import com.neurocoevo.substrate._
 import com.neurocoevo.network._
+import com.neurocoevo.parameters.MutationFunctionParameters
 import scala.collection.immutable.HashMap
 
 
@@ -53,14 +54,14 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 		case Network.NetworkOutput(output) =>
 
 			// Here the output node innovation id is 5. because the CPPN will always use this for connection weights
-			val weight = output(5) * 5  // Profile the weight between a defined weight range
+			val weight = output(5) * (MutationFunctionParameters().connectionWeightRange /2)  // Profile the weight between a defined weight range
 
 			val newConnections = {
 
 				// only express connection if above a certain weight:
 				// What happens if we never create a complete network? How do we know if we have expressed connections that will take signal from input to output?
 				// Currently forcing non recurrent.. to test xOr.
-				
+
 				if(Math.abs(weight) > 0.0 && currentPair._1.layer < currentPair._2.layer) {
 
 				 	connectionMap + (currentConnectionId -> new ConnectionGenome(
@@ -82,7 +83,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 
 
 			if(neuronPairs.isEmpty) {
-				
+
 				// completed connections so we should now update the neuron bias.
 
 				// work out which ones have bias.
@@ -117,7 +118,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 		case Network.NetworkOutput(outputs) =>
 
 			// Here the output node innovation id is 6. because the CPPN will always use this for bias weights
-			val bias = outputs(6) * 5 // profile weight into a range.
+			val bias = outputs(6) * (MutationFunctionParameters().connectionWeightRange /2) // profile weight into a range.
 
 			val updatedNeuronList = updatedNeurons + (currentNeuron.innovationId -> currentNeuron.copy(biasWeight = bias))
 
@@ -153,7 +154,7 @@ class ActorGenomeFactory(annSubstratePath: String) extends Actor with ActorLoggi
 								  {
 									val x = (currentNeuron \ "@biasWeight").text
 									if(x.length == 0){
-										(Random.nextDouble * 2) - 1
+										((Random.nextDouble * MutationFunctionParameters().connectionWeightRange) - (MutationFunctionParameters().connectionWeightRange /2))
 									} else {
 										x.toDouble
 									}

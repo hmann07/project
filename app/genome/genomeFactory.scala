@@ -8,6 +8,7 @@ import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 import com.neurocoevo.substrate._
+import com.neurocoevo.parameters.MutationFunctionParameters
 import scala.collection.immutable.HashMap
 
 
@@ -32,7 +33,7 @@ object GenomeFactory {
 								  {
 								  	val x = (i \ "@biasWeight").text
 								  	if(x.length == 0){
-								  		(Random.nextDouble * 2) - 1
+								  		((Random.nextDouble * MutationFunctionParameters().connectionWeightRange) - (MutationFunctionParameters().connectionWeightRange /2))
 								  	} else {
 								  		x.toDouble
 								  	}
@@ -49,7 +50,7 @@ object GenomeFactory {
 								  {
 								  	val x = (i \ "@weight").text
 								  	if(x.length == 0){
-								  		(Random.nextDouble * 2) - 1
+								  		((Random.nextDouble * MutationFunctionParameters().connectionWeightRange) - (MutationFunctionParameters().connectionWeightRange /2))
 								  	} else {
 								  		x.toDouble
 								  	}

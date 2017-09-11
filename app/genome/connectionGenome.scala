@@ -1,12 +1,13 @@
 package com.neurocoevo.genome
 
 import scala.util.Random
+import com.neurocoevo.parameters.MutationFunctionParameters
 
 case class ConnectionGenome(
 	val innovationId: Int,
 	val from: Int,
 	val to: Int,
-	val weight: Double = (Random.nextDouble * 2) - 1,
+	val weight: Double = ((Random.nextDouble * MutationFunctionParameters().connectionWeightRange) - (MutationFunctionParameters().connectionWeightRange /2)),
 	val enabled: Boolean = true,
 	val recurrent: Boolean = false)
 

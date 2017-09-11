@@ -3,7 +3,7 @@ package com.neurocoevo.parameters
 	case class SpeciationParameters(
 		val c1: Double = 1.0,
 		val c2: Double = 1.0,
-		val c3: Double = 0.3,
+		val c3: Double = 0.4,
 		val speciationThreshold: Double = 3.0)
 
 
@@ -22,15 +22,22 @@ package com.neurocoevo.parameters
 	case class OffspringParameters(
 		val crossoverRate: Double = 0.25,
 		val mutationRate: Double = 0.75,
-		val elitismRate: Double = 0.1
+		val elitismRate: Double = 0.2
 	)
 
-	// Should add to 1.
+
 	case class MutationFunctionParameters (
-		val perturbWeightRate: Double = 0.95,
-		val addNeuronRate: Double = 0.025,
-		val addConnectionRate: Double = 0.025
+	// Should add to 1.
+		val perturbWeightRate: Double = 0.92,
+		val addNeuronRate: Double = 0.03,
+		val addConnectionRate: Double = 0.05,
+	//
+		val weightChangeProportion: Double = 0.8,
+		val jiggleProportion: Double = 0.9,
+		val connectionWeightRange: Double = 10.0,
+		val mutationPertubFactor: Double = 0.05
 	)
+
 
 	case class OutputParameters (
 		val outputPath: String = ".\\public\\logs\\",
@@ -38,4 +45,4 @@ package com.neurocoevo.parameters
 		)
 
 	case class UniverseParameters (
-		val populationCount: Int = 1)
+		val populationCount: Int = 100)

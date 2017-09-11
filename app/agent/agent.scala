@@ -68,7 +68,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
     			case "BP" => ann ! Network.Sensation(1, e, l, "BP")
     			case "STD" => ann ! Network.Sensation(1, e, l, "EVOLVE")
     		}
-    		
+
 
 
         // Received when a network has completed one signal of a pattern and needs another
@@ -84,12 +84,12 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
             val ts = System.currentTimeMillis()
             agentType match {
             	case "BP" => {
-            			
+
               			parent ! BackPropagationStats(g, fitnessValue, ts, sse)
-              			
+
             		}
 
-            		
+
             	case "STD" => parent ! Matured(g, fitnessValue, sse, species, ts)
             }
         // receieved some instructions for crossing over two genomes..
@@ -123,15 +123,15 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 			val params = MutationFunctionParameters()
 
 			val mutationFunctions = List(
-					(mutatePerturbWeight(_, _),params.perturbWeightRate ),
-					(mutateAddNeuron(_, _), params.addNeuronRate),
-					(mutateAddConnection(_, _), params.addConnectionRate)
+					(mutatePerturbWeight(_, _, _),params.perturbWeightRate ),
+					(mutateAddNeuron(_, _, _), params.addNeuronRate),
+					(mutateAddConnection(_, _, _), params.addConnectionRate)
 					)
 
 			val mutationFunction = RouletteWheel.select(mutationFunctions)
 
 
-			mutationFunction(genome, genomeNumber)
+			mutationFunction(genome, genomeNumber, params)
 
 		}
 
@@ -140,7 +140,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
         // find a connection
         // vary its weight slightly. or a lot. or by something....
 
-			def mutatePerturbWeight(genome: NetworkGenome, genomeNumber: Int) = {
+			def mutatePerturbWeight(genome: NetworkGenome, genomeNumber: Int, params: MutationFunctionParameters) = {
 
 
 					// Currently go 50.50 on whether or not to change bias or connection weight...
@@ -148,67 +148,92 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 
 					// should this be parameterised?...
 
-					if(Random.nextDouble < Random.nextDouble) {
+					// Going to consider mutating bias all the time..
 
-									// change connection weight
-									// HyperNeat Implementation doesn't just change one it changes multiple.The number of changes is based on a random number or a fixed quantity,
-									// whilst always making sure at least one is changes.
+								// change connection weight
+								// HyperNeat Implementation doesn't just change one it changes multiple.The number of changes is based on a random number or a fixed quantity,
+								// whilst always making sure at least one is changes.
 
-									val connections = genome.connections.values
-									//val totalConnections = connections.length
-									//val connectionToChange = connections(Random.nextInt(totalConnections))
+								val weightRangeCap = params.connectionWeightRange / 2
 
-									val newConnections: HashMap[Int, ConnectionGenome] = genome.connections ++ connections.foldLeft(HashMap[Int, ConnectionGenome]()) {(conns, connection) =>
+								val connections = genome.connections.values
+								//val totalConnections = connections.length
+								//val connectionToChange = connections(Random.nextInt(totalConnections))
 
-											conns + (connection.innovationId -> {
+								val newConnections: HashMap[Int, ConnectionGenome] = genome.connections ++ connections.foldLeft(HashMap[Int, ConnectionGenome]()) {(conns, connection) =>
 
-												// a chance that this connection will not be changed at all
+										conns + (connection.innovationId -> {
+
+											// a chance that this connection will not be changed at all
+											if(Random.nextDouble < params.weightChangeProportion) {
+
+												// a chance that the weight will be completely reset or just changed slightly.
 												if(Random.nextDouble < 0.9) {
+												// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
 
+													// sharpNEAT restrict to small weights between 1...
+													//val dW = {connection.weight + (((Random.nextDouble * params.connectionWeightRange) - weightRangeCap) * params.mutationPertubFactor)} match {
+													val dW = {connection.weight + (((Random.nextDouble * 2) - 1) * params.mutationPertubFactor)} match {
+														case e if e > weightRangeCap => weightRangeCap
+														case e if e < -weightRangeCap => -weightRangeCap
+														case e => e
+													}
 
-																// a chance that the weight will be completely reset or just changed slightly.
-																if(Random.nextDouble < 0.9) {
-																	// perturb
-																	// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
-																	val c = connection.copy(weight = connection.weight + ((Random.nextDouble * 4) - 2) * Random.nextDouble)
-																	c
-																} else {
-																	// Reset weight
-																	val c = connection.copy(weight = (Random.nextDouble * 2) - 1)
-																	c
-																}
+													val c = connection.copy(weight = dW)
+													c
+													} else {
 
+														val c = connection.copy(weight = (Random.nextDouble * params.connectionWeightRange) - weightRangeCap)
+														c
+													}
 
-														} else {
-															connection
-														}
-												})
-									}
-
-									parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
-
-							} else {
-									// change bias weight
-									val neurons = genome.neurons.values.toList
-									val totalNeurons = neurons.length
-									val neuronToChange = neurons(Random.nextInt(totalNeurons))
-
-									// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
-									//val perturbedNeuron = neuronToChange.copy(biasWeight = neuronToChange.biasWeight + ((Random.nextDouble * 8) - 4) * Random.nextDouble)
-
-									val newNeurons: HashMap[Int, NeuronGenome] = genome.neurons ++ neurons.foldLeft(HashMap[Int, NeuronGenome]()){(acc, currentNeuron) =>
-										acc + (currentNeuron.innovationId -> {
-											if(Random.nextDouble < 0.9) {
-												currentNeuron.copy(biasWeight = neuronToChange.biasWeight + ((Random.nextDouble * 4) - 2) * Random.nextDouble)
 											} else {
-												currentNeuron
+												connection
 											}
 										})
-									}
+								}
 
-									parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, genome.connections), genomeNumber)
+								//parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
 
-							}
+								// Now change bias weight
+
+								val neurons = genome.neurons.values.toList
+								val totalNeurons = neurons.length
+								val neuronToChange = neurons(Random.nextInt(totalNeurons))
+
+								// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
+
+								val newNeurons: HashMap[Int, NeuronGenome] = genome.neurons ++ neurons.foldLeft(HashMap[Int, NeuronGenome]()){(acc, currentNeuron) =>
+									acc + (currentNeuron.innovationId -> {
+									// do we change the bias?
+										if(Random.nextDouble < params.weightChangeProportion) {
+
+											//do we purturb or reset?
+
+											if(Random.nextDouble < params.jiggleProportion) {
+												// perturb
+												//val dW = {neuronToChange.biasWeight + (((Random.nextDouble * params.connectionWeightRange) - weightRangeCap) * params.mutationPertubFactor)} match {
+												val dW = {neuronToChange.biasWeight + (((Random.nextDouble * 2) - 1) * params.mutationPertubFactor)} match {
+													case e if e > weightRangeCap => weightRangeCap
+													case e if e < -weightRangeCap => -weightRangeCap
+													case e => e
+												}
+
+												currentNeuron.copy(biasWeight = dW)
+											} else {
+												// reset
+												currentNeuron.copy(biasWeight = ((Random.nextDouble * params.connectionWeightRange) - weightRangeCap))
+											}
+										} else {
+											// no change to bias.
+											currentNeuron
+										}
+									})
+								}
+
+								parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, newConnections), genomeNumber)
+
+						//}
 		}
 
     // Add connection
@@ -225,7 +250,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
     // add node
     // pick two random nodes. and add a new connected node.
 
-    def mutateAddConnection (genome: NetworkGenome, genomeNumber: Int) = {
+    def mutateAddConnection (genome: NetworkGenome, genomeNumber: Int, params: MutationFunctionParameters) = {
 
 
 
@@ -256,7 +281,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 					case None => {
 						// the connection does not exist already, in this network, check innovation number in case elsewhere.
 						innovationAgent  ! Innovation.NewConnectionProposal(n1, n2)
-		        		context become mutatingGenomeAddConnection(genome, genomeNumber)
+		        		context become mutatingGenomeAddConnection(genome, genomeNumber, params)
 					}
 				}
     }
@@ -267,7 +292,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
      <return> NetworkGenome: A genome with a new neuron added.
     */
 
-    def mutateAddNeuron (genome: NetworkGenome, genomeNumber: Int) = {
+    def mutateAddNeuron (genome: NetworkGenome, genomeNumber: Int, params: MutationFunctionParameters) = {
 
         // First, pick a connection from the genome to split.. Randomly...
 
@@ -284,11 +309,11 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
         // the same innovation id of both neuron and the two connections
 
         innovationAgent  ! Innovation.NewNeuronProposal(connectionToSplit.from, connectionToSplit.to)
-        context become mutatingGenome(genome, connectionToSplit.innovationId, genomeNumber)
+        context become mutatingGenome(genome, connectionToSplit.innovationId, genomeNumber, params)
     }
 
 
-    def mutatingGenome(genome: NetworkGenome, oldConnection: Int, genomeNumber: Int): Receive = {
+    def mutatingGenome(genome: NetworkGenome, oldConnection: Int, genomeNumber: Int, params: MutationFunctionParameters): Receive = {
 
         case Innovation.NewNeuronConfirmation(neuronData) =>
             // using the neuron data change the NetworkGenome
@@ -308,7 +333,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
                     "SIGMOID", // In case of CPPN Needs to be randomly selected
                     "hidden",  // Assume we can't ad or remove inputs or outputs.
                     -1, // Bias val
-                    (Random.nextDouble * 4) -2, // Bias weight
+                    ((Random.nextDouble * params.connectionWeightRange) - (params.connectionWeightRange /2)), // Bias weight
                     (genome.neurons(oldConnectionGenome.from).layer + genome.neurons(oldConnectionGenome.to).layer) / 2 // Layer. SHould be the sum of the layers of the 2 neurons previously conected / 2
                     ))
 
@@ -318,7 +343,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 
     }
 
-		def mutatingGenomeAddConnection(genome: NetworkGenome, genomeNumber: Int): Receive = {
+		def mutatingGenomeAddConnection(genome: NetworkGenome, genomeNumber: Int, params: MutationFunctionParameters): Receive = {
 
 				case Innovation.NewConnectionConfirmation(connectionData) =>
 
@@ -330,7 +355,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 						connectionData.innovationId,
 						connectionData.fromNeuron,  //from
 						connectionData.toNeuron,  // to
-						Random.nextDouble, //weight
+						((Random.nextDouble * params.connectionWeightRange) - (params.connectionWeightRange /2)), //weight
 						true, // enabled
 						{ genome.neurons(connectionData.fromNeuron).layer >= genome.neurons(connectionData.toNeuron).layer })) // recurrent
 
