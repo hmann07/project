@@ -296,7 +296,7 @@ import Population._
 	// TODO: Enable agents to change themselves, rather than creating new ones and killing old ones...
 
 		case "Ready" =>
-			//println("agent ready")
+			
 
 			if(!agentMessages.isEmpty){
 
@@ -318,7 +318,7 @@ import Population._
 
 				// Stop the last agent.
 				context stop sender()
-				//println("All children received")
+				
 				// create new actors
 				(Agent.NewChild(g, name) :: childrenRegistered).foreach(c => {
 

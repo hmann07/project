@@ -162,7 +162,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
           case 4 => {
 						
             //val ts = System.currentTimeMillis()
-
+            
       			parent ! Matured(genome,   1 / (settings.fitnessValue + fitnessValue), settings.sse + squaredError )
       			
             //println(genome.id + ", " + (settings.sse + fitnessValue) + ", " + settings.totalSensationsReceived + ", " + v )
