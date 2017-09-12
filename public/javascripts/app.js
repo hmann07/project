@@ -54,7 +54,7 @@ var nodes = genome.nodes
 
 	var linkWidthScale = d3.scaleLinear().range([3,6]).domain([d3.min(outputlinks, function(d){return d.weight}), d3.max(outputlinks,function(d){return d.weight})]);
   var xPosScale =  d3.scaleLinear().range([50, width - 50]).domain([0,1])
-  var actFnColourScale = d3.scaleOrdinal().domain(["GAUSSIAN","SINE","SIGMOID" ,"BIPOLARSIGMOID","IDENTITY"]).range(d3.schemeCategory10);
+  var actFnColourScale = d3.scaleOrdinal().domain(["SIGMOID", "GAUSSIAN", "SINE", "TANH", "BIPOLARSIGMOID", "IDENTITY"]).range(d3.schemeCategory20);
 
 	var nodeSize = 20
 

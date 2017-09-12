@@ -1,3 +1,8 @@
+.netSelection{
+  height:500px;
+  overflow: scroll;
+}
+
 svg {
   background-color: #FFF;
   cursor: default;

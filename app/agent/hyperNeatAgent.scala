@@ -348,10 +348,12 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
                      neuronData.connection1 -> new ConnectionGenome(neuronData.connection1, neuronData.fromNeuron, neuronData.newNeuron, 1 ),   //new ConnectionGenomes
                      neuronData.connection2 -> new ConnectionGenome(neuronData.connection2, neuronData.newNeuron, neuronData.toNeuron, oldConnectionGenome.weight))  //new ConnectionGenomes
 
+            val activationFns = List("SIGMOID", "GAUSSIAN", "SINE", "TANH", "BIPOLARSIGMOID")
+			val activationFn = activationFns(Random.nextInt(activationFns.length))
 
             val newNeurons = genome.neurons + (neuronData.newNeuron-> new NeuronGenome(
                     neuronData.newNeuron,
-                    "SIGMOID", // In case of CPPN Needs to be randomly selected
+                    activationFn, // In case of CPPN Needs to be randomly selected
                     "hidden",  // Assume we can't ad or remove inputs or outputs.
                     -1, // Bias val
                     ((Random.nextDouble * params.connectionWeightRange) - (params.connectionWeightRange /2)), // Bias weight
