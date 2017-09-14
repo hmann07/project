@@ -1,5 +1,11 @@
 package com.neurocoevo.parameters
 
+import com.neurocoevo.evolution
+
+	case class Evaluator(
+		val evaluator: new XOREvaluator(4)
+		)
+
 	case class SpeciationParameters(
 		val c1: Double = 1.0,
 		val c2: Double = 1.0,
@@ -9,8 +15,8 @@ package com.neurocoevo.parameters
 
 	case class PopulationParameters(
 		val populationSize: Int = 150,
-		val genomePath: String = ".\\resources\\cppnSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml
-		val agentType: String = "HYPER", // Options: HYPER, STD, BP
+		val genomePath: String = ".\\resources\\annSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml
+		val agentType: String = "STD", // Options: HYPER, STD, BP
 		val altGenomePath: String = ".\\resources\\hyperneatAnnSubstrate.xml"
 	)
 

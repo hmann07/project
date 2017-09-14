@@ -5,6 +5,7 @@ import com.neurocoevo.neuron._
 import com.neurocoevo.activationfunction.ActivationFunction
 import com.neurocoevo.substrate.SubstrateNode
 import com.neurocoevo.parameters.BackPropParameters
+import com.neurocoevo.parameters.Evaluator
 
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
@@ -27,8 +28,7 @@ object Network {
     	sse: Double = 0,
     	fitnessValue: Double = 0.00000000001, // tiny, so that we avoid any nasty divide by zero errors.. 
       maxIterations: Int = BackPropParameters().maxIterations,
-
-		performanceFunction: ((Double, Double) => Double) = (networkOutput: Double, expectedValue: Double) => math.pow(expectedValue - networkOutput,2))
+      evaluator: Evaluator = Evaluator().evaluator )
 
 	case class Sensation(
 			 id: Double,
@@ -157,23 +157,23 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         if(updatedOutputs.size == outputs.size) {
           // All Network outputs have been received
 
-          val error = settings.sensations(1).label(0) - v
-          val squaredError = math.pow(error, 2)
-          val fitnessValue = settings.performanceFunction(v, settings.sensations(1).label(0))
+          
+          val updatedEval = evaluator.evaluateIteration(settings.sensations(1), updatedOutputs)
 
           settings.totalSensationsReceived match {
-            case 4 => {
+            case updatedEval.epochLength => {
             
               //val ts = System.currentTimeMillis()
               
-              parent ! Matured(genome,   1 / (settings.fitnessValue + fitnessValue), settings.sse + squaredError )
+              updatedEvalEpoch = updatedEval.evaluateEpoch()
+
+              parent ! Matured(genome,   updatedEvalEpoch.fitness , updatedEvalEpoch.auxValue )
               
               //println(genome.id + ", " + (settings.sse + fitnessValue) + ", " + settings.totalSensationsReceived + ", " + v )
               
-              // Don't need to relax since all sensations have finished. This also causes deadletters.
-              //children.foreach(c => c ! "Relax")
-
-              context become readyNetwork(settings.copy(sse = 0, fitnessValue = 0))
+              // Don't need to relax since all sensations have finished. the network will shortly cease to be. This also causes deadletters.
+              
+              context become readyNetwork(settings.copy(evaluator = updatedEvalEpoch))
             }
         
             case _ => {
@@ -183,10 +183,11 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
           //println(squaredError + ", " + settings.sensations + ", " + v)
 
      //println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived } + ", " + v + ", " + settings.sensations(1).label(0))
+              
+              val updatedEval = evaluator.evaluateIteration(settings.sensations(1), updatedOutputs)
+
               children.foreach(c => c ! "Relax")
-              context become  relaxingNetwork(settings.copy(
-                sse = settings.sse + squaredError,
-                fitnessValue = settings.fitnessValue + fitnessValue), 0)
+              context become  relaxingNetwork(settings.copy(evaluator = updatedEval), 0)
             }
           }
 
