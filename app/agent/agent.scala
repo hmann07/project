@@ -7,6 +7,7 @@ import com.neurocoevo.network._
 import com.neurocoevo.experience._
 import com.neurocoevo.population._
 import com.neurocoevo.innovation._
+import com.neurocoevo.speciation.SpeciesMember
 import com.neurocoevo.parameters.MutationFunctionParameters
 import com.neurocoevo.evolution.RouletteWheel
 
@@ -103,9 +104,12 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 
 				mutate(genome, genomeNumber)
 
-		case Population.Crossover(g, f, genomeNumber) =>
-
-  			parent ! NewChild(f(g, genomeNumber), genomeNumber)
+		case Population.Crossover(g, genomeNumber) =>
+			val crossedGenome = crossover(g, genomeNumber)
+			if(crossedGenome.id != -1){
+				// we are not mutating so can forward onwards
+				parent ! Agent.NewChild(crossedGenome, genomeNumber)
+			}
 
   		case "ProcessRequest" =>
   			sender() ! "Ready"
@@ -140,100 +144,96 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
         // find a connection
         // vary its weight slightly. or a lot. or by something....
 
-			def mutatePerturbWeight(genome: NetworkGenome, genomeNumber: Int, params: MutationFunctionParameters) = {
+		def mutatePerturbWeight(genome: NetworkGenome, genomeNumber: Int, params: MutationFunctionParameters) = {
 
 
-					// Currently go 50.50 on whether or not to change bias or connection weight...
-					// currently separate since I am keeping Bias inside the neuron rather than the connection.
+			// Currently go 50.50 on whether or not to change bias or connection weight...
+			// currently separate since I am keeping Bias inside the neuron rather than the connection.
 
-					// should this be parameterised?...
+			// should this be parameterised?...
 
-					// Going to consider mutating bias all the time..
+			// Going to consider mutating bias all the time..
 
-								// change connection weight
-								// HyperNeat Implementation doesn't just change one it changes multiple.The number of changes is based on a random number or a fixed quantity,
-								// whilst always making sure at least one is changes.
+			// change connection weight
+			// HyperNeat Implementation doesn't just change one it changes multiple.The number of changes is based on a random number or a fixed quantity,
+			// whilst always making sure at least one is changes.
 
-								val weightRangeCap = params.connectionWeightRange / 2
+			val weightRangeCap = params.connectionWeightRange / 2
 
-								val connections = genome.connections.values
-								//val totalConnections = connections.length
-								//val connectionToChange = connections(Random.nextInt(totalConnections))
+			val connections = genome.connections.values
 
-								val newConnections: HashMap[Int, ConnectionGenome] = genome.connections ++ connections.foldLeft(HashMap[Int, ConnectionGenome]()) {(conns, connection) =>
+			val newConnections: HashMap[Int, ConnectionGenome] = genome.connections ++ connections.foldLeft(HashMap[Int, ConnectionGenome]()) {(conns, connection) =>
 
-										conns + (connection.innovationId -> {
+					conns + (connection.innovationId -> {
 
-											// a chance that this connection will not be changed at all
-											if(Random.nextDouble < params.weightChangeProportion) {
+						// a chance that this connection will not be changed at all
+						if(Random.nextDouble < params.weightChangeProportion) {
 
-												// a chance that the weight will be completely reset or just changed slightly.
-												if(Random.nextDouble < 0.9) {
-												// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
+							// a chance that the weight will be completely reset or just changed slightly.
+							if(Random.nextDouble < 0.9) {
+							// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
 
-													// sharpNEAT restrict to small weights between 1...
-													//val dW = {connection.weight + (((Random.nextDouble * params.connectionWeightRange) - weightRangeCap) * params.mutationPertubFactor)} match {
-													val dW = {connection.weight + (((Random.nextDouble * 2) - 1) * params.mutationPertubFactor)} match {
-														case e if e > weightRangeCap => weightRangeCap
-														case e if e < -weightRangeCap => -weightRangeCap
-														case e => e
-													}
+								// sharpNEAT restrict to small weights between 1...
+								val dW = {connection.weight + (((Random.nextDouble * params.connectionWeightRange) - weightRangeCap) * params.mutationPertubFactor)} match {
 
-													val c = connection.copy(weight = dW)
-													c
-													} else {
-
-														val c = connection.copy(weight = (Random.nextDouble * params.connectionWeightRange) - weightRangeCap)
-														c
-													}
-
-											} else {
-												connection
-											}
-										})
+									case e if e > weightRangeCap => weightRangeCap
+									case e if e < -weightRangeCap => -weightRangeCap
+									case e => e
 								}
 
-								//parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
+								val c = connection.copy(weight = dW)
+								c
+								} else {
 
-								// Now change bias weight
-
-								val neurons = genome.neurons.values.toList
-								val totalNeurons = neurons.length
-								val neuronToChange = neurons(Random.nextInt(totalNeurons))
-
-								// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
-
-								val newNeurons: HashMap[Int, NeuronGenome] = genome.neurons ++ neurons.foldLeft(HashMap[Int, NeuronGenome]()){(acc, currentNeuron) =>
-									acc + (currentNeuron.innovationId -> {
-									// do we change the bias?
-										if(Random.nextDouble < params.weightChangeProportion) {
-
-											//do we purturb or reset?
-
-											if(Random.nextDouble < params.jiggleProportion) {
-												// perturb
-												//val dW = {neuronToChange.biasWeight + (((Random.nextDouble * params.connectionWeightRange) - weightRangeCap) * params.mutationPertubFactor)} match {
-												val dW = {neuronToChange.biasWeight + (((Random.nextDouble * 2) - 1) * params.mutationPertubFactor)} match {
-													case e if e > weightRangeCap => weightRangeCap
-													case e if e < -weightRangeCap => -weightRangeCap
-													case e => e
-												}
-
-												currentNeuron.copy(biasWeight = dW)
-											} else {
-												// reset
-												currentNeuron.copy(biasWeight = ((Random.nextDouble * params.connectionWeightRange) - weightRangeCap))
-											}
-										} else {
-											// no change to bias.
-											currentNeuron
-										}
-									})
+									val c = connection.copy(weight = (Random.nextDouble * params.connectionWeightRange) - weightRangeCap)
+									c
 								}
 
-								parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, newConnections), genomeNumber)
+						} else {
+							// We are not going to mutate the connection so just return it
+							connection
+						}
+					})
+			}
 
-						//}
+			// Now change bias weight
+
+				val neurons = genome.neurons.values.toList
+				val totalNeurons = neurons.length
+				val neuronToChange = neurons(Random.nextInt(totalNeurons))
+
+					// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
+
+				val newNeurons: HashMap[Int, NeuronGenome] = genome.neurons ++ neurons.foldLeft(HashMap[Int, NeuronGenome]()){(acc, currentNeuron) =>
+					acc + (currentNeuron.innovationId -> {
+						// do we change the bias?
+						if(Random.nextDouble < params.weightChangeProportion) {
+
+							//do we purturb or reset?
+
+							if(Random.nextDouble < params.jiggleProportion) {
+								// perturb
+								val dW = {neuronToChange.biasWeight + (((Random.nextDouble * params.connectionWeightRange) - weightRangeCap) * params.mutationPertubFactor)} match {
+
+										case e if e > weightRangeCap => weightRangeCap
+										case e if e < -weightRangeCap => -weightRangeCap
+										case e => e
+									}
+
+									currentNeuron.copy(biasWeight = dW)
+								} else {
+									// reset
+									currentNeuron.copy(biasWeight = ((Random.nextDouble * params.connectionWeightRange) - weightRangeCap))
+								}
+							} else {
+								// no change to bias.
+								currentNeuron
+							}
+						})
+					}
+
+					// send the new mutated genome
+					parent ! NewChild(new NetworkGenome(genomeNumber, newNeurons, newConnections), genomeNumber)
 		}
 
     // Add connection
@@ -343,26 +343,95 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 
     }
 
-		def mutatingGenomeAddConnection(genome: NetworkGenome, genomeNumber: Int, params: MutationFunctionParameters): Receive = {
+	def mutatingGenomeAddConnection(genome: NetworkGenome, genomeNumber: Int, params: MutationFunctionParameters): Receive = {
 
-				case Innovation.NewConnectionConfirmation(connectionData) =>
+		case Innovation.NewConnectionConfirmation(connectionData) =>
 
-					//if({ genome.neurons(connectionData.fromNeuron).layer >= genome.neurons(connectionData.toNeuron).layer })
-					//	println("creating a recurrent connection")
+			//if({ genome.neurons(connectionData.fromNeuron).layer >= genome.neurons(connectionData.toNeuron).layer })
+			//	println("creating a recurrent connection")
 
-					val newConnections = genome.connections + (connectionData.innovationId ->
-						new ConnectionGenome(
-						connectionData.innovationId,
-						connectionData.fromNeuron,  //from
-						connectionData.toNeuron,  // to
-						((Random.nextDouble * params.connectionWeightRange) - (params.connectionWeightRange /2)), //weight
-						true, // enabled
-						{ genome.neurons(connectionData.fromNeuron).layer >= genome.neurons(connectionData.toNeuron).layer })) // recurrent
+			val newConnections = genome.connections + (connectionData.innovationId ->
+				new ConnectionGenome(
+				connectionData.innovationId,
+				connectionData.fromNeuron,  //from
+				connectionData.toNeuron,  // to
+				((Random.nextDouble * params.connectionWeightRange) - (params.connectionWeightRange /2)), //weight
+				true, // enabled
+				{ genome.neurons(connectionData.fromNeuron).layer >= genome.neurons(connectionData.toNeuron).layer })) // recurrent
 
-	 			context.parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
+			context.parent ! NewChild(new NetworkGenome(genomeNumber, genome.neurons, newConnections), genomeNumber)
 
+	}
+
+
+	// CROSSOVER
+	// This function will be passed to the agents or the stronger of the agents.
+	// benefit being it would get done in parallel in large populations this matters.
+	// crossover in NEAT actually refers specifically to the connections. Though the Neruons are obviously involved...
+	// the neurons for the new genome can be retrieved by a pass through the new connection genome.
+	// but which do we take?? In general the Neruons wiht the same innovation number should both be the same
+	// however I have added Bias to the neuron itself meaning during learning/mutation they will diverge. Equally perhaps i tis interesting
+	// to include mutation of the activation function. Could take neuron
+	// randomly or that of the fittest.
+
+
+	def crossover(g: List[SpeciesMember], genomeNumber: Int): NetworkGenome = {
+
+		g.length match {
+			case 2 => {
+				val performanceSortedGenomes = g.sortBy(- _.fitness)
+				val networkGenome1 = performanceSortedGenomes(0).genome // Due to the previous sort this will always be the strongest.
+				val networkGenome2 = performanceSortedGenomes(1).genome
+
+				val crossedConnections: HashMap[Int, ConnectionGenome] = networkGenome1.connections.foldLeft(HashMap[Int, ConnectionGenome]()) { (m, c) =>
+
+
+					val matching = networkGenome2.connections.contains(c._1)
+
+
+
+					if (matching) {
+						// Randomly take one or other of the genomes.
+						val matched = networkGenome2.connections(c._1)
+						m + (List(c, (matched.innovationId -> matched))(Random.nextInt(2)))
+					} else {
+						// This is the stronger genome take its additional parts. discard the other.
+						// TODO: Do we not even want to consider the weaker disjoints or excesss genes. in sharpNeat this appears to be toggled
+						// at one point (though commented out) even randomly..
+						m + c
+					}
+					}
+
+				val newGenomes = crossedConnections.foldLeft(HashMap[Int, NeuronGenome]()) { (m, n) =>
+
+					m + (n._2.from -> networkGenome1.neurons(n._2.from), n._2.to -> networkGenome1.neurons(n._2.to) )
+
+				  }
+				//println(crossedConnections)
+				//println(newGenomes)
+
+
+				if(Random.nextDouble <= MutationFunctionParameters().offspringMutationRate){
+					// then we also mutate the child...
+					context.self ! Population.Mutate(new NetworkGenome(genomeNumber, networkGenome1.neurons, crossedConnections), genomeNumber)
+
+					// Using -1 to tell the agent that we are going to do some extra processing...
+					new NetworkGenome(-1, networkGenome1.neurons, crossedConnections)
+
+				} else {
+					// otherwise send it as is
+					new NetworkGenome(genomeNumber, networkGenome1.neurons, crossedConnections)
+				}
+			}
+
+			case _ => {
+				//  NEAT software shows if only one parent we mutate it.
+				context.self ! Population.Mutate(new NetworkGenome(genomeNumber, g(0).genome.neurons, g(0).genome.connections), genomeNumber)
+
+				// Using -1 to tell the agent that we are going to do some extra processing...
+
+				new NetworkGenome(-1, g(0).genome.neurons, g(0).genome.connections)
+			}
 		}
-
-
-
+	}
 }

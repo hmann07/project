@@ -7,6 +7,7 @@ import com.neurocoevo.network._
 import com.neurocoevo.experience._
 import com.neurocoevo.population._
 import com.neurocoevo.innovation._
+import com.neurocoevo.speciation.SpeciesMember
 import com.neurocoevo.parameters.MutationFunctionParameters
 import com.neurocoevo.evolution.RouletteWheel
 
@@ -123,16 +124,21 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 				mutate(genome, genomeNumber)
 
-		case Population.Crossover(g, f, genomeNumber) =>
+		case Population.Crossover(g, genomeNumber) =>
+			val crossedGenome = crossover(g, genomeNumber)
+			if(crossedGenome.id != -1){
+				// we are not mutating so can forward onwards
+				parent ! Agent.NewChild(crossedGenome, genomeNumber)
+			}
 
-  			parent ! Agent.NewChild(f(g, genomeNumber), genomeNumber)
+
 
   		case "ProcessRequest" =>
   			sender() ! "Ready"
 
   	}
 
-	
+
     // MUTATIONS
     // Genrally it seems mutation does not get applied until cross over has happened...
 		// Even further implemenations of Hyper neat appear to not mutate when corssover has happended...
@@ -193,8 +199,8 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 												// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
 
 													// sharpNEAT restrict to small weights between 1...
-													//val dW = {connection.weight + (((Random.nextDouble * params.connectionWeightRange) - weightRangeCap) * params.mutationPertubFactor)} match {
-													val dW = {connection.weight + (((Random.nextDouble * 2) - 1) * params.mutationPertubFactor)} match {
+													val dW = {connection.weight + (((Random.nextDouble * params.connectionWeightRange) - weightRangeCap) * params.mutationPertubFactor)} match {
+
 														case e if e > weightRangeCap => weightRangeCap
 														case e if e < -weightRangeCap => -weightRangeCap
 														case e => e
@@ -233,8 +239,8 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 											if(Random.nextDouble < params.jiggleProportion) {
 												// perturb
-												//val dW = {neuronToChange.biasWeight + (((Random.nextDouble * params.connectionWeightRange) - weightRangeCap) * params.mutationPertubFactor)} match {
-												val dW = {neuronToChange.biasWeight + (((Random.nextDouble * 2) - 1) * params.mutationPertubFactor)} match {
+												val dW = {neuronToChange.biasWeight + (((Random.nextDouble * params.connectionWeightRange) - weightRangeCap) * params.mutationPertubFactor)} match {
+
 													case e if e > weightRangeCap => weightRangeCap
 													case e if e < -weightRangeCap => -weightRangeCap
 													case e => e
@@ -294,7 +300,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 					case Some(e) => {
 						// these two are already connected so just return the genome.
 						// TODO: We can probably have a few goes at this.. say try 4 times if no success then give up.
-						
+
 						parent ! Agent.NewChild(genome.copy(id = genomeNumber), genomeNumber)
 
 					}
@@ -386,6 +392,73 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 		}
 
+	// CROSSOVER
+	// This function will be passed to the agents or the stronger of the agents.
+	// benefit being it would get done in parallel in large populations this matters.
+	// crossover in NEAT actually refers specifically to the connections. Though the Neruons are obviously involved...
+	// the neurons for the new genome can be retrieved by a pass through the new connection genome.
+	// but which do we take?? In general the Neruons wiht the same innovation number should both be the same
+	// however I have added Bias to the neuron itself meaning during learning/mutation they will diverge. Equally perhaps i tis interesting
+	// to include mutation of the activation function. Could take neuron
+	// randomly or that of the fittest.
 
 
+	def crossover(g: List[SpeciesMember], genomeNumber: Int): NetworkGenome = {
+
+		g.length match {
+			case 2 => {
+				val performanceSortedGenomes = g.sortBy(- _.fitness)
+				val networkGenome1 = performanceSortedGenomes(0).genome // Due to the previous sort this will always be the strongest.
+				val networkGenome2 = performanceSortedGenomes(1).genome
+
+				val crossedConnections: HashMap[Int, ConnectionGenome] = networkGenome1.connections.foldLeft(HashMap[Int, ConnectionGenome]()) { (m, c) =>
+
+
+					val matching = networkGenome2.connections.contains(c._1)
+
+
+
+					if (matching) {
+						// Randomly take one or other of the genomes.
+						val matched = networkGenome2.connections(c._1)
+						m + (List(c, (matched.innovationId -> matched))(Random.nextInt(2)))
+					} else {
+						// This is the stronger genome take its additional parts. discard the other.
+						// TODO: Do we not even want to consider the weaker disjoints or excesss genes. in sharpNeat this appears to be toggled
+						// at one point (though commented out) even randomly..
+						m + c
+					}
+					}
+
+				val newGenomes = crossedConnections.foldLeft(HashMap[Int, NeuronGenome]()) { (m, n) =>
+
+					m + (n._2.from -> networkGenome1.neurons(n._2.from), n._2.to -> networkGenome1.neurons(n._2.to) )
+
+				  }
+				//println(crossedConnections)
+				//println(newGenomes)
+
+				if(Random.nextDouble <= MutationFunctionParameters().offspringMutationRate){
+					// then we also mutate the child...
+					context.self ! Population.Mutate(new NetworkGenome(genomeNumber, networkGenome1.neurons, crossedConnections), genomeNumber)
+
+					// Using -1 to tell the agent that we are going to do some extra processing...
+					new NetworkGenome(-1, networkGenome1.neurons, crossedConnections)
+
+				} else {
+					// otherwise send it as is
+					new NetworkGenome(genomeNumber, networkGenome1.neurons, crossedConnections)
+				}
+			}
+
+			case _ => {
+			//  NEAT software shows if only one parent we mutate it.
+			context.self ! Population.Mutate(new NetworkGenome(genomeNumber, g(0).genome.neurons, g(0).genome.connections), genomeNumber)
+
+			// Using -1 to tell the agent that we are going to do some extra processing...
+
+			new NetworkGenome(-1, g(0).genome.neurons, g(0).genome.connections)
+			}
+		}
+	}
 }

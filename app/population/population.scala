@@ -38,7 +38,7 @@ object Population {
 
 	// All mutation operators are given an id to give to the children.. This id is track by the population so that no agent in the population can have the same.
 
-	case class Crossover(g: List[SpeciesMember], f: (List[SpeciesMember], Int) => NetworkGenome, genomeNumber: Int)
+	case class Crossover(g: List[SpeciesMember], genomeNumber: Int)
 
 	case class Mutate(genome: NetworkGenome, genomeNumber: Int)
 
@@ -71,7 +71,7 @@ import Population._
 
 
 
-	
+
 
 	def receive = {
 
@@ -165,11 +165,11 @@ import Population._
 		// Matches when an agent has processed a set of patterns form the environment.
 		case Agent.Matured(genome, fitnessValue, sse, speciesIdx, timestamp, annGenome) =>
 
-			
+
 			val agentResult = AgentResults(genome, sse, fitnessValue, sender(), annGenome)
 
 			// check the population best.
-	
+
 			val best = {if(bestGenome != null){
 								if(fitnessValue < bestGenome.fitnessValue){
 									bestGenome
@@ -191,14 +191,14 @@ import Population._
 
 
 				// tell the outputter to save down the best genome in JSON format.
-				
+
 				networkOutput ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" + generationNumber , "JSON")
 
 				// if we are in HyperNeat mode
 				if(settings.agentType == "HYPER"){
 					networkOutput ! NetworkOutput.OutputRequest(best.annGenome, "HyperNeatANN" + generationNumber , "JSON")
 				}
-				
+
 				// Work out which species this genome is most compatible with.
 
 				val newSpeciesDirectory = checkBestSpecies(genome, fitnessValue, speciesIdx, speciesDirectory, settings.speciationThreshold)
@@ -223,7 +223,7 @@ import Population._
 					)
 
 				//println(generationNumber + ", " + speciesDirectory.size + ", " + totalAgents + ", " + finalFitnessValue + ", " + best.fitnessValue + ", " + best.sse + ", " + best.genome.neurons.size + ", " + best.genome.connections.size)
-				
+
 				// create a map of items for generation stats
 				val gStats: Map[String, Double] = Map(
 					"runNumber" -> settings.runNumber,
@@ -236,7 +236,7 @@ import Population._
 					"bestGenomeFitness" -> best.fitnessValue ,
 					"bestsse" -> best.sse,
 					"bestNeuronCount" -> best.genome.neurons.size,
-					"bestConnectionCount" -> best.genome.connections.size					
+					"bestConnectionCount" -> best.genome.connections.size
 					)
 
 				populationOutput ! PopulationOutput.PopOutputRequest(gStats, "populationStats", "JSON")
@@ -296,7 +296,7 @@ import Population._
 	// TODO: Enable agents to change themselves, rather than creating new ones and killing old ones...
 
 		case "Ready" =>
-			
+
 
 			if(!agentMessages.isEmpty){
 
@@ -318,7 +318,7 @@ import Population._
 
 				// Stop the last agent.
 				context stop sender()
-				
+
 				// create new actors
 				(Agent.NewChild(g, name) :: childrenRegistered).foreach(c => {
 
@@ -337,7 +337,7 @@ import Population._
 				// start evolving again
 				if(generationNumber == 200){
 					// then we've performed the prescribed number of gnerations
-					
+
 					// tell innovation to stop
 
 					context.stop(self)
@@ -360,7 +360,7 @@ import Population._
 
 	def speciating(settings: PopulationSettings, finalAgentsComplete: List[AgentResults], generationNumber: Int, currentGenomeNumber: Int, totalSpecies: Int, finishedSpecies: Int, agentMessages: List[Any] , speciesDirectory:HashMap[Int, SpeciesDirectoryEntry]): Actor.Receive = {
 
-		// this will come from a Species actor. 
+		// this will come from a Species actor.
 		// It means a particular species has finished selecting parents for crossover, nominations for mutation or elites.
 		// there may still be more species to hear from.
 
@@ -391,7 +391,7 @@ import Population._
 
 		case Species.Extinct(speciesId) =>
 
-			// The species seems to have no members.. 
+			// The species seems to have no members..
 			// It should have stopped itself
 			//context stop sender()
 			val updatedSpeciesDirectory = speciesDirectory + (speciesId -> speciesDirectory(speciesId).copy(totalFitness = 0, memberCount = 0))
@@ -405,8 +405,8 @@ import Population._
 
 				// Move into a state where agents will voluteer themselves and we reply with enough data for them to do the processing
 				// We also change the species from the directory.
-				
-						
+
+
 
 				context become spawning(settings, agentMessages.length, List.empty, generationNumber, currentGenomeNumber, updatedSpeciesDirectory, agentMessages)
 
@@ -429,7 +429,7 @@ import Population._
 				currentGenomeNumber + 1,
 				totalSpecies,
 				finishedSpecies,
-				Crossover(List(p1,p2), crossover, currentGenomeNumber) :: agentMessages,
+				Crossover(List(p1,p2), currentGenomeNumber) :: agentMessages,
 				speciesDirectory
 				)
 
@@ -462,62 +462,7 @@ import Population._
 
 
 
-	// CROSSOVER
-	// This function will be passed to the agents or the stronger of the agents.
-	// benefit being it would get done in parallel in large populations this matters.
-	// crossover in NEAT actually refers specifically to the connections. Though the Neruons are obviously involved...
-	// the neurons for the new genome can be retrieved by a pass through the new connection genome.
-	// but which do we take?? In general the Neruons wiht the same innovation number should both be the same
-	// however I have added Bias to the neuron itself meaning during learning/mutation they will diverge. Equally perhaps i tis interesting
-	// to include mutation of the activation function. Could take neuron
-	// randomly or that of the fittest.
 
-
-	def crossover(g: List[SpeciesMember], genomeNumber: Int): NetworkGenome = {
-
-		g.length match {
-			case 2 => {
-				val performanceSortedGenomes = g.sortBy(- _.fitness)
-				val networkGenome1 = performanceSortedGenomes(0).genome // Due to the previous sort this will always be the strongest.
-				val networkGenome2 = performanceSortedGenomes(1).genome
-
-				val crossedConnections: HashMap[Int, ConnectionGenome] = networkGenome1.connections.foldLeft(HashMap[Int, ConnectionGenome]()) { (m, c) =>
-
-
-					val matching = networkGenome2.connections.contains(c._1)
-
-
-
-					if (matching) {
-						// Randomly take one or other of the genomes.
-						val matched = networkGenome2.connections(c._1)
-						m + (List(c, (matched.innovationId -> matched))(Random.nextInt(2)))
-					} else {
-						// This is the stronger genome take its additional parts. discard the other.
-						// TODO: Do we not even want to consider the weaker disjoints or excesss genes. in sharpNeat this appears to be toggled
-						// at one point (though commented out) even randomly..
-						m + c
-					}
-					}
-
-				val newGenomes = crossedConnections.foldLeft(HashMap[Int, NeuronGenome]()) { (m, n) =>
-
-					m + (n._2.from -> networkGenome1.neurons(n._2.from), n._2.to -> networkGenome1.neurons(n._2.to) )
-
-				  }
-				//println(crossedConnections)
-				//println(newGenomes)
-
-
-				new NetworkGenome(genomeNumber, networkGenome1.neurons, crossedConnections)
-			}
-
-			case _ => {
-				// this is lazy if signleton genome... just return the existing one.. NEAT software actaully mutates it..
-				new NetworkGenome(genomeNumber, g(0).genome.neurons, g(0).genome.connections)
-			}
-		}
-	}
 
 	def checkBestSpecies(genome: NetworkGenome, fitnessValue: Double, speciesIdx: Int, speciesDirectory: HashMap[Int, SpeciesDirectoryEntry], speciationThreshold: Double): HashMap[Int, SpeciesDirectoryEntry] =  {
 
@@ -591,12 +536,12 @@ import Population._
 
 					newSpeciesActor ! SpeciesMember(genome, fitnessValue)
 
-					speciesDirectory + (newSpeciesId -> 
+					speciesDirectory + (newSpeciesId ->
 						SpeciesDirectoryEntry(
 							SpeciesMember(genome, fitnessValue),
-							SpeciesMember(genome, fitnessValue), 
-							newSpeciesActor, 
-							fitnessValue, 
+							SpeciesMember(genome, fitnessValue),
+							newSpeciesActor,
+							fitnessValue,
 							1
 							))
 

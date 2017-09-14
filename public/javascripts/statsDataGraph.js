@@ -9,7 +9,7 @@ var lineChart = function(loc,data,config){
   this.groupField = config.groupField
   // grouped data will break up the data by runnumber, this should also be made to use population id.
   this.groupedData = {}
-    data.forEach(function(d){ 
+    data.forEach(function(d){
       var datagrouping = c.groupField.map(function(f){return d[f]}).join("-")
        c.groupedData[datagrouping] != undefined? c.groupedData[datagrouping].push(d): c.groupedData[datagrouping] = [d]
        })
@@ -23,17 +23,17 @@ var lineChart = function(loc,data,config){
   this.xTitle = config.xTitle
   this.yTitle = config.yTitle
   this.x= d3.scaleLinear().range([0, this.width]).domain([d3.min(c.data, function(d) { return d[c.xVal]; }), d3.max(c.data, function(d) { return d[c.xVal]; })])
-  this.y = d3.scaleLinear().domain([d3.min(c.data,function(d){ return c.yVal.map(x=> d[x]).reduce(function(a,b){return Math.min(a,b)});}), d3.max(c.data,function(d){ return c.yVal.map(x=> d[x]).reduce(function(a,b){return Math.max(a,b)});})]).rangeRound([c.height, 0]);
+  this.y = d3.scaleLinear().domain([d3.min(c.data,function(d){ return c.yVal.map(function(x){return d[x]).reduce(function(a,b){return Math.min(a,b)});}), d3.max(c.data,function(d){ return c.yVal.map(function(x){return d[x]}).reduce(function(a,b){return Math.max(a,b)});})]).rangeRound([c.height, 0]);
   this.axis = d3.axisBottom(this.x).ticks(20);
   this.yaxis = d3.axisLeft(this.y);
 
 
 }
 
-// the main function that needs to be called by any code... other wise it won't draw anything 
+// the main function that needs to be called by any code... other wise it won't draw anything
 lineChart.prototype.draw = function(){
 
-  // first draw a legend box... 
+  // first draw a legend box...
     var c = this
     var legend = this.loc.append("div").attr("class","legend")
     var g = legend.append("svg").attr("height",c.legendEntryHeight * c.yVal.length ).attr("width","100%").selectAll(".leg-entry").data(c.yVal)
@@ -71,7 +71,7 @@ lineChart.prototype.draw = function(){
       g.append("g")
           .attr("class", "axis axis--y")
           .call(d3.axisLeft(c.y))
-      
+
       svg.append("text")
           .attr("class", "axis-title")
           .attr("transform", "translate(0," + c.height / 2 + ")rotate(-90)")
@@ -90,7 +90,7 @@ lineChart.prototype.draw = function(){
       g.append("g")
         .attr("class","focus-group")
 
-        // Not used. but if a series is marked as beinga quartile via the config then this will draw an 
+        // Not used. but if a series is marked as beinga quartile via the config then this will draw an
         // area series to illustrate upper and lower quartile values.
 
       if(c.quartile){
@@ -111,7 +111,7 @@ lineChart.prototype.draw = function(){
 
         // since we are using a less intelligent data output loop through the grouped data and output a separate line for each.
         Object.keys(c.groupedData).forEach(function (dk){
-         
+
           var line = d3.line()
               .curve(d3.curveMonotoneX)
               .x(function(d) {
@@ -200,7 +200,7 @@ lineChart.prototype.draw = function(){
 var lc = new lineChart(
     d3.select("#statsViewer"), // preset document location
     d,  // coming in from a static file
-    {"groupField": ["populationName", "runNumber"], "quartile": false, "y":["bestsse"], "x": "generationNumber","xTitle":"Generation", "yTitle":"Best Fitness Value" } // config 
+    {"groupField": ["populationName", "runNumber"], "quartile": false, "y":["bestsse"], "x": "generationNumber","xTitle":"Generation", "yTitle":"Best Fitness Value" } // config
     ).draw()
 //d
 // {{"quartile": false, "y":["lowerQuartile"], "x": "month","xtitle":"Months", ytitle:"price" }

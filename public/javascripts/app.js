@@ -1,6 +1,6 @@
 
 // Core taken from : https://bl.ocks.org/mbostock/4600693
-// arrow heads and inspiration for tick function from : https://codepen.io/zarazum/pen/fjoqF. 
+// arrow heads and inspiration for tick function from : https://codepen.io/zarazum/pen/fjoqF.
 
 // set up SVG for D3
 var width  = 800,
@@ -39,9 +39,9 @@ svg.append('svg:defs').append('svg:marker')
 //  - nodes are known by 'id', not by index in array.
 //  - reflexive edges are indicated on the node (as a bold black circle).
 //  - links are always source < target; edge directions are set by 'left' and 'right'.
-var nodes = genome.nodes
 
-  outputlinks = genome.links
+var nodes = genome.nodes
+var outputlinks = genome.links
 	var links = outputlinks.map(function(l) {
 			return {
 			source: nodes.filter(function( n ) {  return n.id == l.source;})[0],
@@ -84,8 +84,8 @@ var simulation = d3.forceSimulation()
     .data(nodes)
     .enter().append("circle")
       .attr("r", nodeSize)
-      .attr("fill", function(d) { 
-        return actFnColourScale(d.actFn); 
+      .attr("fill", function(d) {
+        return actFnColourScale(d.actFn);
       })
       .call(d3.drag()
           .on("start", dragstarted)
@@ -93,7 +93,7 @@ var simulation = d3.forceSimulation()
           .on("end", dragended));
 
   node.append("title")
-      .text(function(d) { 
+      .text(function(d) {
           return d.actFn;
            });
 

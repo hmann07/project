@@ -152,43 +152,55 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 
 	  case Output(v, "EVOLVE") =>
 
+        val updatedOutputs: SortedMap[Int, Double] = settings.outputsReceived + (sender().path.name.toInt -> v)
 
-        val error = settings.sensations(1).label(0) - v
-        val squaredError = math.pow(error, 2)
+        if(updatedOutputs.size == outputs.size) {
+          // All Network outputs have been received
 
-	  		val fitnessValue = settings.performanceFunction(v, settings.sensations(1).label(0))
+          val error = settings.sensations(1).label(0) - v
+          val squaredError = math.pow(error, 2)
+          val fitnessValue = settings.performanceFunction(v, settings.sensations(1).label(0))
 
-        settings.totalSensationsReceived match {
-          case 4 => {
-						
-            //val ts = System.currentTimeMillis()
+          settings.totalSensationsReceived match {
+            case 4 => {
             
-      			parent ! Matured(genome,   1 / (settings.fitnessValue + fitnessValue), settings.sse + squaredError )
-      			
-            //println(genome.id + ", " + (settings.sse + fitnessValue) + ", " + settings.totalSensationsReceived + ", " + v )
-            
-            // Don't need to relax since all sensations have finished. This also causes deadletters.
-      			//children.foreach(c => c ! "Relax")
+              //val ts = System.currentTimeMillis()
+              
+              parent ! Matured(genome,   1 / (settings.fitnessValue + fitnessValue), settings.sse + squaredError )
+              
+              //println(genome.id + ", " + (settings.sse + fitnessValue) + ", " + settings.totalSensationsReceived + ", " + v )
+              
+              // Don't need to relax since all sensations have finished. This also causes deadletters.
+              //children.foreach(c => c ! "Relax")
 
-      			context become readyNetwork(settings.copy(sse = 0, fitnessValue = 0))
-          }
-          case _ => {
+              context become readyNetwork(settings.copy(sse = 0, fitnessValue = 0))
+            }
+        
+            case _ => {
 
 
           //println("SIGNAL RECEIVED: " +  genome)
           //println(squaredError + ", " + settings.sensations + ", " + v)
 
-		 //println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived } + ", " + v + ", " + settings.sensations(1).label(0))
-            children.foreach(c => c ! "Relax")
-            context become  relaxingNetwork(settings.copy(
-              sse = settings.sse + squaredError,
-              fitnessValue = settings.fitnessValue + fitnessValue), 0)
+     //println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived } + ", " + v + ", " + settings.sensations(1).label(0))
+              children.foreach(c => c ! "Relax")
+              context become  relaxingNetwork(settings.copy(
+                sse = settings.sse + squaredError,
+                fitnessValue = settings.fitnessValue + fitnessValue), 0)
+            }
           }
+
+
+
+        } else {
+          // Still waiting for outputs.
+           context become readyNetwork(settings.copy(outputsReceived = updatedOutputs))
         }
 
+        
 
 
-        case Output(v, "BP") =>
+    case Output(v, "BP") =>
 			
         // If we are in Back propagation mode.
        
