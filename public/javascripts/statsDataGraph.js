@@ -23,7 +23,7 @@ var lineChart = function(loc,data,config){
   this.xTitle = config.xTitle
   this.yTitle = config.yTitle
   this.x= d3.scaleLinear().range([0, this.width]).domain([d3.min(c.data, function(d) { return d[c.xVal]; }), d3.max(c.data, function(d) { return d[c.xVal]; })])
-  this.y = d3.scaleLinear().domain([d3.min(c.data,function(d){ return c.yVal.map(function(x){return d[x]).reduce(function(a,b){return Math.min(a,b)});}), d3.max(c.data,function(d){ return c.yVal.map(function(x){return d[x]}).reduce(function(a,b){return Math.max(a,b)});})]).rangeRound([c.height, 0]);
+  this.y = d3.scaleLinear().domain([d3.min(c.data,function(d){ return c.yVal.map(function(x){return d[x]}).reduce(function(a,b){return Math.min(a,b)});}), d3.max(c.data,function(d){ return c.yVal.map(function(x){return d[x]}).reduce(function(a,b){return Math.max(a,b)});})]).rangeRound([c.height, 0]);
   this.axis = d3.axisBottom(this.x).ticks(20);
   this.yaxis = d3.axisLeft(this.y);
 

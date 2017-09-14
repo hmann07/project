@@ -1,9 +1,9 @@
 package com.neurocoevo.parameters
 
-import com.neurocoevo.evolution
+import com.neurocoevo.evolution._
 
-	case class Evaluator(
-		val evaluator: new XOREvaluator(4)
+	case class EvaluatorParameters(
+		val evaluator: Evaluator =  XOREvaluator(4)
 		)
 
 	case class SpeciationParameters(
@@ -15,8 +15,8 @@ import com.neurocoevo.evolution
 
 	case class PopulationParameters(
 		val populationSize: Int = 150,
-		val genomePath: String = ".\\resources\\annSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml
-		val agentType: String = "STD", // Options: HYPER, STD, BP
+		val genomePath: String = ".\\resources\\cppnSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml
+		val agentType: String = "HYPER", // Options: HYPER, STD, BP
 		val altGenomePath: String = ".\\resources\\hyperneatAnnSubstrate.xml"
 	)
 
@@ -26,19 +26,19 @@ import com.neurocoevo.evolution
 	)
 
 	case class OffspringParameters(
-		val crossoverRate: Double = 0.10,
-		val mutationRate: Double = 0.90,
-		val elitismRate: Double = 0.02
+		val crossoverRate: Double = 0.25,
+		val mutationRate: Double = 0.75,
+		val elitismRate: Double = 0.01
 	)
 
 
 	case class MutationFunctionParameters (
-		val offspringMutationRate: Double = 0.5,
+		val offspringMutationRate: Double = 0.4,
 
 	// Should add to 1.
-		val perturbWeightRate: Double = 0.98,
-		val addNeuronRate: Double = 0.01,
-		val addConnectionRate: Double = 0.01,
+		val perturbWeightRate: Double = 0.95,
+		val addNeuronRate: Double = 0.025,
+		val addConnectionRate: Double = 0.025,
 	//
 		val weightChangeProportion: Double = 0.6,
 		val jiggleProportion: Double = 0.8, // non-jiggle are reset
@@ -53,4 +53,4 @@ import com.neurocoevo.evolution
 		)
 
 	case class UniverseParameters (
-		val populationCount: Int = 50)
+		val populationCount: Int = 1)

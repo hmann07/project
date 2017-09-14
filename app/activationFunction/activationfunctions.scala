@@ -23,9 +23,11 @@ object ActivationFunction {
   }
 
   case class Sigmoid() extends ActivationFunction {
-   //  def function(x: Double) = 1 / (1 + Math.exp(x * -1))
-    def function(x: Double) = 1 / (1 + Math.exp(x * -4.9))
-	def derivative(x: Double) = this.function(x)  * (1 - this.function(x))
+    // def function(x: Double) = 1 / (1 + Math.exp(x * -1))
+   
+    var b = -4.9
+   def function(x: Double) = 1 / (1 + Math.exp(x * b))
+	 def derivative(x: Double) = this.function(x)  * (1 - this.function(x))
   }
 
  // as used in sharpNeat

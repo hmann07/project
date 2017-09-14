@@ -5,7 +5,8 @@ import com.neurocoevo.neuron._
 import com.neurocoevo.activationfunction.ActivationFunction
 import com.neurocoevo.substrate.SubstrateNode
 import com.neurocoevo.parameters.BackPropParameters
-import com.neurocoevo.parameters.Evaluator
+import com.neurocoevo.parameters.EvaluatorParameters
+import com.neurocoevo.evolution.Evaluator
 
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
@@ -28,7 +29,7 @@ object Network {
     	sse: Double = 0,
     	fitnessValue: Double = 0.00000000001, // tiny, so that we avoid any nasty divide by zero errors.. 
       maxIterations: Int = BackPropParameters().maxIterations,
-      evaluator: Evaluator = Evaluator().evaluator )
+      evaluator: Evaluator = (EvaluatorParameters().evaluator) )
 
 	case class Sensation(
 			 id: Double,
@@ -111,11 +112,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
   	def readyNetwork(settings: NetworkSettings) : Receive = {
 
   		case Sensation(id, v, l, signalType) =>
-  			//println("preparing to send, expected value: " + l)
-
-        	// println("SIGNAL SENT: " +  genome)
-			// println(Sensation(id, v, l, signalType))
-  			
+  			  			
         v.zip(inputs).foreach({case (v,i) => i._2 ! Neuron.Signal(v, false, signalType)})
   			
         context become readyNetwork(settings.copy(sensations = settings.sensations + (id -> Sensation(id, v, l, signalType)),
@@ -157,37 +154,25 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         if(updatedOutputs.size == outputs.size) {
           // All Network outputs have been received
 
-          
-          val updatedEval = evaluator.evaluateIteration(settings.sensations(1), updatedOutputs)
+          val updatedEval: Evaluator = (settings.evaluator).evaluateIteration(settings.sensations(1), updatedOutputs)
 
           settings.totalSensationsReceived match {
             case updatedEval.epochLength => {
-            
-              //val ts = System.currentTimeMillis()
-              
-              updatedEvalEpoch = updatedEval.evaluateEpoch()
+
+              val updatedEvalEpoch = updatedEval.evaluateEpoch()
 
               parent ! Matured(genome,   updatedEvalEpoch.fitness , updatedEvalEpoch.auxValue )
               
-              //println(genome.id + ", " + (settings.sse + fitnessValue) + ", " + settings.totalSensationsReceived + ", " + v )
-              
-              // Don't need to relax since all sensations have finished. the network will shortly cease to be. This also causes deadletters.
+              // Don't need to relax since all sensations have finished. 
+              // the actor will shortly cease to be. so no real need to do anything.. This also causes deadletters.
               
               context become readyNetwork(settings.copy(evaluator = updatedEvalEpoch))
             }
         
             case _ => {
-
-
-          //println("SIGNAL RECEIVED: " +  genome)
-          //println(squaredError + ", " + settings.sensations + ", " + v)
-
-     //println(parent.path.name + ", " + settings.totalSensationsReceived + ", " + {(settings.sse + fitnessValue) / settings.totalSensationsReceived } + ", " + v + ", " + settings.sensations(1).label(0))
-              
-              val updatedEval = evaluator.evaluateIteration(settings.sensations(1), updatedOutputs)
-
+              // rest network, which will, once complete, ask for move signals.
               children.foreach(c => c ! "Relax")
-              context become  relaxingNetwork(settings.copy(evaluator = updatedEval), 0)
+              context become  relaxingNetwork(settings.copy(evaluator = updatedEval, outputsReceived = SortedMap.empty ), 0)
             }
           }
 
