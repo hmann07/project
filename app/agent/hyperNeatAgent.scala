@@ -68,7 +68,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 			} else {
 
 				// we assume that this must have been the ANN. so we can send it its inputs we can close the ANN factory since we no longer need it.
-
+				
 				context.actorSelection("annFac") ! akka.actor.PoisonPill
 
 				// all set up, start getting signals to process.

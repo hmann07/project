@@ -3,7 +3,7 @@ package com.neurocoevo.parameters
 import com.neurocoevo.evolution._
 
 	case class EvaluatorParameters(
-		val evaluator: Evaluator =  XOREvaluator(4)
+		val evaluator: Evaluator =  VDEvaluator(75)
 		)
 
 	case class SpeciationParameters(
@@ -14,10 +14,10 @@ import com.neurocoevo.evolution._
 
 
 	case class PopulationParameters(
-		val populationSize: Int = 150,
-		val genomePath: String = ".\\resources\\cppnSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml
+		val populationSize: Int = 50,
+		val genomePath: String = ".\\resources\\cppnSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml or hyperneatAnnSubstrateVisualDiscrimination
 		val agentType: String = "HYPER", // Options: HYPER, STD, BP
-		val altGenomePath: String = ".\\resources\\hyperneatAnnSubstrate.xml"
+		val altGenomePath: String = ".\\resources\\hyperneatAnnSubstrateVisualDiscrimination.xml"
 	)
 
 	case class BackPropParameters(
