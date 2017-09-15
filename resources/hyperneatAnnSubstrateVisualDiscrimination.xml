@@ -1,0 +1,271 @@
+<substrate>
+	<neurons>
+	<neuron id="1" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>-1</dim></neuron>
+	<neuron id="2" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>-0.8</dim></neuron>
+	<neuron id="3" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>-0.6</dim></neuron>
+	<neuron id="4" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>-0.4</dim></neuron>
+	<neuron id="5" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>-0.2</dim></neuron>
+	<neuron id="6" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>0</dim></neuron>
+	<neuron id="7" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>0.2</dim></neuron>
+	<neuron id="8" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>0.4</dim></neuron>
+	<neuron id="9" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>0.6</dim></neuron>
+	<neuron id="10" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>0.8</dim></neuron>
+	<neuron id="11" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-1</dim><dim>1</dim></neuron>
+
+	<neuron id="12" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>-1</dim></neuron>
+	<neuron id="23" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>-1</dim></neuron>
+	<neuron id="34" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>-1</dim></neuron>
+	<neuron id="45" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>-1</dim></neuron>
+	<neuron id="56" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>-1</dim></neuron>
+	<neuron id="67" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>-1</dim></neuron>
+	<neuron id="78" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>-1</dim></neuron>
+	<neuron id="89" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>-1</dim></neuron>
+	<neuron id="100" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>-1</dim></neuron>
+	<neuron id="111" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>-1</dim></neuron>
+
+	<neuron id="13" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>-0.8</dim></neuron>
+	<neuron id="24" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>-0.8</dim></neuron>
+	<neuron id="35" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>-0.8</dim></neuron>
+	<neuron id="46" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>-0.8</dim></neuron>
+	<neuron id="57" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>-0.8</dim></neuron>
+	<neuron id="68" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>-0.8</dim></neuron>
+	<neuron id="79" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>-0.8</dim></neuron>
+	<neuron id="90" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>-0.8</dim></neuron>
+	<neuron id="101" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>-0.8</dim></neuron>
+	<neuron id="112" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>-0.8</dim></neuron>
+
+<neuron id="14" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>-0.6</dim></neuron>
+	<neuron id="25" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>-0.6</dim></neuron>
+	<neuron id="36" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>-0.6</dim></neuron>
+	<neuron id="47" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>-0.6</dim></neuron>
+	<neuron id="58" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>-0.6</dim></neuron>
+	<neuron id="69" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>-0.6</dim></neuron>
+	<neuron id="80" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>-0.6</dim></neuron>
+	<neuron id="91" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>-0.6</dim></neuron>
+	<neuron id="102" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>-0.6</dim></neuron>
+	<neuron id="113" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>-0.6</dim></neuron>
+
+<neuron id="15" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>-0.4</dim></neuron>
+	<neuron id="26" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>-0.4</dim></neuron>
+	<neuron id="37" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>-0.4</dim></neuron>
+	<neuron id="48" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>-0.4</dim></neuron>
+	<neuron id="59" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>-0.4</dim></neuron>
+	<neuron id="70" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>-0.4</dim></neuron>
+	<neuron id="81" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>-0.4</dim></neuron>
+	<neuron id="92" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>-0.4</dim></neuron>
+	<neuron id="103" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>-0.4</dim></neuron>
+	<neuron id="114" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>-0.4</dim></neuron>
+
+<neuron id="16" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>-0.2</dim></neuron>
+	<neuron id="27" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>-0.2</dim></neuron>
+	<neuron id="38" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>-0.2</dim></neuron>
+	<neuron id="49" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>-0.2</dim></neuron>
+	<neuron id="60" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>-0.2</dim></neuron>
+	<neuron id="71" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>-0.2</dim></neuron>
+	<neuron id="82" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>-0.2</dim></neuron>
+	<neuron id="93" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>-0.2</dim></neuron>
+	<neuron id="104" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>-0.2</dim></neuron>
+	<neuron id="115" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>-0.2</dim></neuron>
+
+<neuron id="17" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>0</dim></neuron>
+	<neuron id="28" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>0</dim></neuron>
+	<neuron id="39" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>0</dim></neuron>
+	<neuron id="50" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>0</dim></neuron>
+	<neuron id="61" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>0</dim></neuron>
+	<neuron id="72" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>0</dim></neuron>
+	<neuron id="83" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>0</dim></neuron>
+	<neuron id="94" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>0</dim></neuron>
+	<neuron id="105" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>0</dim></neuron>
+	<neuron id="116" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>0</dim></neuron>
+
+<neuron id="18" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>0.2</dim></neuron>
+	<neuron id="29" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>0.2</dim></neuron>
+	<neuron id="40" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>0.2</dim></neuron>
+	<neuron id="51" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>0.2</dim></neuron>
+	<neuron id="62" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>0.2</dim></neuron>
+	<neuron id="73" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>0.2</dim></neuron>
+	<neuron id="84" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>0.2</dim></neuron>
+	<neuron id="95" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>0.2</dim></neuron>
+	<neuron id="106" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>0.2</dim></neuron>
+	<neuron id="117" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>0.2</dim></neuron>
+
+<neuron id="19" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>0.4</dim></neuron>
+	<neuron id="30" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>0.4</dim></neuron>
+	<neuron id="41" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>0.4</dim></neuron>
+	<neuron id="52" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>0.4</dim></neuron>
+	<neuron id="63" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>0.4</dim></neuron>
+	<neuron id="74" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>0.4</dim></neuron>
+	<neuron id="85" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>0.4</dim></neuron>
+	<neuron id="96" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>0.4</dim></neuron>
+	<neuron id="107" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>0.4</dim></neuron>
+	<neuron id="118" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>0.4</dim></neuron>
+
+<neuron id="20" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>0.6</dim></neuron>
+	<neuron id="31" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>0.6</dim></neuron>
+	<neuron id="42" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>0.6</dim></neuron>
+	<neuron id="53" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>0.6</dim></neuron>
+	<neuron id="64" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>0.6</dim></neuron>
+	<neuron id="75" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>0.6</dim></neuron>
+	<neuron id="86" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>0.6</dim></neuron>
+	<neuron id="97" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>0.6</dim></neuron>
+	<neuron id="108" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>0.6</dim></neuron>
+	<neuron id="119" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>0.6</dim></neuron>
+
+<neuron id="21" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>0.8</dim></neuron>
+	<neuron id="32" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>0.8</dim></neuron>
+	<neuron id="43" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>0.8</dim></neuron>
+	<neuron id="54" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>0.8</dim></neuron>
+	<neuron id="65" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>0.8</dim></neuron>
+	<neuron id="76" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>0.8</dim></neuron>
+	<neuron id="87" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>0.8</dim></neuron>
+	<neuron id="98" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>0.8</dim></neuron>
+	<neuron id="109" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>0.8</dim></neuron>
+	<neuron id="120" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>0.8</dim></neuron>
+
+<neuron id="22" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.8</dim><dim>1</dim></neuron>
+	<neuron id="33" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.6</dim><dim>1</dim></neuron>
+	<neuron id="44" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.4</dim><dim>1</dim></neuron>
+	<neuron id="55" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>-0.2</dim><dim>1</dim></neuron>
+	<neuron id="66" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0</dim><dim>1</dim></neuron>
+	<neuron id="77" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.2</dim><dim>1</dim></neuron>
+	<neuron id="88" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.4</dim><dim>1</dim></neuron>
+	<neuron id="99" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.6</dim><dim>1</dim></neuron>
+	<neuron id="110" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>0.8</dim><dim>1</dim></neuron>
+	<neuron id="121" type="input" activationFunction="IDENTITY" layer="0" bias="0"><dim>1</dim><dim>1</dim></neuron>
+
+	<neuron id="122" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>-1</dim></neuron>
+	<neuron id="133" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>-1</dim></neuron>
+	<neuron id="144" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>-1</dim></neuron>
+	<neuron id="155" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>-1</dim></neuron>
+	<neuron id="166" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>-1</dim></neuron>
+	<neuron id="177" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>-1</dim></neuron>
+	<neuron id="188" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>-1</dim></neuron>
+	<neuron id="199" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>-1</dim></neuron>
+	<neuron id="210" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>-1</dim></neuron>
+	<neuron id="221" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>-1</dim></neuron>
+	<neuron id="232" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>-1</dim></neuron>
+
+<neuron id="123" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>-0.8</dim></neuron>
+	<neuron id="134" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>-0.8</dim></neuron>
+	<neuron id="145" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>-0.8</dim></neuron>
+	<neuron id="156" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>-0.8</dim></neuron>
+	<neuron id="167" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>-0.8</dim></neuron>
+	<neuron id="178" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>-0.8</dim></neuron>
+	<neuron id="189" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>-0.8</dim></neuron>
+	<neuron id="200" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>-0.8</dim></neuron>
+	<neuron id="211" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>-0.8</dim></neuron>
+	<neuron id="222" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>-0.8</dim></neuron>
+	<neuron id="233" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>-0.8</dim></neuron>
+
+<neuron id="124" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>-0.6</dim></neuron>
+	<neuron id="135" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>-0.6</dim></neuron>
+	<neuron id="146" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>-0.6</dim></neuron>
+	<neuron id="157" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>-0.6</dim></neuron>
+	<neuron id="168" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>-0.6</dim></neuron>
+	<neuron id="179" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>-0.6</dim></neuron>
+	<neuron id="190" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>-0.6</dim></neuron>
+	<neuron id="201" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>-0.6</dim></neuron>
+	<neuron id="212" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>-0.6</dim></neuron>
+	<neuron id="223" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>-0.6</dim></neuron>
+	<neuron id="234" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>-0.6</dim></neuron>
+
+<neuron id="125" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>-0.4</dim></neuron>
+	<neuron id="136" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>-0.4</dim></neuron>
+	<neuron id="147" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>-0.4</dim></neuron>
+	<neuron id="158" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>-0.4</dim></neuron>
+	<neuron id="169" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>-0.4</dim></neuron>
+	<neuron id="180" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>-0.4</dim></neuron>
+	<neuron id="191" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>-0.4</dim></neuron>
+	<neuron id="202" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>-0.4</dim></neuron>
+	<neuron id="213" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>-0.4</dim></neuron>
+	<neuron id="224" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>-0.4</dim></neuron>
+	<neuron id="235" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>-0.4</dim></neuron>
+
+<neuron id="126" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>-0.2</dim></neuron>
+	<neuron id="137" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>-0.2</dim></neuron>
+	<neuron id="148" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>-0.2</dim></neuron>
+	<neuron id="159" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>-0.2</dim></neuron>
+	<neuron id="170" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>-0.2</dim></neuron>
+	<neuron id="181" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>-0.2</dim></neuron>
+	<neuron id="192" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>-0.2</dim></neuron>
+	<neuron id="203" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>-0.2</dim></neuron>
+	<neuron id="214" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>-0.2</dim></neuron>
+	<neuron id="225" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>-0.2</dim></neuron>
+	<neuron id="236" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>-0.2</dim></neuron>
+
+<neuron id="127" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>0</dim></neuron>
+	<neuron id="138" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>0</dim></neuron>
+	<neuron id="149" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>0</dim></neuron>
+	<neuron id="160" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>0</dim></neuron>
+	<neuron id="171" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>0</dim></neuron>
+	<neuron id="182" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>0</dim></neuron>
+	<neuron id="193" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>0</dim></neuron>
+	<neuron id="204" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>0</dim></neuron>
+	<neuron id="215" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>0</dim></neuron>
+	<neuron id="226" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>0</dim></neuron>
+	<neuron id="237" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>0</dim></neuron>
+
+<neuron id="128" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>0.2</dim></neuron>
+	<neuron id="139" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>0.2</dim></neuron>
+	<neuron id="150" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>0.2</dim></neuron>
+	<neuron id="161" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>0.2</dim></neuron>
+	<neuron id="172" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>0.2</dim></neuron>
+	<neuron id="183" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>0.2</dim></neuron>
+	<neuron id="194" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>0.2</dim></neuron>
+	<neuron id="205" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>0.2</dim></neuron>
+	<neuron id="216" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>0.2</dim></neuron>
+	<neuron id="227" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>0.2</dim></neuron>
+	<neuron id="238" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>0.2</dim></neuron>
+
+<neuron id="129" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>0.4</dim></neuron>
+	<neuron id="140" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>0.4</dim></neuron>
+	<neuron id="151" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>0.4</dim></neuron>
+	<neuron id="162" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>0.4</dim></neuron>
+	<neuron id="173" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>0.4</dim></neuron>
+	<neuron id="184" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>0.4</dim></neuron>
+	<neuron id="195" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>0.4</dim></neuron>
+	<neuron id="206" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>0.4</dim></neuron>
+	<neuron id="217" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>0.4</dim></neuron>
+	<neuron id="228" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>0.4</dim></neuron>
+	<neuron id="239" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>0.4</dim></neuron>
+
+<neuron id="130" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>0.6</dim></neuron>
+	<neuron id="141" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>0.6</dim></neuron>
+	<neuron id="152" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>0.6</dim></neuron>
+	<neuron id="163" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>0.6</dim></neuron>
+	<neuron id="174" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>0.6</dim></neuron>
+	<neuron id="185" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>0.6</dim></neuron>
+	<neuron id="196" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>0.6</dim></neuron>
+	<neuron id="207" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>0.6</dim></neuron>
+	<neuron id="218" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>0.6</dim></neuron>
+	<neuron id="229" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>0.6</dim></neuron>
+	<neuron id="240" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>0.6</dim></neuron>
+
+<neuron id="131" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>0.8</dim></neuron>
+	<neuron id="142" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>0.8</dim></neuron>
+	<neuron id="153" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>0.8</dim></neuron>
+	<neuron id="164" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>0.8</dim></neuron>
+	<neuron id="175" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>0.8</dim></neuron>
+	<neuron id="186" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>0.8</dim></neuron>
+	<neuron id="197" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>0.8</dim></neuron>
+	<neuron id="208" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>0.8</dim></neuron>
+	<neuron id="219" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>0.8</dim></neuron>
+	<neuron id="230" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>0.8</dim></neuron>
+	<neuron id="241" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>0.8</dim></neuron>
+
+<neuron id="132" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-1</dim><dim>1</dim></neuron>
+	<neuron id="143" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.8</dim><dim>1</dim></neuron>
+	<neuron id="154" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.6</dim><dim>1</dim></neuron>
+	<neuron id="165" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.4</dim><dim>1</dim></neuron>
+	<neuron id="176" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>-0.2</dim><dim>1</dim></neuron>
+	<neuron id="187" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0</dim><dim>1</dim></neuron>
+	<neuron id="198" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.2</dim><dim>1</dim></neuron>
+	<neuron id="209" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.4</dim><dim>1</dim></neuron>
+	<neuron id="220" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.6</dim><dim>1</dim></neuron>
+	<neuron id="231" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>0.8</dim><dim>1</dim></neuron>
+	<neuron id="242" type="output" activationFunction="SIGMOID" layer="1" bias="-1"><dim>1</dim><dim>1</dim></neuron>
+
+
+
+	</neurons>
+</substrate>
