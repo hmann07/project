@@ -25,20 +25,21 @@ case class VDEvaluator(
 
   		  // Then work out the distance of that output from the true output
           
-  		  val d = Math.sqrt(Math.pow(x1 - x2,2) + Math.pow(y1 - y2, 2))
+  		  val d = Math.pow(x1 - x2,2) + Math.pow(y1 - y2, 2)
+  		  val actuald = math.sqrt(d)
   		  //println(d + ", " + networkInput.label + ", " + networkOutput.maxBy(m => m._2) )
-          this.copy(aggregatedIterationValue = aggregatedIterationValue + d)
+          this.copy(aggregatedIterationValue = aggregatedIterationValue + d, auxValue = auxValue + actuald )
 	}
 
 
 	override def evaluateEpoch() = {
 		
-		  // we need to inverse distnace since the smaller the better
+		  // we need to inverse distnace since we want the smaller the distance the  better fitness
 
-		  var invD = 1 / (aggregatedIterationValue / 75)
+		  var invD = 1 / ((aggregatedIterationValue) / 75)
 			
 			// Aux value is the average distance... 
 
-		this.copy(fitness = invD, auxValue = aggregatedIterationValue / 75)
+		this.copy(fitness = invD, auxValue = auxValue / 75)
 	}
 } 

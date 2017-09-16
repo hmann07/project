@@ -36,9 +36,9 @@ import com.neurocoevo.evolution._
 		val offspringMutationRate: Double = 0.4,
 
 	// Should add to 1.
-		val perturbWeightRate: Double = 0.8,
-		val addNeuronRate: Double = 0.1,
-		val addConnectionRate: Double = 0.1,
+		val perturbWeightRate: Double = 0.96,
+		val addNeuronRate: Double = 0.02,
+		val addConnectionRate: Double = 0.02,
 	//
 		val weightChangeProportion: Double = 0.9,
 		val jiggleProportion: Double = 0.5, // non-jiggle are reset
