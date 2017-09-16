@@ -36,11 +36,15 @@ class Universe extends Actor with ActorLogging {
 
 	outputParams(runnum) 
 
+	// When migration is enabled we need to have just one innovation for now since we get conflicting innovation ids across populations
+	val networkGenome = GenomeFactory.createGenome(Population.PopulationSettings().genomePath, 0)
+	val inn = system.actorOf(Innovation.props(networkGenome), "innovation")
+
 	val populations = 1.to(params.populationCount).map(p => {
 	
-			val networkGenome = GenomeFactory.createGenome(Population.PopulationSettings().genomePath, 0)
+			
 
-			val inn = system.actorOf(Innovation.props(networkGenome), "innovation" + p)
+			
 
 			// start an outputter for the system.
 			val networkOutput = system.actorOf(Props[NetworkOutput], "networkOutput" + p)
@@ -75,10 +79,12 @@ class Universe extends Actor with ActorLogging {
 			
 				// Then this is the last population so we can send to all
 				if (Random.nextDouble < params.migrationRate) {
-					context.children.foreach(c => c ! Migrant(bestGenome.genome))
+					newWaiting.foreach(c => c ! Migrant(bestGenome.genome))
 				} else {
-					context.children.foreach(c => c ! Migrant(null))
+					newWaiting.foreach(c => c ! Migrant(null))
 				}
+
+				context become runningUniverse(null, 0, List.empty)
 				
 			} else {
 				

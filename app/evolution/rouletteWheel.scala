@@ -14,13 +14,19 @@ object RouletteWheel {
 		of error will pick a genome. those with bigger
 	*/
 	def select(genomes:List[SpeciesMember], totalFitnessValue: Double): SpeciesMember = {
-
+		
 		val t = totalFitnessValue * Random.nextDouble
 		selectAux(genomes, t, 0)
 
 	}
 
 	def selectAux(genomes:List[SpeciesMember], targetFitnessValue: Double, cumulativeError: Double): SpeciesMember = {
+		try {
+			val t = genomes.head.fitness
+		}catch {
+			case e: Exception => println(cumulativeError +", " + targetFitnessValue)
+		}
+
 		if(targetFitnessValue <= cumulativeError + genomes.head.fitness){
 			genomes.head
 		} else {

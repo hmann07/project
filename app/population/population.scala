@@ -300,6 +300,9 @@ import Population._
 
 	}
 
+	// This state runs after the speciation state. While in this moe the population will wait foreach
+	// Children, once all children are received create the new agents and go to evolving state.
+
 	def spawning(
 		settings: PopulationSettings,
 		expectedChildren: Int,
@@ -393,6 +396,9 @@ import Population._
 	}
 
 
+	// this will be caused by the spawning state 
+	// When migrant is recieved all new children will be created, then proceed to evolving state.
+
 	def awaitMigrants(
 		settings: PopulationSettings, 
 		childrenRegistered: List[Agent.NewChild], 
@@ -401,19 +407,31 @@ import Population._
 		expectedChildren: Int,
 		speciesDirectory:  HashMap[Int, SpeciesDirectoryEntry] ): Receive = {
 
+		case "Ready" =>
+			// this must have been a leftover from spawning stage... which should be able to stop it..
+			context stop sender()
+
 		case Migrant(genome) =>
 
+				
 					if(genome != null){
 						
+						val g = genome.copy(id = currentGenomeNumber)
+
 						val e = context.actorOf(Props[Experience], "experience." + currentGenomeNumber)
 						settings.agentType match {
 								case "STD" =>
-									context.actorOf(Agent.props(genome, e, innovationAgent, "STD"), "agent."+ currentGenomeNumber)
+									context.actorOf(Agent.props(g, e, innovationAgent, "STD"), "agent."+ currentGenomeNumber)
 
 								case "HYPER" =>
-									context.actorOf(HyperNeatAgent.props(genome, settings.altGenomePath, e, innovationAgent), "hyperneatagent."+ currentGenomeNumber)
-						}
-					}
+									context.actorOf(HyperNeatAgent.props(g, settings.altGenomePath, e, innovationAgent), "hyperneatagent."+ currentGenomeNumber)
+							}
+					} 		
+					
+					val numberOfChildren = {if(genome !=null) {expectedChildren + 1} else {expectedChildren}}
+
+
+
 					// create new actors
 					childrenRegistered.foreach(c => {
 
@@ -433,14 +451,11 @@ import Population._
 					if(generationNumber == 200){
 						// then we've performed the prescribed number of generations
 
-						// tell innovation to stop
-
 						context.stop(self)
 
 					} else {
-						context become evolving(settings, currentGenomeNumber + 1, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDirectory)
+						context become evolving(settings, currentGenomeNumber + 1, List.empty,  numberOfChildren, generationNumber + 1, 0, null, speciesDirectory)
 					}
-
 
 	}
 

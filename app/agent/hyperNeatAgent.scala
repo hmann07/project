@@ -424,7 +424,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 				val crossedConnections: HashMap[Int, ConnectionGenome] = networkGenome1.connections.foldLeft(HashMap[Int, ConnectionGenome]()) { (m, c) =>
 
-
+					// First check if genome2 has this connection
 					val matching = networkGenome2.connections.contains(c._1)
 
 
@@ -434,14 +434,20 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 						val matched = networkGenome2.connections(c._1)
 						m + (List(c, (matched.innovationId -> matched))(Random.nextInt(2)))
 					} else {
-						// This is the stronger genome take its additional parts. discard the other.
+						// This is the stronger genome (by virtue of being genome1) take its additional parts. discard the other.
 						// TODO: Do we not even want to consider the weaker disjoints or excesss genes. in sharpNeat this appears to be toggled
 						// at one point (though commented out) even randomly..
 						m + c
 					}
 					}
 
+					// now go through the connections and make sure we have neurons for both ends
 				val newGenomes = crossedConnections.foldLeft(HashMap[Int, NeuronGenome]()) { (m, n) =>
+					try{
+						m + (n._2.from -> networkGenome1.neurons(n._2.from), n._2.to -> networkGenome1.neurons(n._2.to) )
+					} catch {
+						case e: Exception => println(networkGenome1 + " \n" + networkGenome2)
+					}
 
 					m + (n._2.from -> networkGenome1.neurons(n._2.from), n._2.to -> networkGenome1.neurons(n._2.to) )
 

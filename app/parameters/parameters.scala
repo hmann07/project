@@ -3,22 +3,23 @@ package com.neurocoevo.parameters
 import com.neurocoevo.evolution._
 
 	case class EvaluatorParameters(
-		val evaluator: Evaluator =  VDEvaluator(75)
+		//val evaluator: Evaluator =  VDEvaluator(75)
+		val evaluator: Evaluator =  XOREvaluator(4)
 		)
 
 	case class SpeciationParameters(
 		val c1: Double = 1.0,
 		val c2: Double = 1.0,
 		val c3: Double = 0.3,
-		val speciationThreshold: Double = 3)
+		val speciationThreshold: Double = 2.0)
 
 
 	case class PopulationParameters(
-		val populationSize: Int = 75,
-		val genomePath: String = ".\\resources\\cppnSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml or hyperneatAnnSubstrateVisualDiscrimination
+		val populationSize: Int = 150,
+		val genomePath: String = ".\\resources\\cppnSubstrate.xml", // "cppnSubstrate.xml" or annSubstrate.xml or annBPSubstrate.xml or hyperneatAnnSubstrate or hyperneatAnnSubstrateVisualDiscrimination
 		val agentType: String = "HYPER", // Options: HYPER, STD, BP
-		val altGenomePath: String = ".\\resources\\hyperneatAnnSubstrateVisualDiscrimination.xml",
-		val migrate: Boolean = false
+		val altGenomePath: String = ".\\resources\\hyperneatAnnSubstrate.xml",
+		val migrate: Boolean = true
 	)
 
 	case class BackPropParameters(
@@ -34,17 +35,17 @@ import com.neurocoevo.evolution._
 
 
 	case class MutationFunctionParameters (
-		val offspringMutationRate: Double = 0.4,
+		val offspringMutationRate: Double = 0.1,
 
 	// Should add to 1.
-		val perturbWeightRate: Double = 0.76,
-		val addNeuronRate: Double = 0.04,
-		val addConnectionRate: Double = 0.2,
+		val perturbWeightRate: Double = 0.8,
+		val addNeuronRate: Double = 0.1,
+		val addConnectionRate: Double = 0.1,
 	//
-		val weightChangeProportion: Double = 0.9,
-		val jiggleProportion: Double = 0.5, // non-jiggle are reset
+		val weightChangeProportion: Double = 0.6,
+		val jiggleProportion: Double = 0.7, // non-jiggle are reset
 		val connectionWeightRange: Double = 8.0,
-		val mutationPertubFactor: Double = 0.15
+		val mutationPertubFactor: Double = 0.05
 	)
 
 
@@ -54,5 +55,5 @@ import com.neurocoevo.evolution._
 		)
 
 	case class UniverseParameters (
-		val populationCount: Int = 1,
+		val populationCount: Int = 5,
 		val migrationRate: Double = 0.5)

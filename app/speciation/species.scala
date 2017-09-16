@@ -113,7 +113,11 @@ import Species._
 
 				//val parent1 = members(0)
 				//val parent2 = members(1)
-
+				try {
+					val parent1 = RouletteWheel.select(members, speciesTotalFitness)
+				} catch {
+					case e: Exception => println(members +", " + y)
+				}
 				val parent1 = RouletteWheel.select(members, speciesTotalFitness)
 				val parent2 = RouletteWheel.select(members, speciesTotalFitness)
 
@@ -140,6 +144,10 @@ import Species._
 			case (0,y,z) if y > 0 =>
 
 				// mutate
+				
+				
+
+
 				val parent1 = RouletteWheel.select(members, speciesTotalFitness)
 
 				context.parent ! Mutate(parent1)
