@@ -282,33 +282,36 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 
         // first take all the keys / innovation ids for the neurons
+        		val dest = (genome.hiddenNodes ++ genome.outputNodes)
 				val validSrcNeurons = genome.neurons.keys.toList
-				val validDestNeurons = (genome.hiddenNodes ++ genome.outputNodes).keys.toList // Mustn't connect to the input.
+				val validDestNeurons = dest.keys.toList // Mustn't connect to the input.
 
 				// select two random neurons
 				val n1 = validSrcNeurons(Random.nextInt(validSrcNeurons.length))
 				val n2 = validDestNeurons(Random.nextInt(validDestNeurons.length))
 
+				// check if recurrent
+				if(dest(n1).layer < dest(n2).layer) {
 
+					// check not already connected locally
 
-				// check not already connected locally
+					val existingEntry = genome.connections.values.find(te => te.from == n1 && te.to == n2)
 
-				val existingEntry = genome.connections.values.find(te => te.from == n1 && te.to == n2)
+					existingEntry match {
 
-				existingEntry match {
+						case Some(e) => {
+							// these two are already connected so just return the genome.
+							// TODO: We can probably have a few goes at this.. say try 4 times if no success then give up.
 
-					case Some(e) => {
-						// these two are already connected so just return the genome.
-						// TODO: We can probably have a few goes at this.. say try 4 times if no success then give up.
+							parent ! Agent.NewChild(genome.copy(id = genomeNumber), genomeNumber)
 
-						parent ! Agent.NewChild(genome.copy(id = genomeNumber), genomeNumber)
+						}
 
-					}
-
-					case None => {
-						// the connection does not exist already, in this network, check innovation number in case elsewhere.
-						innovationAgent  ! Innovation.NewConnectionProposal(n1, n2)
-		        		context become mutatingGenomeAddConnection(genome, genomeNumber, params)
+						case None => {
+							// the connection does not exist already, in this network, check innovation number in case elsewhere.
+							innovationAgent  ! Innovation.NewConnectionProposal(n1, n2)
+			        		context become mutatingGenomeAddConnection(genome, genomeNumber, params)
+						}
 					}
 				}
     }
@@ -324,10 +327,12 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
         // First, pick a connection from the genome to split.. Randomly...
 
 		// Avoid splitting a recurrent connection.. for now... In theory it creates unnecessary structure..
-		// though perhaps fine tunes the signal and seems at face value to converge quicker. it's behaviour is a little difficult to reason about in terms of recurrency
-        val connIds: List[Int] = genome.connections.filter(x=> !x._2.recurrent).keys.toList
-		//val connIds: List[Int] = genome.connections.keys.toList
+		// though perhaps fine tunes the signal and seems at face value to converge quicker. it's behaviour is a little difficult 
+		// to reason about in terms of recurrency in this model. It's a bit like a delay.
+		// The signal would take multiple iterations to get to a feedforward node. 
 
+        val connIds: List[Int] = genome.connections.filter(x=> !x._2.recurrent).keys.toList
+		
         val connToReplace: Int = connIds(Random.nextInt(connIds.length))
         val connectionToSplit: ConnectionGenome = genome.connections(connToReplace)
 
