@@ -30,6 +30,8 @@ class Universe extends Actor with ActorLogging {
 
 	val runnum = System.currentTimeMillis()
 
+	outputParams(runnum) 
+
 	val populations = 1.to(params.populationCount).map(p => {
 	
 			val networkGenome = GenomeFactory.createGenome(Population.PopulationSettings().genomePath, 0)
@@ -68,7 +70,7 @@ class Universe extends Actor with ActorLogging {
 			if(newWaiting.length == params.populationCount){
 			
 				// Then this is the last population so we can send to all
-				if (Random.nextDouble < 0.5) {
+				if (Random.nextDouble < params.migrationRate) {
 					context.children.foreach(c => c ! Migrant(bestGenome.genome))
 				} else {
 					context.children.foreach(c => c ! Migrant(null))
@@ -99,4 +101,30 @@ class Universe extends Actor with ActorLogging {
 			context become runningUniverse(universeBest, numBestReceived + 1, waitingPopulations)
 
 	}
+
+	outputParams(runnum: Int) {
+
+		content = Map(
+			"speciation" -> SpeciationParameters(),
+			"offspring" -> OffspringParameters(),
+			"mutation" -> MutationFunctionParameters(),
+			"universe" -> UniverseParameters()
+
+			)
+
+
+		val jsonString = content.map(c => "\"" + c._1 + "\": " + c._2 + "").mkString("{", ", ",  "}")
+
+			val params = OutputParameters()
+			val pw = new PrintWriter(new FileOutputStream(new File(params.popOutputPath + "-" + runnum + "-parameters.js"), true))
+
+			try {
+				
+				pw.append(jsonString +"\r\n") 
+				
+			}
+			finally pw.close()
+
+	}
+
 }

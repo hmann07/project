@@ -30,7 +30,7 @@ object Population {
 			altGenomePath: String = PopulationParameters().altGenomePath,
 			speciationThreshold: Double = SpeciationParameters().speciationThreshold,
 			runNumber: Double = 0.0,
-			migration: Boolean = false
+			migration: Boolean = PopulationParameters().migrate
 			)
 
 
@@ -403,15 +403,17 @@ import Population._
 
 		case Migrant(genome) =>
 
-					val e = context.actorOf(Props[Experience], "experience." + currentGenomeNumber)
-					settings.agentType match {
-							case "STD" =>
-								context.actorOf(Agent.props(genome, e, innovationAgent, "STD"), "agent."+ currentGenomeNumber)
+					if(genome != null){
+						
+						val e = context.actorOf(Props[Experience], "experience." + currentGenomeNumber)
+						settings.agentType match {
+								case "STD" =>
+									context.actorOf(Agent.props(genome, e, innovationAgent, "STD"), "agent."+ currentGenomeNumber)
 
-							case "HYPER" =>
-								context.actorOf(HyperNeatAgent.props(genome, settings.altGenomePath, e, innovationAgent), "hyperneatagent."+ currentGenomeNumber)
+								case "HYPER" =>
+									context.actorOf(HyperNeatAgent.props(genome, settings.altGenomePath, e, innovationAgent), "hyperneatagent."+ currentGenomeNumber)
+						}
 					}
-
 					// create new actors
 					childrenRegistered.foreach(c => {
 
