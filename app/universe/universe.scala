@@ -5,6 +5,7 @@ import com.neurocoevo.innovation.Innovation
 import com.neurocoevo.population.Population
 import com.neurocoevo.population.PopulationOutput
 import com.neurocoevo.network.NetworkOutput
+import com.neurocoevo.genome.NetworkGenome
 import com.neurocoevo.parameters.UniverseParameters
 
 import akka.actor.ActorSystem
@@ -45,8 +46,13 @@ class Universe extends Actor with ActorLogging {
 		})
 		
 
-	def receive = {
+	def receive = runningUniverse() 
+
+	def runningUniverse(bestGenome: NetworkGenome = null) : Receive = {
+
 		case "test" =>
+
+		case Population.AgentResults(genome, sse, fitnessValue, agent, annGenome) =>
 
 
 	}

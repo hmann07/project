@@ -47,12 +47,3 @@
 #
 #-java-home <path>
 
- J-server 
- J-XX:+UseNUMA 
- J-XX:+UseCondCardMark 
- J-XX:-UseBiasedLocking 
- J-Xms1024M 
- J-Xmx2048M 
- J-Xss1M 
- J-XX:MaxPermSize=128m 
- J-XX:+UseParallelGC

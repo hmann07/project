@@ -282,6 +282,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 
         // first take all the keys / innovation ids for the neurons
+        		val all = (genome.inputNodes ++ genome.hiddenNodes ++ genome.outputNodes)
         		val dest = (genome.hiddenNodes ++ genome.outputNodes)
 				val validSrcNeurons = genome.neurons.keys.toList
 				val validDestNeurons = dest.keys.toList // Mustn't connect to the input.
@@ -290,8 +291,8 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 				val n1 = validSrcNeurons(Random.nextInt(validSrcNeurons.length))
 				val n2 = validDestNeurons(Random.nextInt(validDestNeurons.length))
 
-				// check if recurrent
-				if(dest(n1).layer < dest(n2).layer) {
+				// check if recurrent // Currently defaulting to stop recurrent CPPN connections. FOR VD experiment only.
+				if(all(n1).layer < dest(n2).layer) {
 
 					// check not already connected locally
 
@@ -303,7 +304,8 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 							// these two are already connected so just return the genome.
 							// TODO: We can probably have a few goes at this.. say try 4 times if no success then give up.
 
-							parent ! Agent.NewChild(genome.copy(id = genomeNumber), genomeNumber)
+							// try a differnet mutation...
+							context.self ! Population.Mutate(genome, genomeNumber)
 
 						}
 
@@ -313,6 +315,9 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 			        		context become mutatingGenomeAddConnection(genome, genomeNumber, params)
 						}
 					}
+				} else {
+					// try a differnet mutation...
+					context.self ! Population.Mutate(genome, genomeNumber)
 				}
     }
 
