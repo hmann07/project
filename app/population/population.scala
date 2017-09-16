@@ -11,6 +11,7 @@ import com.neurocoevo.evolution.RouletteWheel
 import com.neurocoevo.parameters._
 import com.neurocoevo.speciation.Species
 import com.neurocoevo.speciation.SpeciesMember
+import com.neurocoevo.universe.Universe.Migrant
 
 import scala.util.Random
 import scala.collection.immutable.HashMap
@@ -28,7 +29,8 @@ object Population {
 			agentType: String = PopulationParameters().agentType,
 			altGenomePath: String = PopulationParameters().altGenomePath,
 			speciationThreshold: Double = SpeciationParameters().speciationThreshold,
-			runNumber: Double = 0.0
+			runNumber: Double = 0.0,
+			migration: Boolean = false
 			)
 
 
@@ -75,7 +77,7 @@ import Population._
 
 	def receive = {
 
-		case PopulationSettings(n, genomePath, "STD", altGenomePath,  speciationThreshold, rn) =>
+		case PopulationSettings(n, genomePath, "STD", altGenomePath,  speciationThreshold, rn, migration) =>
 
 			val agentType = "STD"
 
@@ -91,9 +93,9 @@ import Population._
 			// TODO: is it better to make the outputter a member of the netowrk or of the system or of the agent... rather than population?
 			// network doesn't get a view of the ANN.. at the moment.
 
-			context become evolving(PopulationSettings(n,  genomePath, agentType, altGenomePath, speciationThreshold, rn), n, List.empty, n, 1, 0)
+			context become evolving(PopulationSettings(n,  genomePath, agentType, altGenomePath, speciationThreshold, rn, migration), n, List.empty, n, 1, 0)
 
-		case PopulationSettings(n, cppnGenomePath, "HYPER", annGenomePath, speciationThreshold, rn) =>
+		case PopulationSettings(n, cppnGenomePath, "HYPER", annGenomePath, speciationThreshold, rn, migration) =>
 
 			val agentType = "HYPER"
 
@@ -112,10 +114,10 @@ import Population._
 			})
 
 
-	   		 context become evolving(PopulationSettings(n,  cppnGenomePath, agentType, annGenomePath, speciationThreshold, rn), n, List.empty, n, 1, 0)
+	   		 context become evolving(PopulationSettings(n,  cppnGenomePath, agentType, annGenomePath, speciationThreshold, rn, migration), n, List.empty, n, 1, 0)
 
 
-		 case PopulationSettings(n, genomePath, "BP", altGenomePath,  speciationThreshold, rn) =>
+		 case PopulationSettings(n, genomePath, "BP", altGenomePath,  speciationThreshold, rn, migration) =>
 
 			val agentType = "BP"
 
@@ -131,7 +133,7 @@ import Population._
 			// TODO: is it better to make the outputter a member of the netowrk or of the system or of the agent... rather than population?
 			// network doesn't get a view of the ANN.. at the moment.
 
-			context become evolving(PopulationSettings(n,  genomePath, agentType, altGenomePath, speciationThreshold, rn), n, List.empty, n, 1, 0)
+			context become evolving(PopulationSettings(n,  genomePath, agentType, altGenomePath, speciationThreshold, rn, migration), n, List.empty, n, 1, 0)
 
 	}
 
@@ -189,6 +191,10 @@ import Population._
 				val finalAgentsComplete = (agentResult :: agentsComplete)
 				val finalFitnessValue = totalfitnessValue + fitnessValue
 
+
+				// tell the universe about the champion
+
+				context.parent ! best
 
 				// tell the outputter to save down the best genome in JSON format.
 
@@ -260,9 +266,19 @@ import Population._
 				}
 					)
 
+				
 				// move to a state where we will wait for species to send proposal for their offspring to create.
-				context become speciating(settings, finalAgentsComplete, generationNumber, currentGenomeNumber + 1, finalSpeciesDirectory.size, 0, List.empty, finalSpeciesDirectory)
-
+				context become speciating(
+					settings, 
+					finalAgentsComplete, 
+					generationNumber, 
+					currentGenomeNumber + 1, 
+					finalSpeciesDirectory.size, 
+					0, 
+					List.empty, 
+					finalSpeciesDirectory
+					)
+				
 
 			} else {
 
@@ -308,6 +324,7 @@ import Population._
 			} else {
 			context stop sender()
 			}
+		
 		case Agent.NewChild(g, name) =>
 
 			//println("received " + Agent.NewChild(g, name))
@@ -317,33 +334,50 @@ import Population._
 			if(expectedChildren == childrenRegistered.length + 1) {
 
 				// Stop the last agent.
-				context stop sender()
+				context stop sender()	
 
-				// create new actors
-				(Agent.NewChild(g, name) :: childrenRegistered).foreach(c => {
+				// time to send migration
 
-
-					val e = context.actorOf(Props[Experience], "experience." + c.genome.id)
-
-					settings.agentType match {
-						case "STD" =>
-							context.actorOf(Agent.props(c.genome, e, innovationAgent, "STD"), "agent."+ c.genome.id)
-
-						case "HYPER" =>
-							context.actorOf(HyperNeatAgent.props(c.genome, settings.altGenomePath, e, innovationAgent), "hyperneatagent."+ c.genome.id)
-					}
-				})
-
-				// start evolving again
-				if(generationNumber == 200){
-					// then we've performed the prescribed number of gnerations
-
-					// tell innovation to stop
-
-					context.stop(self)
-
+				if(settings.migration) {
+					context.parent ! "ready"
+					context become awaitMigrants(
+						settings, 
+						Agent.NewChild(g, name) :: childrenRegistered,
+			        	generationNumber,  
+						currentGenomeNumber, 
+						expectedChildren,
+						speciesDirectory)
+				
 				} else {
-					context become evolving(settings, currentGenomeNumber, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDirectory)
+
+					// Just continue.
+
+					// create new actors
+					(Agent.NewChild(g, name) :: childrenRegistered).foreach(c => {
+
+
+						val e = context.actorOf(Props[Experience], "experience." + c.genome.id)
+
+						settings.agentType match {
+							case "STD" =>
+								context.actorOf(Agent.props(c.genome, e, innovationAgent, "STD"), "agent."+ c.genome.id)
+
+							case "HYPER" =>
+								context.actorOf(HyperNeatAgent.props(c.genome, settings.altGenomePath, e, innovationAgent), "hyperneatagent."+ c.genome.id)
+						}
+					})
+
+					// start evolving again
+					if(generationNumber == 200){
+						// then we've performed the prescribed number of gnerations
+
+						// tell innovation to stop
+
+						context.stop(self)
+
+					} else {
+						context become evolving(settings, currentGenomeNumber, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDirectory)
+					}
 				}
 
 			} else {
@@ -357,6 +391,57 @@ import Population._
 				context become spawning(settings, expectedChildren,  Agent.NewChild(g, name) :: childrenRegistered, generationNumber, currentGenomeNumber, speciesDirectory, agentMessages)
 			}
 	}
+
+
+	def awaitMigrants(
+		settings: PopulationSettings, 
+		childrenRegistered: List[Agent.NewChild], 
+		generationNumber: Int, 
+		currentGenomeNumber: Int, 
+		expectedChildren: Int,
+		speciesDirectory:  HashMap[Int, SpeciesDirectoryEntry] ): Receive = {
+
+		case Migrant(genome) =>
+
+					val e = context.actorOf(Props[Experience], "experience." + currentGenomeNumber)
+					settings.agentType match {
+							case "STD" =>
+								context.actorOf(Agent.props(genome, e, innovationAgent, "STD"), "agent."+ currentGenomeNumber)
+
+							case "HYPER" =>
+								context.actorOf(HyperNeatAgent.props(genome, settings.altGenomePath, e, innovationAgent), "hyperneatagent."+ currentGenomeNumber)
+					}
+
+					// create new actors
+					childrenRegistered.foreach(c => {
+
+
+						val e = context.actorOf(Props[Experience], "experience." + c.genome.id)
+
+						settings.agentType match {
+							case "STD" =>
+								context.actorOf(Agent.props(c.genome, e, innovationAgent, "STD"), "agent."+ c.genome.id)
+
+							case "HYPER" =>
+								context.actorOf(HyperNeatAgent.props(c.genome, settings.altGenomePath, e, innovationAgent), "hyperneatagent."+ c.genome.id)
+						}
+					})
+
+					// start evolving again
+					if(generationNumber == 200){
+						// then we've performed the prescribed number of generations
+
+						// tell innovation to stop
+
+						context.stop(self)
+
+					} else {
+						context become evolving(settings, currentGenomeNumber + 1, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDirectory)
+					}
+
+
+	}
+
 
 	def speciating(settings: PopulationSettings, finalAgentsComplete: List[AgentResults], generationNumber: Int, currentGenomeNumber: Int, totalSpecies: Int, finishedSpecies: Int, agentMessages: List[Any] , speciesDirectory:HashMap[Int, SpeciesDirectoryEntry]): Actor.Receive = {
 

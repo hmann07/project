@@ -41,6 +41,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
     override def postStop() {
 
         experience ! "STOP"
+        context.children.foreach(c=> context.stop(c))
 
     }
 

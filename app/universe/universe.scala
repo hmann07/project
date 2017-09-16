@@ -6,17 +6,24 @@ import com.neurocoevo.population.Population
 import com.neurocoevo.population.PopulationOutput
 import com.neurocoevo.network.NetworkOutput
 import com.neurocoevo.genome.NetworkGenome
+import com.neurocoevo.population.Population.AgentResults
 import com.neurocoevo.parameters.UniverseParameters
+
+import scala.util.Random
 
 import akka.actor.ActorSystem
 import akka.actor.{Actor, ActorRef, ActorLogging, Props, Inbox}
 
 object Universe {
 
+	case class Migrant(val genome: NetworkGenome) 
+
+	case class NoMigrants()
+
 }
 
 class Universe extends Actor with ActorLogging {
-
+	import Universe._
 	import context._
 
 	val params = UniverseParameters()
@@ -48,12 +55,48 @@ class Universe extends Actor with ActorLogging {
 
 	def receive = runningUniverse() 
 
-	def runningUniverse(bestGenome: NetworkGenome = null) : Receive = {
+	def runningUniverse(bestGenome: AgentResults = null, numBestReceived: Int = 0, waitingPopulations: List[ActorRef] = List.empty) : Receive = {
 
-		case "test" =>
+
+		// received when the population is ready to receive migrants. 
+		case "ready" =>
+
+			// append sender 
+			val newWaiting = sender() :: waitingPopulations
+			
+			// assumption: If we have heard from all, we must also have all the best agents..
+			if(newWaiting.length == params.populationCount){
+			
+				// Then this is the last population so we can send to all
+				if (Random.nextDouble < 0.5) {
+					context.children.foreach(c => c ! Migrant(bestGenome.genome))
+				} else {
+					context.children.foreach(c => c ! Migrant(null))
+				}
+				
+			} else {
+				
+				// we are waiting to hear from more populations.
+
+				context become runningUniverse(bestGenome, numBestReceived, sender() :: waitingPopulations)
+			}
+			
+			
 
 		case Population.AgentResults(genome, sse, fitnessValue, agent, annGenome) =>
 
+			val universeBest = {if(bestGenome != null){
+								if(fitnessValue < bestGenome.fitnessValue){
+									bestGenome
+								}else{
+									Population.AgentResults(genome, sse, fitnessValue, agent, annGenome)
+								}
+							} else {
+								Population.AgentResults(genome, sse, fitnessValue, agent, annGenome)
+							}}
+
+
+			context become runningUniverse(universeBest, numBestReceived + 1, waitingPopulations)
 
 	}
 }

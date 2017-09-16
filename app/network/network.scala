@@ -51,6 +51,13 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
 	import context._
 	import Network._
 
+  override def postStop() {
+
+        
+        context.children.foreach(c=> context.stop(c))
+
+    }
+
 	// create actors for nodes
 
 	val inputs: SortedMap[String, ActorRef] = generateInputNeurons( genome.inputNodes, SortedMap.empty)

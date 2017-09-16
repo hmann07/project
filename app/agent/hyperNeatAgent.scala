@@ -44,6 +44,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
     override def postStop() {
 
         experience ! "STOP"
+        context.children.foreach(c=> context.stop(c))
 
     }
 
