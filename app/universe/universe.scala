@@ -1,5 +1,9 @@
 package com.neurocoevo.universe
 
+import java.io.File
+import java.io.PrintWriter
+import java.io.FileOutputStream
+
 import com.neurocoevo.genome.GenomeFactory
 import com.neurocoevo.innovation.Innovation
 import com.neurocoevo.population.Population
@@ -7,7 +11,7 @@ import com.neurocoevo.population.PopulationOutput
 import com.neurocoevo.network.NetworkOutput
 import com.neurocoevo.genome.NetworkGenome
 import com.neurocoevo.population.Population.AgentResults
-import com.neurocoevo.parameters.UniverseParameters
+import com.neurocoevo.parameters._
 
 import scala.util.Random
 
@@ -102,9 +106,9 @@ class Universe extends Actor with ActorLogging {
 
 	}
 
-	outputParams(runnum: Int) {
+	def outputParams(runnum: Long) = {
 
-		content = Map(
+		val content = Map(
 			"speciation" -> SpeciationParameters(),
 			"offspring" -> OffspringParameters(),
 			"mutation" -> MutationFunctionParameters(),
