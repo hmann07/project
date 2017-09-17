@@ -293,33 +293,36 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 				val n2 = validDestNeurons(Random.nextInt(validDestNeurons.length))
 
 				// check if recurrent // Currently defaulting to stop recurrent CPPN connections. FOR VD experiment only.
-				if(all(n1).layer < dest(n2).layer) {
-
-					// check not already connected locally
-
-					val existingEntry = genome.connections.values.find(te => te.from == n1 && te.to == n2)
-
-					existingEntry match {
-
-						case Some(e) => {
-							// these two are already connected so just return the genome.
-							// TODO: We can probably have a few goes at this.. say try 4 times if no success then give up.
-
-							// try a differnet mutation...
-							context.self ! Population.Mutate(genome, genomeNumber)
-
-						}
-
-						case None => {
-							// the connection does not exist already, in this network, check innovation number in case elsewhere.
-							innovationAgent  ! Innovation.NewConnectionProposal(n1, n2)
-			        		context become mutatingGenomeAddConnection(genome, genomeNumber, params)
-						}
-					}
-				} else {
+				if(!params.recurrent &&  all(n1).layer >= dest(n2).layer) {
+					// we are not allowing recurrent but proposed connection is...
 					// try a differnet mutation...
 					context.self ! Population.Mutate(genome, genomeNumber)
-				}
+
+					} else {
+
+						// Go ahead and create it.
+						// check not already connected locally
+
+						val existingEntry = genome.connections.values.find(te => te.from == n1 && te.to == n2)
+
+						existingEntry match {
+
+							case Some(e) => {
+								// these two are already connected so just return the genome.
+								// TODO: We can probably have a few goes at this.. say try 4 times if no success then give up.
+
+								// try a differnet mutation...
+								context.self ! Population.Mutate(genome, genomeNumber)
+
+							}
+
+							case None => {
+								// the connection does not exist already, in this network, check innovation number in case elsewhere.
+								innovationAgent  ! Innovation.NewConnectionProposal(n1, n2)
+				        		context become mutatingGenomeAddConnection(genome, genomeNumber, params)
+							}
+						}
+					}
     }
 
     /* <Description> mutateAddNeuron: As generally described by the hyperneat papers pick a connection, disable it
@@ -373,7 +376,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
                     activationFn, // In case of CPPN Needs to be randomly selected
                     "hidden",  // Assume we can't ad or remove inputs or outputs.
                     -1, // Bias val
-                    ((Random.nextDouble * params.connectionWeightRange) - (params.connectionWeightRange /2)), // Bias weight
+                    ((Random.nextDouble * params.biasWeightRange) - (params.biasWeightRange /2)), // Bias weight
                     (genome.neurons(oldConnectionGenome.from).layer + genome.neurons(oldConnectionGenome.to).layer) / 2 // Layer. SHould be the sum of the layers of the 2 neurons previously conected / 2
                     ))
 

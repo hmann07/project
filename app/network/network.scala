@@ -161,7 +161,7 @@ class Network(genome: NetworkGenome) extends Actor with ActorLogging {
         if(updatedOutputs.size == outputs.size) {
           // All Network outputs have been received
 
-          val updatedEval: Evaluator = (settings.evaluator).evaluateIteration(settings.sensations(1), updatedOutputs)
+          val updatedEval: Evaluator = settings.evaluator.evaluateIteration(settings.sensations(1), updatedOutputs)
 
           settings.totalSensationsReceived match {
             case updatedEval.epochLength => {

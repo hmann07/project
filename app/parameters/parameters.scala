@@ -10,8 +10,8 @@ import com.neurocoevo.evolution._
 	case class SpeciationParameters(
 		val c1: Double = 1.0,
 		val c2: Double = 1.0,
-		val c3: Double = 0.3,
-		val speciationThreshold: Double = 3.1)
+		val c3: Double = 0.4,
+		val speciationThreshold: Double = 3.0)
 
 
 	case class PopulationParameters(
@@ -30,12 +30,12 @@ import com.neurocoevo.evolution._
 	case class OffspringParameters(
 		val crossoverRate: Double = 0.25,
 		val mutationRate: Double = 0.75,
-		val elitismRate: Double = 0.2
+		val elitismRate: Double = 0.1
 	)
 
 
 	case class MutationFunctionParameters (
-		val offspringMutationRate: Double = 0.0,
+		val offspringMutationRate: Double = 0.2,
 
 	// Should add to 1.
 		val perturbWeightRate: Double = 0.92,
@@ -44,8 +44,9 @@ import com.neurocoevo.evolution._
 	//
 		val weightChangeProportion: Double = 0.9,
 		val jiggleProportion: Double = 0.9, // non-jiggle are reset
-		val connectionWeightRange: Double = 10.0,
-		val mutationPertubFactor: Double = 0.08,
+		val connectionWeightRange: Double = 100.0,
+		val biasWeightRange: Double = 100.0,
+		val mutationPertubFactor: Double = 0.02,
 		val recurrent: Boolean = false
 	)
 
