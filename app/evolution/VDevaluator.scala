@@ -42,4 +42,6 @@ case class VDEvaluator(
 
 		this.copy(fitness = invD, auxValue = auxValue / 75)
 	}
+
+
 } 

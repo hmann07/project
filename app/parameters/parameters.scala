@@ -35,7 +35,7 @@ import com.neurocoevo.evolution._
 
 
 	case class MutationFunctionParameters (
-		val offspringMutationRate: Double = 0.2,
+		val offspringMutationRate: Double = 0.1,
 
 	// Should add to 1.
 		val perturbWeightRate: Double = 0.92,
@@ -44,8 +44,8 @@ import com.neurocoevo.evolution._
 	//
 		val weightChangeProportion: Double = 0.9,
 		val jiggleProportion: Double = 0.9, // non-jiggle are reset
-		val connectionWeightRange: Double = 100.0,
-		val biasWeightRange: Double = 100.0,
+		val connectionWeightRange: Double = 50.0,
+		val biasWeightRange: Double = 50.0,
 		val mutationPertubFactor: Double = 0.02,
 		val recurrent: Boolean = false
 	)
@@ -57,5 +57,5 @@ import com.neurocoevo.evolution._
 		)
 
 	case class UniverseParameters (
-		val populationCount: Int = 10,
+		val populationCount: Int = 20,
 		val migrationRate: Double = 0.5)

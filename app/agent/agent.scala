@@ -426,7 +426,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 					}
 					}
 
-				val newGenomes = crossedConnections.foldLeft(HashMap[Int, NeuronGenome]()) { (m, n) =>
+				val newNeurons = crossedConnections.foldLeft(HashMap[Int, NeuronGenome]()) { (m, n) =>
 
 					m + (n._2.from -> networkGenome1.neurons(n._2.from), n._2.to -> networkGenome1.neurons(n._2.to) )
 
@@ -435,16 +435,16 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 				//println(newGenomes)
 
 
-				if(Random.nextDouble <= MutationFunctionParameters().offspringMutationRate){
+				if(Random.nextDouble < MutationFunctionParameters().offspringMutationRate){
 					// then we also mutate the child...
-					context.self ! Population.Mutate(new NetworkGenome(genomeNumber, networkGenome1.neurons, crossedConnections), genomeNumber)
+					context.self ! Population.Mutate(new NetworkGenome(genomeNumber, newNeurons, crossedConnections), genomeNumber)
 
 					// Using -1 to tell the agent that we are going to do some extra processing...
 					new NetworkGenome(-1, networkGenome1.neurons, crossedConnections)
 
 				} else {
 					// otherwise send it as is
-					new NetworkGenome(genomeNumber, networkGenome1.neurons, crossedConnections)
+					new NetworkGenome(genomeNumber, newNeurons, crossedConnections)
 				}
 			}
 

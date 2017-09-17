@@ -10,6 +10,7 @@ trait Evaluator {
 	val auxValue: Double
 	def evaluateIteration(networkInput: Sensation, networkOutput: SortedMap[Int, Double]): Evaluator
 	def evaluateEpoch() : Evaluator
+
 	
 }
 
@@ -34,7 +35,6 @@ case class XOREvaluator(
 		
 		this.copy(fitness = evalfitness, auxValue = aggregatedIterationValue)
 	}
-
 
 } 
 

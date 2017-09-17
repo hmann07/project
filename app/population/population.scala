@@ -198,7 +198,7 @@ import Population._
 
 				// tell the outputter to save down the best genome in JSON format.
 
-				networkOutput ! NetworkOutput.OutputRequest(best.genome, "PopulationBest" + generationNumber , "JSON")
+				networkOutput ! NetworkOutput.OutputRequest(best.genome, self.path.name + "-PopulationBest-" + generationNumber , "JSON")
 
 				// if we are in HyperNeat mode
 				if(settings.agentType == "HYPER"){
