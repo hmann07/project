@@ -32,3 +32,5 @@ RUN
 run
 exit
 run
+clean
+run

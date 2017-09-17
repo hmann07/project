@@ -65,8 +65,35 @@ class Universe extends Actor with ActorLogging {
 
 	def receive = runningUniverse() 
 
-	def runningUniverse(bestGenome: AgentResults = null, numBestReceived: Int = 0, waitingPopulations: List[ActorRef] = List.empty) : Receive = {
+	def runningUniverse(bestGenome: AgentResults = null, numBestReceived: Int = 0, waitingPopulations: List[ActorRef] = List.empty, popchildren: Int = params.populationCount) : Receive = {
 
+		case "finished" =>
+
+			context.stop(sender())
+
+			val newWaiting = waitingPopulations
+
+			if(newWaiting.length + 1 == popchildren){
+			
+				// Then this is the last population so we can send to all
+				if (Random.nextDouble < params.migrationRate) {
+					newWaiting.foreach(c => c ! Migrant(bestGenome.genome))
+				} else {
+					newWaiting.foreach(c => c ! Migrant(null))
+				}
+
+				context become runningUniverse(null, 0, List.empty, popchildren -1)
+				
+			} else {
+				
+				// we are waiting to hear from more populations. But on next generation this population will not be there 
+
+				context become runningUniverse(bestGenome, numBestReceived,waitingPopulations, popchildren -1)
+			}
+
+
+
+			
 
 		// received when the population is ready to receive migrants. 
 		case "ready" =>
@@ -84,13 +111,13 @@ class Universe extends Actor with ActorLogging {
 					newWaiting.foreach(c => c ! Migrant(null))
 				}
 
-				context become runningUniverse(null, 0, List.empty)
+				context become runningUniverse(null, 0, List.empty, popchildren)
 				
 			} else {
 				
 				// we are waiting to hear from more populations.
 
-				context become runningUniverse(bestGenome, numBestReceived, sender() :: waitingPopulations)
+				context become runningUniverse(bestGenome, numBestReceived, sender() :: waitingPopulations, popchildren)
 			}
 			
 			
@@ -108,7 +135,7 @@ class Universe extends Actor with ActorLogging {
 							}}
 
 
-			context become runningUniverse(universeBest, numBestReceived + 1, waitingPopulations)
+			context become runningUniverse(universeBest, numBestReceived + 1, waitingPopulations, popchildren)
 
 	}
 

@@ -29,7 +29,7 @@ object Network {
     	sse: Double = 0,
     	fitnessValue: Double = 0.00000000001, // tiny, so that we avoid any nasty divide by zero errors.. 
       maxIterations: Int = BackPropParameters().maxIterations,
-      evaluator: Evaluator = (EvaluatorParameters().evaluator) )
+      evaluator: Evaluator = EvaluatorParameters().evaluator.evaluateEpoch() )
 
 	case class Sensation(
 			 id: Double,

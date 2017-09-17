@@ -65,9 +65,9 @@ import Population._
 		println(self.path.name + " finished")
 
 		// since we are done with the population all the actor for logging data can be closed down (after they've finished the final bits of data)
-		networkOutput ! akka.actor.PoisonPill
-		populationOutput ! akka.actor.PoisonPill
-        innovationAgent ! akka.actor.PoisonPill
+		//networkOutput ! akka.actor.PoisonPill
+		//populationOutput ! akka.actor.PoisonPill
+        //innovationAgent ! akka.actor.PoisonPill
         context.children.foreach {_ ! akka.actor.PoisonPill}
     }
 
@@ -248,36 +248,49 @@ import Population._
 				populationOutput ! PopulationOutput.PopOutputRequest(gStats, "populationStats", "JSON")
 				populationOutput ! PopulationOutput.PopOutputRequest(gStats, "populationStats", "CSV")
 
-				// all genomes allocated a species. now we tell the species to create their volunteers and update current champion to be previous champion.
 
-				val finalSpeciesDirectory = newSpeciesDirectory.foldLeft(HashMap[Int, SpeciesDirectoryEntry]())((directory, dirEntry) => {
+				if(generationNumber == 200){
+						// then we've performed the prescribed number of generations
 
-					dirEntry._2.actor ! SelectParents(totalMeanfitnessValue, settings.populationSize, OffspringParameters())
 
-					// set current champion as the old champion ready for the new genomes to return their results and be tested against this previous champion.
-					// also reset fitness values counts etc..
+						context.stop(self)
+						
 
-					directory + (dirEntry._1 ->  dirEntry._2.copy(
-						//champion = null,
-						previousChampion = dirEntry._2.champion,
-						totalFitness = 0,
-						memberCount = 0
-						))
+				 } else {
+
+					// start work to create new generation
+
+					// all genomes allocated a species. now we tell the species to create their volunteers and update current champion to be previous champion.
+
+					val finalSpeciesDirectory = newSpeciesDirectory.foldLeft(HashMap[Int, SpeciesDirectoryEntry]())((directory, dirEntry) => {
+
+						dirEntry._2.actor ! SelectParents(totalMeanfitnessValue, settings.populationSize, OffspringParameters())
+
+						// set current champion as the old champion ready for the new genomes to return their results and be tested against this previous champion.
+						// also reset fitness values counts etc..
+
+						directory + (dirEntry._1 ->  dirEntry._2.copy(
+							//champion = null,
+							previousChampion = dirEntry._2.champion,
+							totalFitness = 0,
+							memberCount = 0
+							))
+					}
+						)
+
+					
+					// move to a state where we will wait for species to send proposal for their offspring to create.
+					context become speciating(
+						settings, 
+						finalAgentsComplete, 
+						generationNumber, 
+						currentGenomeNumber + 1, 
+						finalSpeciesDirectory.size, 
+						0, 
+						List.empty, 
+						finalSpeciesDirectory
+						)
 				}
-					)
-
-				
-				// move to a state where we will wait for species to send proposal for their offspring to create.
-				context become speciating(
-					settings, 
-					finalAgentsComplete, 
-					generationNumber, 
-					currentGenomeNumber + 1, 
-					finalSpeciesDirectory.size, 
-					0, 
-					List.empty, 
-					finalSpeciesDirectory
-					)
 				
 
 			} else {
@@ -371,16 +384,9 @@ import Population._
 					})
 
 					// start evolving again
-					if(generationNumber == 200){
-						// then we've performed the prescribed number of gnerations
-
-						// tell innovation to stop
-
-						context.stop(self)
-
-					} else {
-						context become evolving(settings, currentGenomeNumber, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDirectory)
-					}
+					
+					context become evolving(settings, currentGenomeNumber, List.empty, expectedChildren, generationNumber + 1, 0, null, speciesDirectory)
+					
 				}
 
 			} else {
@@ -448,14 +454,7 @@ import Population._
 					})
 
 					// start evolving again
-					if(generationNumber == 200){
-						// then we've performed the prescribed number of generations
-
-						context.stop(self)
-
-					} else {
-						context become evolving(settings, currentGenomeNumber + 1, List.empty,  numberOfChildren, generationNumber + 1, 0, null, speciesDirectory)
-					}
+					context become evolving(settings, currentGenomeNumber + 1, List.empty,  numberOfChildren, generationNumber + 1, 0, null, speciesDirectory)
 
 	}
 

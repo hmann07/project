@@ -19,9 +19,9 @@ class StartController @Inject()(system: ActorSystem, cc: ControllerComponents) e
 
 	//val inbox = Inbox.create(system)
 
-	system.actorOf(Props[Universe])
+	val u = system.actorOf(Props[Universe])
 
-    Ok(views.html.evolutionOutput(null, null))
+    Ok(views.html.index())
   }
 
 }
