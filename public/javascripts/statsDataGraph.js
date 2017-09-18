@@ -176,7 +176,7 @@ lineChart.prototype.draw = function(){
                 .attr("x",5)
                 .attr("y",-5)
                 .text(function(d){
-                  return pointData[d]
+                  return pointData[d] + " - pop:" + pointData.populationName+ " - gen:" + pointData.generationNumber
                 })
                 .transition().duration(250).style("fill-opacity", 1);
 
@@ -200,7 +200,7 @@ lineChart.prototype.draw = function(){
 var lc = new lineChart(
     d3.select("#statsViewer"), // preset document location
     d,  // coming in from a static file
-    {"groupField": ["populationName", "runNumber"], "quartile": false, "y":["bestsse"], "x": "generationNumber","xTitle":"Generation", "yTitle":"Best Fitness Value" } // config
+    {"groupField": ["populationName", "runNumber"], "quartile": false, "y":["bestsse"], "x": "generationNumber","xTitle":"Generation", "yTitle":"Distance" } // config
     ).draw()
 //d
 // {{"quartile": false, "y":["lowerQuartile"], "x": "month","xtitle":"Months", ytitle:"price" }

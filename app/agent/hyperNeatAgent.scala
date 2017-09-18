@@ -196,7 +196,7 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 											if(Random.nextDouble < params.weightChangeProportion) {
 
 												// a chance that the weight will be completely reset or just changed slightly.
-												if(Random.nextDouble < 0.9) {
+												if(Random.nextDouble < params.jiggleProportion) {
 												// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
 
 													// sharpNEAT restrict to small weights between 1...
@@ -283,46 +283,60 @@ class HyperNeatAgent(cppnGenome: NetworkGenome, annSubstratePath: String, experi
 
 
         // first take all the keys / innovation ids for the neurons
-        		val all = (genome.inputNodes ++ genome.hiddenNodes ++ genome.outputNodes)
-        		val dest = (genome.hiddenNodes ++ genome.outputNodes)
-				val validSrcNeurons = genome.neurons.keys.toList
-				val validDestNeurons = dest.keys.toList // Mustn't connect to the input.
+		val all = (genome.inputNodes ++ genome.hiddenNodes ++ genome.outputNodes)
+		val dest = (genome.hiddenNodes ++ genome.outputNodes)
+		val validSrcNeurons = genome.neurons.keys.toList
+		val validDestNeurons = dest.keys.toList // Mustn't connect to the input.
 
-				// select two random neurons
-				val n1 = validSrcNeurons(Random.nextInt(validSrcNeurons.length))
-				val n2 = validDestNeurons(Random.nextInt(validDestNeurons.length))
+		def tryConnectNodes(tries: Int, tried: Int = 0):Unit = {
 
-				// check if recurrent // Currently defaulting to stop recurrent CPPN connections. FOR VD experiment only.
-				if(!params.recurrent &&  all(n1).layer >= dest(n2).layer) {
-					// we are not allowing recurrent but proposed connection is...
-					// try a differnet mutation...
-					context.self ! Population.Mutate(genome, genomeNumber)
+    		if(tries == tried) {
+    			// try a differnet mutation...
+				context.self ! Population.Mutate(genome, genomeNumber)
+    		} else {
 
-					} else {
 
-						// Go ahead and create it.
-						// check not already connected locally
+    		val n1 = validSrcNeurons(Random.nextInt(validSrcNeurons.length))
+			val n2 = validDestNeurons(Random.nextInt(validDestNeurons.length))
 
-						val existingEntry = genome.connections.values.find(te => te.from == n1 && te.to == n2)
+			// check if recurrent // Currently defaulting to stop recurrent CPPN connections. FOR VD experiment only.
+			if(!params.recurrent &&  all(n1).layer >= dest(n2).layer) {
+				// we are not allowing recurrent but proposed connection is...
+				// try a differnet mutation...
+				context.self ! Population.Mutate(genome, genomeNumber)
 
-						existingEntry match {
+				} else {
 
-							case Some(e) => {
-								// these two are already connected so just return the genome.
-								// TODO: We can probably have a few goes at this.. say try 4 times if no success then give up.
+					// Go ahead and create it.
+					// check not already connected locally
 
-								// try a differnet mutation...
-								context.self ! Population.Mutate(genome, genomeNumber)
+					val existingEntry = genome.connections.values.find(te => te.from == n1 && te.to == n2)
 
-							}
+					existingEntry match {
 
-							case None => {
-								// the connection does not exist already, in this network, check innovation number in case elsewhere.
-								innovationAgent  ! Innovation.NewConnectionProposal(n1, n2)
-				        		context become mutatingGenomeAddConnection(genome, genomeNumber, params)
-							}
+						case Some(e) => {
+							// these two are already connected so just return the genome.
+							// TODO: We can probably have a few goes at this.. say try 4 times if no success then give up.
+
+
+							tryConnectNodes(tries: Int, tried+1)
+
+						}
+
+						case None => {
+							// the connection does not exist already, in this network, check innovation number in case elsewhere.
+							innovationAgent  ! Innovation.NewConnectionProposal(n1, n2)
+			        		context become mutatingGenomeAddConnection(genome, genomeNumber, params)
 						}
 					}
+				}
+			}
+    	}
+		
+
+		// try to select two random neurons
+
+		tryConnectNodes(5)
     }
 
     /* <Description> mutateAddNeuron: As generally described by the hyperneat papers pick a connection, disable it

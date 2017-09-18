@@ -170,7 +170,7 @@ class Agent(cppnGenome: NetworkGenome, experience: ActorRef, species: Int, innov
 						if(Random.nextDouble < params.weightChangeProportion) {
 
 							// a chance that the weight will be completely reset or just changed slightly.
-							if(Random.nextDouble < 0.9) {
+							if(Random.nextDouble < params.jiggleProportion) {
 							// Could insert some sort of factor here to control how much it changes. also in sharpNeat and Erlang there is a weight cap
 
 								// sharpNEAT restrict to small weights between 1...
